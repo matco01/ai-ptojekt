@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TechMarket – elektronika s osobním poradenstvím</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%231c2663%22/%3E%3Ctext x=%2216%22 y=%2224%22 font-family=%22Arial%22 font-weight=%22900%22 font-style=%22italic%22 font-size=%2222%22 fill=%22white%22 text-anchor=%22middle%22%3Et%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/fa/css/all.min.css">
+  <link rel="stylesheet" href="shop.css">
+</head>
+<body>
+  <div class="demo-bar"><i class="fa-solid fa-flask"></i> DEMO obchod pro ukázku AI prodavačky – smyšlené produkty, nic se neprodává</div>
+
+  <header class="top">
+    <div class="top-in">
+      <a href="#/" class="logo" aria-label="TechMarket – úvod">
+        <span class="mark"><span>t</span></span>
+        <span class="word">techmarket<b>.cz</b></span>
+      </a>
+      <form id="search" class="search" autocomplete="off" role="search">
+        <div class="field">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" placeholder="Co hledáte? Např. sluchátka, notebook do školy…" aria-label="Hledat">
+        </div>
+        <button type="submit">Hledat</button>
+      </form>
+      <nav class="acts" aria-label="Účet a košík">
+        <a class="account" href="#/">
+          <span class="ava"><i class="fa-regular fa-user"></i></span>
+          <span class="txt"><b>Můj TechMarket <i class="fa-solid fa-chevron-down"></i></b><small>Přihlásit se</small></span>
+        </a>
+        <span class="divider"></span>
+        <a class="ico" href="#/" title="Objednávky"><i class="fa-regular fa-calendar-check"></i></a>
+        <a class="ico" href="#/" title="Oblíbené"><i class="fa-regular fa-heart"></i></a>
+        <span class="flag" title="Čeština"><svg viewBox="0 0 640 480"><rect fill="#fff" height="240" width="640"/><rect fill="#d7141a" height="240" width="640" y="240"/><polygon fill="#11457e" points="0,0 360,240 0,480"/></svg></span>
+        <a class="ico cart" href="#/kosik" title="Košík"><i class="fa-solid fa-cart-shopping"></i><span id="cart-count" class="count">0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page">
+    <aside class="flank" aria-hidden="true">
+      <p class="fl-title">S <span class="plus">Klubem+</span><br><span class="big">ušetříš</span><br>pokaždé,<br>když<br>nakoupíš</p>
+      <div class="fl-art"><span class="coin r">+</span><span class="pig"><i class="fa-solid fa-piggy-bank"></i></span><span class="coin l">%</span></div>
+      <a class="btn" href="#/akce">Více</a>
+    </aside>
+    <main class="frame" id="app"></main>
+    <aside class="flank" aria-hidden="true">
+      <p class="fl-title">S <span class="plus">Klubem+</span><br><span class="big">ušetříš</span><br>pokaždé,<br>když<br>nakoupíš</p>
+      <div class="fl-art"><span class="coin l">%</span><span class="pig"><i class="fa-solid fa-piggy-bank"></i></span><span class="coin r">+</span></div>
+      <a class="btn" href="#/akce">Více</a>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <div class="foot-cols">
+      <div><b>Nákup</b><a href="#/">Doprava a platba</a><a href="#/akce">Splátky 0 %</a><a href="#/kategorie/mobily">Výkup telefonů</a></div>
+      <div><b>Služby</b><a href="#/">Reklamace</a><a href="#/kategorie/tv">Instalace TV</a><a href="#/kategorie/tv">Prodloužená záruka</a></div>
+      <div><b>Kontakt</b><span>+420 222 000 000 (7–22 h)</span><span>Prodejny Praha · Brno</span></div>
+      <div><b>O projektu</b><span>Ukázka AI prodavačky pro e-shopy.</span><a href="/admin/">Dashboard pro majitele →</a></div>
+    </div>
+  </footer>
+
+  <script src="shop.js"></script>
+  <!-- The whole AI salesperson = this one line. It works the same on any website. -->
+  <script src="/widget/prodavac.js" data-name="Klára" data-color="#2288e5" data-greet-delay="1.2" defer></script>
+</body>
+</html>

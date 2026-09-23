@@ -1,0 +1,19 @@
+{
+  "name": "ai-prodavac",
+  "version": "0.1.0",
+  "description": "AI obchodní prodavač pro e-shopy – prototyp",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@fortawesome/fontawesome-free": "^7.3.1",
+    "express": "^5.2.1"
+  }
+}

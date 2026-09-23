@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI prodavač – přehled</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --surface-0: #f4f4f2; --surface-1: #fcfcfb; --line: #e4e3df;
+      --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #8a8984;
+      --series-1: #2a78d6; --series-2: #eb6834; --track: #ecebe7;
+      --accent: #2e7d5b;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:where(:not([data-theme="light"])) {
+        color-scheme: dark;
+        --surface-0: #111110; --surface-1: #1a1a19; --line: #2e2e2c;
+        --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #8f8e86;
+        --series-1: #3987e5; --series-2: #d95926; --track: #262624;
+        --accent: #4aa37c;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--surface-0); color: var(--text-primary); }
+    header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 18px 28px; background: var(--surface-1); border-bottom: 1px solid var(--line); }
+    header h1 { font-size: 20px; margin: 0; flex: 1; }
+    header h1 small { font-weight: 400; color: var(--text-secondary); font-size: 14px; margin-left: 8px; }
+    button { font: inherit; cursor: pointer; border-radius: 10px; padding: 8px 14px; border: 1px solid var(--line); background: var(--surface-1); color: var(--text-primary); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    button:disabled { opacity: .55; cursor: default; }
+    main { max-width: 1200px; margin: 0 auto; padding: 24px 28px 60px; display: grid; gap: 18px; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+    .tile, .card { background: var(--surface-1); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+    .tile .label { font-size: 13px; color: var(--text-secondary); }
+    .tile .value { font-size: 30px; font-weight: 700; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+    .tile .sub { font-size: 12.5px; color: var(--text-muted); }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+    .card h2 { font-size: 15px; margin: 0 0 4px; }
+    .card .hint { font-size: 12.5px; color: var(--text-muted); margin: 0 0 14px; }
+    .bars { display: grid; gap: 8px; }
+    .bar { display: grid; grid-template-columns: minmax(110px, 38%) 1fr 48px; align-items: center; gap: 10px; font-size: 13.5px; position: relative; }
+    .bar .name { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar .track { height: 14px; background: var(--track); border-radius: 0 4px 4px 0; }
+    .bar .fill { height: 100%; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
+    .bar .num { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .bar:hover .fill { filter: brightness(1.12); }
+    .legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 10px; }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+    .empty { color: var(--text-muted); font-size: 13px; }
+    .questions { list-style: none; padding: 0; margin: 0; max-height: 320px; overflow-y: auto; }
+    .questions li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+    .questions li small { color: var(--text-muted); margin-left: 6px; }
+    .insights { line-height: 1.55; font-size: 14.5px; }
+    .insights h2 { font-size: 15px; margin: 18px 0 6px; } .insights h2:first-child { margin-top: 0; }
+    .insights ul { margin: 0; padding-left: 20px; }
+    .tip { position: fixed; pointer-events: none; background: var(--text-primary); color: var(--surface-1); font-size: 12.5px; padding: 6px 9px; border-radius: 8px; z-index: 9; display: none; }
+    .notice { background: #fff4d6; color: #6b5300; border-radius: 10px; padding: 10px 14px; font-size: 13.5px; }
+    @media (max-width: 600px) { header, main { padding-left: 16px; padding-right: 16px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI prodavač · přehled pro e-shop <small>TechMarket (demo)</small></h1>
+    <button id="refresh">↻ Obnovit</button>
+    <button id="seed" title="Vygeneruje simulované návštěvy pro ukázku">Naplnit demo daty</button>
+    <button id="reset">Smazat data</button>
+  </header>
+  <main>
+    <div id="demo-notice" class="notice" hidden>Data obsahují simulované (demo) návštěvy. Pro reálná čísla klikněte „Smazat data“ a projděte si obchod.</div>
+    <section class="tiles" id="tiles"></section>
+
+    <section class="card">
+      <h2>✨ Doporučení od AI pro majitele obchodu</h2>
+      <p class="hint">Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.</p>
+      <div id="insights" class="insights"><button class="primary" id="gen">Vygenerovat doporučení</button></div>
+    </section>
+
+    <section class="cols">
+      <div class="card">
+        <h2>Konverze: s AI vs. bez AI</h2>
+        <p class="hint">Podíl návštěv, které skončily objednávkou.</p>
+        <div class="legend"><span><i style="background:var(--series-1)"></i>S AI prodavačkou</span><span><i style="background:var(--series-2)"></i>Bez AI</span></div>
+        <div class="bars" id="conv"></div>
+      </div>
+      <div class="card">
+        <h2>Nabídka pomoci</h2>
+        <p class="hint">Jak zákazníci reagují, když se jim prodavačka nabídne.</p>
+        <div class="bars" id="offer"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Proaktivní tipy prodavačky</h2>
+      <p class="hint">Kdy se prodavačka sama ozvala podle chování zákazníka a jak často zákazník tip využil.</p>
+      <div class="legend"><span><i style="background:var(--series-1)"></i>Využito (%)</span></div>
+      <div class="bars" id="nudges"></div>
+    </section>
+
+    <section class="cols">
+      <div class="card"><h2>Co zákazníci hledají</h2><p class="hint">Nejčastější dotazy ve vyhledávání na webu.</p><div class="bars" id="searches"></div></div>
+      <div class="card"><h2>Hledání bez výsledku</h2><p class="hint">Poptávka, kterou obchod nepokryl – kandidáti na rozšíření sortimentu nebo synonyma ve vyhledávání.</p><div class="bars" id="misses"></div></div>
+    </section>
+
+    <section class="cols">
+      <div class="card"><h2>Nejprohlíženější produkty</h2><p class="hint">Počet zobrazení detailu.</p><div class="bars" id="viewed"></div></div>
+      <div class="card"><h2>Co AI nejčastěji doporučuje</h2><p class="hint">Počet zobrazení v kartičkách asistentky.</p><div class="bars" id="recs"></div></div>
+    </section>
+    <section class="cols">
+      <div class="card"><h2>Přidáno do košíku díky AI</h2><p class="hint">Kusy přidané z doporučení asistentky.</p><div class="bars" id="cartai"></div></div>
+      <div class="card"><h2>Hodně prohlížené, málo kupované</h2><p class="hint">Zobrazení detailu u produktů, které si do košíku přidá méně než 15 % zájemců – kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div></div>
+    </section>
+    <section class="card">
+      <h2>Na co se zákazníci ptají</h2>
+      <p class="hint">Poslední dotazy na AI prodavačku.</p>
+      <ul class="questions" id="questions"></ul>
+    </section>
+  </main>
+  <div class="tip" id="tip"></div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const kc = (n) => Math.round(n).toLocaleString("cs-CZ") + " Kč";
+  const token = new URLSearchParams(location.search).get("token") || "";
+  const call = (url, opts = {}) => fetch(url, { ...opts, headers: { "X-Admin-Token": token, ...(opts.headers || {}) } });
+
+  function tile(label, value, sub = "") {
+    return `<div class="tile"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+  }
+
+  // single-series horizontal bar list; rows: {name, value, tip, color?, fmt?}
+  function bars(el, rows, emptyText = "Zatím žádná data.") {
+    if (!rows.length) { el.innerHTML = `<p class="empty">${emptyText}</p>`; return; }
+    const max = Math.max(...rows.map((r) => r.value), 1);
+    el.innerHTML = rows.map((r) => `
+      <div class="bar" data-tip="${esc(r.tip ?? `${r.name}: ${r.value}`)}">
+        <span class="name">${esc(r.name)}</span>
+        <div class="track"><div class="fill" style="width:${(r.value / max) * 100}%;${r.color ? `background:${r.color}` : ""}"></div></div>
+        <span class="num">${r.label ?? r.value}</span>
+      </div>`).join("");
+  }
+
+  // hover tooltip for every bar row
+  const tip = $("tip");
+  document.addEventListener("mousemove", (e) => {
+    const row = e.target.closest?.("[data-tip]");
+    if (!row) { tip.style.display = "none"; return; }
+    tip.textContent = row.dataset.tip;
+    tip.style.display = "block";
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + "px";
+    tip.style.top = e.clientY + 14 + "px";
+  });
+
+  async function load() {
+    const r = await call("/api/analytics");
+    if (!r.ok) { $("tiles").innerHTML = `<p class="empty">Nelze načíst data (${r.status}).</p>`; return; }
+    const d = await r.json();
+    const t = d.totals;
+    $("tiles").innerHTML = [
+      tile("Návštěvy", t.sessions.toLocaleString("cs-CZ"), `${t.events.toLocaleString("cs-CZ")} zaznamenaných událostí`),
+      tile("Využilo AI prodavačku", t.sessions ? Math.round((t.aiSessions / t.sessions) * 100) + " %" : "–", `${t.aiSessions} návštěv · ${t.userMessages} dotazů`),
+      tile("Konverze s AI", t.conversionAi + " %", `bez AI ${t.conversionNonAi} %`),
+      tile("Průměrná objednávka s AI", t.avgOrderAi ? kc(t.avgOrderAi) : "–", `bez AI ${t.avgOrderNonAi ? kc(t.avgOrderNonAi) : "–"}`),
+      tile("Tržby celkem", kc(t.revenue), `${t.orders} objednávek, z toho ${t.ordersAi} s AI`),
+    ].join("");
+
+    bars($("conv"), [
+      { name: "S AI prodavačkou", value: t.conversionAi, label: t.conversionAi + " %", color: "var(--series-1)", tip: `S AI: ${t.conversionAi} % z ${t.aiSessions} návštěv` },
+      { name: "Bez AI", value: t.conversionNonAi, label: t.conversionNonAi + " %", color: "var(--series-2)", tip: `Bez AI: ${t.conversionNonAi} % z ${t.sessions - t.aiSessions} návštěv` },
+    ].filter(() => t.sessions));
+
+    const o = d.offer;
+    bars($("offer"), o.shown ? [
+      { name: "Nabídka zobrazena", value: o.shown },
+      { name: "Přijato – chat", value: o.chat },
+      { name: "Přijato – hlas", value: o.voice },
+      { name: "Odmítnuto", value: o.declined },
+      { name: "Otevřeno později ručně", value: o.reopened },
+    ].map((r) => ({ ...r, tip: `${r.name}: ${r.value}` })) : []);
+    if (o.shown) $("offer").insertAdjacentHTML("beforeend", `<p class="hint" style="margin:8px 0 0">Míra přijetí nabídky: <b>${o.acceptRate} %</b></p>`);
+
+    bars($("nudges"), d.nudges.map((n) => ({
+      name: n.name, value: n.clickRate, label: n.clickRate + " %",
+      tip: `${n.name}: zobrazeno ${n.shown}×, využito ${n.clicked}× (${n.clickRate} %), zavřeno ${n.dismissed}×`,
+    })), "Zatím se žádný tip nezobrazil.");
+    const list = (rows) => rows.map((r) => ({ name: r.name, value: r.count }));
+    bars($("searches"), list(d.topSearches));
+    bars($("misses"), list(d.searchMisses), "Všechna hledání něco našla.");
+    bars($("viewed"), list(d.topViewed));
+    bars($("recs"), list(d.topRecommended));
+    bars($("cartai"), list(d.addToCartAi));
+    bars($("vnb"), d.viewedNotBought.map((r) => ({ name: r.name, value: r.views, label: `${r.views}×`, tip: `${r.name}: ${r.views} zobrazení, ${r.carts} přidání do košíku` })));
+
+    $("questions").innerHTML = d.recentQuestions.length
+      ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<small>${q.mode === "voice" ? "🎙️ hlas" : "💬 chat"} · ${new Date(q.ts).toLocaleString("cs-CZ")}</small></li>`).join("")
+      : `<li class="empty">Zatím žádné dotazy.</li>`;
+
+    $("demo-notice").hidden = !d.hasDemoData;
+  }
+
+  // tiny markdown → HTML for the insights (headings, bullets, bold)
+  function md(text) {
+    return esc(text)
+      .replace(/^### (.*)$/gm, "<h2>$1</h2>").replace(/^## (.*)$/gm, "<h2>$1</h2>").replace(/^# (.*)$/gm, "<h2>$1</h2>")
+      .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+      .replace(/(?:^[-*] .*(?:\n|$))+/gm, (m) => "<ul>" + m.trim().split("\n").map((l) => `<li>${l.replace(/^[-*] /, "")}</li>`).join("") + "</ul>")
+      .replace(/\n{2,}/g, "<br>");
+  }
+
+  $("insights").addEventListener("click", async (e) => {
+    if (!e.target.matches("#gen")) return;
+    e.target.disabled = true;
+    e.target.textContent = "Analyzuji… (může trvat i minutu)";
+    const r = await call("/api/analytics/insights", { method: "POST" });
+    const d = await r.json().catch(() => ({}));
+    $("insights").innerHTML = r.ok
+      ? md(d.markdown) + `<p><button class="primary" id="gen">Vygenerovat znovu</button></p>`
+      : `<p class="empty">${esc(d.error || "Chyba")}</p><button class="primary" id="gen">Zkusit znovu</button>`;
+  });
+  $("refresh").onclick = load;
+  $("seed").onclick = async () => { await call("/api/analytics/seed", { method: "POST" }); load(); };
+  $("reset").onclick = async () => {
+    if (!confirm("Opravdu smazat všechna nasbíraná data?")) return;
+    await call("/api/analytics/reset", { method: "POST" });
+    load();
+  };
+  load();
+</script>
+</body>
+</html>
