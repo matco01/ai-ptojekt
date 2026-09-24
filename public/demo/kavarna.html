@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kávovarna Bohemia – ukázka jiného webu</title>
+  <!-- A deliberately different-looking shop: dark, orange, serif, sharp corners.
+       It only shows that the same widget adapts its look to any website. -->
+  <style>
+    body { margin: 0; background: #16110d; color: #f3e9dc; font-family: Georgia, "Times New Roman", serif; }
+    .note { background: #e8741a; color: #1b120b; font: 600 13px system-ui, sans-serif; text-align: center; padding: 6px; }
+    header { padding: 22px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3a2e24; }
+    header b { font-size: 26px; letter-spacing: .5px; }
+    nav a { color: #d9c7b2; margin-left: 24px; text-decoration: none; }
+    .btn { background: #e8741a; color: #fff; border: none; padding: 12px 26px; border-radius: 2px; font: inherit; text-decoration: none; display: inline-block; }
+    main { padding: 70px 40px; max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 52px; font-weight: 400; margin: 0 0 14px; }
+    p { color: #cdbba6; font-size: 19px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 44px; }
+    .card { background: #221a14; border: 1px solid #3a2e24; padding: 22px; }
+    .card .pic { height: 150px; background: radial-gradient(circle at 50% 60%, #6b4226, #2b1d14 70%); margin-bottom: 14px; }
+    .card .btn { margin-top: 10px; padding: 9px 18px; }
+  </style>
+</head>
+<body>
+  <div class="note">Ukázka: stejná AI prodavačka na úplně jiném webu – jméno, postavičku z loga, barvy i písmo si vytvoří sama.</div>
+  <header><a class="logo" href="/demo/kavarna.html" style="display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none">
+    <svg width="46" height="46" viewBox="0 0 64 64" aria-label="Kávovarna Bohemia logo"><circle cx="32" cy="32" r="30" fill="#e8741a"/><circle cx="32" cy="32" r="30" fill="none" stroke="#b9530c" stroke-width="3"/><ellipse cx="32" cy="32" rx="12" ry="17" fill="#3b2213" transform="rotate(28 32 32)"/><path d="M27 18 Q36 32 37 46" stroke="#e8741a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+    <b>Kávovarna Bohemia</b></a><nav><a href="#">Káva</a><a href="#">Kávovary</a><a href="#">Příslušenství</a><a class="btn" href="#kosik" style="margin-left:24px">Košík</a></nav></header>
+  <main>
+    <h1>Káva, která voní domovem</h1>
+    <p>Pražírna z Vysočiny a e-shop s kávovary pro domácí baristy.</p>
+    <a class="btn" href="#">Nakupovat</a>
+    <div class="grid">
+      <div class="card"><div class="pic"></div><b>Etiopie Yirgacheffe</b><p>Květinová, jemná · 349 Kč</p><a class="btn" href="#">Do košíku</a></div>
+      <div class="card"><div class="pic"></div><b>Brazílie Santos</b><p>Oříšková, čokoládová · 289 Kč</p><a class="btn" href="#">Do košíku</a></div>
+      <div class="card"><div class="pic"></div><b>Barista One kávovar</b><p>Cappuccino na 1 dotyk · 12 490 Kč</p><a class="btn" href="#">Do košíku</a></div>
+    </div>
+  </main>
+  <script src="/widget/prodavac.js" defer></script>
+</body>
+</html>

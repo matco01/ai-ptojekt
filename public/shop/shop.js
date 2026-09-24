@@ -28,6 +28,8 @@
     if (page.type === "cart") route();
   }
   function setQty(id, q) {
+    const before = cart.find((c) => c.id === id)?.quantity ?? 0;
+    if (q < before) track("cart_remove", { productId: id });
     cart = q > 0 ? cart.map((c) => (c.id === id ? { ...c, quantity: q } : c)) : cart.filter((c) => c.id !== id);
     save("tm_cart", cart);
     updateHeader();
@@ -61,6 +63,15 @@
       cart,
     }),
     onAddToCart: (item) => addToCart(item.id, item.quantity ?? 1, { silent: true, source: "ai" }),
+    onRemoveFromCart: (item) => {
+      const line = cart.find((c) => c.id === item.id);
+      if (!line) return;
+      const q = Math.max(0, line.quantity - (item.quantity ?? line.quantity));
+      cart = q ? cart.map((c) => (c.id === item.id ? { ...c, quantity: q } : c)) : cart.filter((c) => c.id !== item.id);
+      save("tm_cart", cart);
+      updateHeader();
+      if (page.type === "cart") cartView(); // re-render only the cart page, don't jump anywhere else
+    },
     onOpenProduct: (id) => (location.hash = `#/produkt/${id}`),
   });
 
@@ -254,11 +265,12 @@
       document.getElementById("grid").innerHTML = list.length ? list.map(tile).join("") : `<p class="muted">Filtrům neodpovídá žádný produkt.</p>`;
       document.getElementById("cnt").textContent = `${list.length} produktů`;
     };
-    app.querySelectorAll("[data-sort]").forEach((b) => (b.onclick = () => { f.sort = b.dataset.sort; app.querySelectorAll("[data-sort]").forEach((x) => x.classList.toggle("on", x === b)); render(); }));
-    app.querySelectorAll("[data-brand]").forEach((c) => (c.onchange = () => { c.checked ? f.brands.add(c.dataset.brand) : f.brands.delete(c.dataset.brand); render(); }));
-    document.getElementById("fsale").onchange = (e) => { f.sale = e.target.checked; render(); };
+    app.querySelectorAll("[data-sort]").forEach((b) => (b.onclick = () => { track("filter_change"); f.sort = b.dataset.sort; app.querySelectorAll("[data-sort]").forEach((x) => x.classList.toggle("on", x === b)); render(); }));
+    app.querySelectorAll("[data-brand]").forEach((c) => (c.onchange = () => { track("filter_change"); c.checked ? f.brands.add(c.dataset.brand) : f.brands.delete(c.dataset.brand); render(); }));
+    document.getElementById("fsale").onchange = (e) => { track("filter_change"); f.sale = e.target.checked; render(); };
     document.getElementById("fmin").oninput = (e) => { f.min = e.target.value; render(); };
     document.getElementById("fmax").oninput = (e) => { f.max = e.target.value; render(); };
+    for (const id of ["fmin", "fmax"]) document.getElementById(id).onchange = () => track("filter_change");
     render();
   }
 
@@ -349,10 +361,15 @@
     const tabEl = document.getElementById("tab");
     tabEl.innerHTML = tabs.desc;
     app.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => {
+      track("tab_view", { tab: b.dataset.tab });
       app.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("on", x === b));
       tabEl.innerHTML = tabs[b.dataset.tab];
     }));
-    document.getElementById("add").onclick = () => addToCart(id, Math.max(1, Math.min(10, Number(document.getElementById("qty").value) || 1)));
+    const addBtn = document.getElementById("add");
+    let hoverTimer = null;
+    addBtn.onmouseenter = () => { hoverTimer = setTimeout(() => track("hover_add", { productId: id }), 1200); };
+    addBtn.onmouseleave = () => clearTimeout(hoverTimer);
+    addBtn.onclick = () => clearTimeout(hoverTimer) || addToCart(id, Math.max(1, Math.min(10, Number(document.getElementById("qty").value) || 1)));
     const addAll = document.getElementById("addall");
     if (addAll) addAll.onclick = () => { fbt.forEach((x) => addToCart(x.id, 1, { silent: true })); toast("✓ Celý set je v košíku"); };
   }

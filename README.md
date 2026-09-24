@@ -7,6 +7,7 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 | Demo e-shop | http://localhost:3000/ | Smyšlený obchod s elektronikou „TechMarket“ ve stylu velkých českých e-shopů (38 produktů, akce, sety, filtry, košík) |
 | AI prodavačka | vpravo dole | Widget, který se vkládá na libovolný web jedním řádkem |
 | Dashboard | http://localhost:3000/admin/ | Chování zákazníků, výkon prodavačky a AI doporučení pro majitele |
+| Ukázka jiného webu | http://localhost:3000/demo/kavarna.html | Tmavý web kavárny: stejná prodavačka se sama přebarví a převezme písmo |
 
 ## Spuštění
 
@@ -40,21 +41,33 @@ Zákazník si vybere 🎙️ **Promluvit si**, 💬 **Napsat**, nebo **„Děkuj
 | Zákazník si prohlíží produkt, ke kterému je set se slevou | „Malý tip, který se snadno přehlédne: když si vezmete X15 Pro, dostanete sluchátka za polovic.“ |
 | Do dopravy zdarma chybí málo | „Chybí vám jen 210 Kč – hodil by se třeba HDMI kabel za 290 Kč.“ |
 | Hledání nic nenašlo | „Na ‚iphone‘ vyhledávání nic nenašlo. Řekněte mi, k čemu to potřebujete…“ |
-| Prohlédl si 3+ produkty v jedné kategorii | „Vidím, že vybíráte mezi několika modely – mám vám je porovnat?“ |
 | Produkt má službu (výkup, prodloužená záruka) | „Dobré vědět: k TV Aurora záruka 5 let zdarma.“ |
 | V kategorii je výrazná sleva, kterou neviděl | „Jen ať vám to neuteče: RoboClean S8 je teď o 3 000 Kč levněji.“ |
 | Košík bez typického příslušenství | „K telefonu si lidé berou i nabíječku – nové telefony se dodávají bez ní.“ |
-| Dlouho stojí na produktu | „Máte k němu nějaký dotaz?“ |
+
+**3. Pozná, když zákazník váhá, a sama nabídne pomoc, i když ji na začátku odmítl.** Jako prodavačka, která vidí, že někdo dlouho stojí u regálu. Text nabídky napíše Claude přesně pro danou situaci (bez API se použije připravený text).
+
+| Co zákazník dělá | Co Klára pozná | Příklad nabídky |
+|---|---|---|
+| Přechází mezi produkty tam a zpátky (A → B → A) | Nemůže se rozhodnout | „Nechci rušit, ale vypadá to, že vybíráte mezi Lumen Book 15 a Vektor Air 14 – mám je porovnat?“ |
+| Dlouho čte produkt, vrací se k textu, otevírá Parametry | Nerozumí technickým údajům | „Parametry u Aurora OLED umí být zamotané. Mám vám je vysvětlit srozumitelně?“ |
+| Najíždí na „Do košíku“, ale neklikne | Má poslední pochybnost | „Vypadá to, že u sluchátek ještě váháte. Můžu pomoct s poslední nejasností?“ |
+| Stojí na produktu a nehýbe se | Přemýšlí | „Kdyby vám u Pixelonu 8a něco nebylo jasné, ráda poradím.“ |
+| Pořád mění filtry a řazení | Nemůže najít to pravé | „Řekněte mi, k čemu to potřebujete, a vyberu 2–3 nejlepší.“ |
+| Zkouší různá hledání | Nezná správná slova | „Popište mi vlastními slovy, co potřebujete.“ |
+| Stojí v košíku, odebírá věci | Váhá s objednávkou | „30 dní na vrácení, doprava zdarma… Mohu s něčím pomoci?“ |
+
+Když zákazník na nabídku klikne, jeho otázka se rovnou pošle do chatu a Klára ví, v jaké situaci je.
 
 **Pravidla, aby nebyla otravná:**
 - Nikdy nepřeruší rozhovor.
 - Mezi tipy je nejméně 35 s.
 - Za návštěvu dá nejvýš 5 tipů.
 - Když zákazník tip zavře, ozývá se méně často.
-- Kdo řekl „jen se dívám“, dostane nejvýš 2 tipy, a to jen skutečně výhodné (slevy, sety, doprava zdarma).
+- Kdo řekl „jen se dívám“, dostane nejvýš 3 tipy s rozestupem aspoň 45 s: jen skutečně výhodné (slevy, sety, doprava zdarma) nebo nabídku pomoci, když zjevně váhá. Vždy s tlačítkem „Teď ne, díky“.
 - Při otevřeném chatu řekne tip přímo v konverzaci.
 
-**3. V rozhovoru** (s Claude API) prodává jako zkušená prodavačka:
+**4. V rozhovoru** (s Claude API) prodává jako zkušená prodavačka:
 - Nejdřív se zeptá na potřebu.
 - Doporučí 1–3 produkty s vysvětlením.
 - Ukáže kartičky s tlačítkem do košíku.
@@ -82,6 +95,7 @@ Zákazník si vybere 🎙️ **Promluvit si**, 💬 **Napsat**, nebo **„Děkuj
 server.js            HTTP server (Express): API + statické soubory
 lib/assistant.js     AI prodavačka (Claude): prompt, nástroje, streaming, ochrany
 lib/proactive.js     Pozdrav a tipy podle chování (pravidla, bez API)
+lib/hesitation.js    Rozpoznání váhání zákazníka (tam a zpět, dlouhé čtení, filtry, košík…)
 lib/offline.js       Zjednodušené odpovědi, když není API klíč
 lib/catalog.js       Katalog, vyhledávání, ceny košíku a sety (v ostré verzi feed e-shopu)
 lib/images.js        Ilustrace produktů pro demo (v ostré verzi fotky z e-shopu)
@@ -95,8 +109,36 @@ public/admin/        Dashboard
 ## Vložení na jiný web
 
 ```html
-<script src="https://VÁŠ-SERVER/widget/prodavac.js" data-name="Klára" data-color="#2288e5" defer></script>
+<script src="https://VÁŠ-SERVER/widget/prodavac.js" data-name="Klára" defer></script>
 ```
+
+**Maskot a jméno se vytvoří z webu samy.** Widget na každém webu najde logo a udělá z něj postavičku s očima, obočím a pusou:
+- **Logo jako obrázek (čtverec, kruh):** oči a pusu dostane přímo logo. Ukázka kavárny: oranžový odznak s kávovým zrnem.
+- **Logo s barevnou značkou** (např. tmavě modrý čtverec s „t“): lesklá dlaždice v barvě značky s tím písmenem. TechMarket.
+- **Logo jen jako nápis:** dlaždice v barvě značky s počátečním písmenem.
+
+Jméno vymyslí Claude podle značky a toho, co obchod prodává. Je to krátké maskotí jméno, ne lidské: TechMarket → **Tekík**, kavárna → **Bafík**, zahradnictví → **Pupík**, knihkupectví → **Luxík**. Server si jméno pamatuje, takže ho každý zákazník potká stejné.
+
+Postavička mrká, sleduje kurzor a zvedá obočí, když přemýšlí. **Pusu otevírá jen, když mluví.** S přirozeným hlasem se otevírá podle skutečné hlasitosti zvuku, s hlasem z prohlížeče v rytmu slov.
+
+Ruční nastavení je volitelné: `data-name`, `data-brand`, `data-avatar-color`, `data-letter`, `data-avatar-image`.
+
+**Hlas:**
+- **Přirozený hlas (doporučeno):** s `ELEVENLABS_API_KEY` v `.env.local` mluví neuronovým hlasem ElevenLabs (česky, výchozí hravý hlas „Jessica“, jde změnit přes `ELEVENLABS_VOICE_ID`). Klíč zdarma na elevenlabs.io, zhruba 10 000 znaků měsíčně.
+- **Bez klíče:** použije nejlepší hlas prohlížeče (v Edge „Vlasta Online (Natural)“).
+- **Emoji a formátování se nikdy nečtou nahlas.**
+
+**Přerušení hlasem:** když Klára mluví, pořád poslouchá. Stačí jí skočit do řeči: zmlkne, poslechne si novou otázku a odpoví na ni. Na „stop“, „počkej“ nebo „dost“ zmlkne hned. Vlastní hlas z reproduktorů pozná a nenechá se jím přerušit. Nejspolehlivěji to funguje se sluchátky. Při přerušení se na serveru zastaví i generování zbytku odpovědi.
+
+**Košík:** agent umí na požádání produkty přidat i odebrat, nebo snížit jejich počet. E-shop k tomu nabízí `AIProdavac.onAddToCart` a `AIProdavac.onRemoveFromCart`.
+
+**Vzhled se přizpůsobí webu sám.** Widget si při načtení zjistí:
+- barvu značky podle tlačítek, hlavně v hlavičce webu
+- písmo
+- zaoblení tlačítek
+- jestli je web světlý, nebo tmavý
+
+Podle toho si nastaví barvy, pozadí panelu, písmo i rohy. Na světlém webu ve stylu Alzy je světlý s modrými akcenty, na tmavém webu kavárny tmavý, oranžový a s patkovým písmem. Ruční nastavení je volitelné: `data-color="#e8741a"`, `data-theme="light|dark"`, `data-font="…"`, `data-radius="8"`.
 
 E-shop předává, co zákazník dělá. Čím víc toho předá, tím lépe prodavačka radí. Ukázka je v `public/shop/shop.js`:
 

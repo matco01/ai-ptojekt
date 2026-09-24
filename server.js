@@ -6,7 +6,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { store, categories, products, related, activePromotions, getProduct, priceCart } from "./lib/catalog.js";
 import { productSvg } from "./lib/images.js";
 import { record, summarize, seedDemo, reset, EVENT_TYPES, NUDGE_LABELS } from "./lib/analytics.js";
-import { chat, generateInsights, ChatError, MODEL, hasApiKey } from "./lib/assistant.js";
+import { chat, generateInsights, writeHesitationOffer, inventAgentName, ChatError, MODEL, hasApiKey } from "./lib/assistant.js";
+import { personaName } from "./lib/persona.js";
+import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -61,11 +63,53 @@ function cleanSignals(raw = {}) {
     declined: Boolean(raw.declined),
     shown: (Array.isArray(raw.shown) ? raw.shown : []).map((x) => str(x, 80)).slice(0, 30),
     via: raw.via ? str(raw.via, 300) : null,
+    brand: raw.brand ? str(raw.brand, 40) : null,
+    agentName: /^\p{L}{2,12}$/u.test(raw.agentName ?? "") ? raw.agentName : null, // the name the widget gave the agent on this site
+    behaviour: cleanBehaviour(raw.behaviour),
+  };
+}
+
+/** How the customer behaves on the current page (collected by the widget). */
+function cleanBehaviour(b = {}) {
+  const n = (v, max) => Math.min(Math.max(0, Number(v) || 0), max);
+  return {
+    activeSec: n(b?.activeSec, 3600),      // time actively spent on this page
+    idleSec: n(b?.idleSec, 3600),          // time since the last mouse / scroll / key input
+    rereads: n(b?.rereads, 100),           // scrolled back up to read something again
+    filterChanges: n(b?.filterChanges, 100),
+    hoverAdd: n(b?.hoverAdd, 100),         // lingered over "add to cart" without clicking
+    cartRemovals: n(b?.cartRemovals, 100),
+    tabs: (Array.isArray(b?.tabs) ? b.tabs : []).map((t) => str(t, 20)).slice(0, 10),
+    seq: (Array.isArray(b?.seq) ? b.seq : []).filter((id) => getProduct(id)).slice(-12), // product views in order, with repeats
   };
 }
 
 // --- public API -------------------------------------------------------------
-app.get("/api/health", (req, res) => res.json({ ok: true, model: MODEL, hasApiKey: hasApiKey() }));
+app.get("/api/health", (req, res) => res.json({ ok: true, model: MODEL, hasApiKey: hasApiKey(), tts: ttsProvider() }));
+
+// The agent's name on a given website – invented once per brand and remembered.
+app.post("/api/persona", rateLimit(20, 60e3), async (req, res) => {
+  const brand = str(req.body?.brand, 60).trim();
+  if (!brand) return res.status(400).json({ error: "brand is required" });
+  const about = str(req.body?.about, 160).trim(); // what the site is about (its description) – helps the name fit
+  res.json({ name: await personaName(brand, inventAgentName, about), tts: ttsProvider() });
+});
+
+// Natural voice (ElevenLabs). 404 when not configured → the widget uses the browser voice.
+app.post("/api/tts", rateLimit(120, 60e3), async (req, res) => {
+  if (ttsProvider() !== "elevenlabs") return res.status(404).json({ error: "TTS not configured" });
+  const text = str(req.body?.text, 600).trim();
+  if (!text) return res.status(400).json({ error: "text is required" });
+  const abort = new AbortController();
+  res.on("close", () => { if (!res.writableEnded) abort.abort(); });
+  try {
+    await streamSpeech(text, res, abort.signal);
+  } catch (err) {
+    if (abort.signal.aborted) return;
+    console.error("TTS:", err.message);
+    if (!res.headersSent) res.status(502).json({ error: "TTS failed" }); else res.end();
+  }
+});
 
 app.get("/api/catalog", (req, res) => {
   res.json({ store: { name: store.name, tagline: store.tagline, assistantName: store.assistantName, freeShippingFrom: store.freeShippingFrom }, categories, products, related, promotions: activePromotions() });
@@ -80,11 +124,18 @@ app.get("/api/img/:id.svg", (req, res) => {
 app.post("/api/cart/price", (req, res) => res.json(priceCart(cleanSignals({ cart: req.body?.cart }).cart)));
 
 // Greeting on arrival + behaviour-based tips. Rule-based: instant and free.
-app.post("/api/proactive", rateLimit(60, 60e3), (req, res) => {
+app.post("/api/proactive", rateLimit(60, 60e3), async (req, res) => {
   const { sessionId, trigger, signals } = req.body ?? {};
   if (!validSession(sessionId)) return res.status(400).json({ error: "Neplatná session." });
   const s = cleanSignals(signals);
-  res.json(trigger === "greeting" ? { greeting: greeting(s) } : { nudge: nextNudge(s) });
+  if (trigger === "greeting") return res.json({ greeting: greeting(s) });
+  const nudge = nextNudge(s);
+  if (nudge?.hesitation) {
+    // a stuck customer gets an offer written for their exact situation
+    nudge.text = await writeHesitationOffer({ ...nudge.hesitation, declined: s.declined, fallback: nudge.text });
+    delete nudge.hesitation;
+  }
+  res.json({ nudge });
 });
 
 app.post("/api/chat", rateLimit(30, 5 * 60e3), async (req, res) => {
@@ -93,12 +144,16 @@ app.post("/api/chat", rateLimit(30, 5 * 60e3), async (req, res) => {
 
   res.set({ "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache", Connection: "keep-alive" });
   res.flushHeaders();
-  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+  const send = (obj) => { if (!res.writableEnded && !res.destroyed) res.write(`data: ${JSON.stringify(obj)}\n\n`); };
+  // customer interrupted (closed the stream) → stop generating the rest of the answer
+  const abort = new AbortController();
+  res.on("close", () => { if (!res.writableEnded) abort.abort(); });
 
   try {
-    await chat({ sessionId, text, context: cleanSignals(context), send });
+    await chat({ sessionId, text, context: cleanSignals(context), send, signal: abort.signal });
     send({ type: "done" });
   } catch (err) {
+    if (abort.signal.aborted) return; // nobody is listening any more
     let message = "Omlouvám se, něco se pokazilo. Zkuste to prosím znovu.";
     if (err instanceof ChatError) message = err.message;
     else if (err instanceof Anthropic.AuthenticationError) message = "AI není správně nakonfigurovaná (neplatný ANTHROPIC_API_KEY).";
@@ -121,6 +176,7 @@ app.post("/api/events", rateLimit(120, 60e3), (req, res) => {
     if (e.productId && getProduct(e.productId)) clean.productId = e.productId;
     if (e.category) clean.category = str(e.category, 30);
     if (e.mode) clean.mode = e.mode === "voice" ? "voice" : "chat";
+    if (e.type === "tab_view") clean.tab = str(e.tab, 20);
     if (e.type === "search") { clean.query = str(e.query, 60); clean.results = Math.max(0, Number(e.results) || 0); }
     if (e.type.startsWith("nudge_")) { if (!(e.kind in NUDGE_LABELS)) continue; clean.kind = e.kind; }
     // "ai_card" = customer clicked "add to cart" on a card the AI recommended
@@ -151,6 +207,7 @@ app.post("/api/analytics/insights", admin, rateLimit(10, 10 * 60e3), async (req,
 // --- static: demo shop, widget, dashboard ------------------------------------
 app.use("/fa", express.static(path.join(here, "node_modules", "@fortawesome", "fontawesome-free")));
 app.use("/widget", express.static(path.join(here, "public", "widget")));
+app.use("/demo", express.static(path.join(here, "public", "demo"))); // other-looking sites for showing the widget adapts
 app.use("/admin", express.static(path.join(here, "public", "admin")));
 app.use("/", express.static(path.join(here, "public", "shop")));
 
