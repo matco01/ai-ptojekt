@@ -266,7 +266,8 @@
     button { font: inherit; cursor: pointer; }
     svg { width: 1em; height: 1em; display: block; }
     :focus-visible { outline: 2px solid ${mix("--c", 70)}; outline-offset: 2px; }
-    .wrap { position: fixed; right: 22px; bottom: 22px; z-index: 2147483000; display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
+    .wrap { position: fixed; right: 22px; bottom: 22px; z-index: 2147483000; display: flex; flex-direction: column; align-items: flex-end; gap: 14px; pointer-events: none; }
+    .wrap > * { pointer-events: auto; } /* the empty part of the corner never blocks taps on the page */
 
     /* ---------- the mascot: navy tile with a "t" nose, big eyes and a mouth that opens when talking ---------- */
     .av { --s: 40px; position: relative; width: var(--s); height: var(--s); flex: none; display: inline-block; }
@@ -319,9 +320,9 @@
     .gbtn:hover { background: ${mix("--c", 14)}; transform: rotate(8deg) scale(1.06); }
 
     /* ---------- arrival: the mascot hops over to you and asks ---------- */
-    .stage { position: fixed; inset: 0; z-index: 2147483001; }
+    .arrive { position: fixed; inset: 0; z-index: 2147483001; }
     .scrim { position: absolute; inset: 0; background: var(--dim); backdrop-filter: blur(3px); animation: fade .4s ease-out both; }
-    .stage.out .scrim { animation: fade .35s ease-in reverse both; }
+    .arrive.out .scrim { animation: fade .35s ease-in reverse both; }
     .greeter { position: absolute; left: 50%; bottom: max(28px, 9vh); transform: translateX(-50%); width: min(430px, calc(100vw - 32px));
       display: flex; flex-direction: column; align-items: center; gap: 18px; }
     .hop { position: relative; transform-origin: 50% 100%; will-change: transform; }
@@ -334,7 +335,7 @@
     .bubble::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 16px; height: 16px; margin-left: -8px; background: inherit;
       border: solid var(--edge); border-width: 0 1px 1px 0; transform: rotate(45deg); border-radius: 0 0 4px 0; }
     .landed .bubble { opacity: 1; transform: none; pointer-events: auto; transition: transform .5s cubic-bezier(.3,1.6,.5,1), opacity .2s; }
-    .stage.out .bubble { opacity: 0; transform: scale(.6) translateY(30px); transition: transform .22s ease-in, opacity .18s; }
+    .arrive.out .bubble { opacity: 0; transform: scale(.6) translateY(30px); transition: transform .22s ease-in, opacity .18s; }
     .bubble .x { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: var(--soft);
       display: grid; place-items: center; font-size: 15px; transition: background .15s, color .15s; }
     .bubble .x:hover { background: var(--glass); color: var(--strong); }
@@ -363,6 +364,15 @@
     .tip .prod b { font-size: 13.5px; display: block; } .tip .prod span { font-size: 14px; font-weight: 800; }
     .timer { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: linear-gradient(90deg, var(--c), var(--c2), var(--c3)); transform-origin: left; animation: shrink var(--t, 20s) linear forwards; }
     .tip:hover .timer { animation-play-state: paused; opacity: .35; }
+    /* a short spoken-style line next to the mascot */
+    .quip { position: relative; max-width: 290px; margin-right: 6px; padding: 12px 16px; border-radius: 16px; background: var(--bg2); color: var(--strong);
+      border: 1px solid var(--edge); box-shadow: 0 14px 34px -10px rgba(10,14,30,.3); font-size: 15px; line-height: 1.45;
+      transform-origin: calc(100% - 26px) 100%; animation: quipIn .38s cubic-bezier(.3,1.5,.5,1) both; }
+    .quip::after { content: ""; position: absolute; right: 22px; bottom: -7px; width: 13px; height: 13px; background: inherit;
+      border: solid var(--edge); border-width: 0 1px 1px 0; transform: rotate(45deg); border-radius: 0 0 3px 0; }
+    .leaving { animation: leave .28s ease-in forwards !important; }
+    @keyframes quipIn { from { opacity: 0; transform: translateY(10px) scale(.7); } }
+    @keyframes leave { to { opacity: 0; transform: translateY(8px) scale(.96); } }
 
     /* ---------- chips ---------- */
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -380,6 +390,7 @@
     .head .title b { display: block; font-size: 16.5px; letter-spacing: -.2px; color: var(--strong); }
     .status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--soft); min-height: 17px; }
     .status i { width: 7px; height: 7px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 8px #3ddc84; flex: none; }
+    .status:not(.busy) i { display: none; }
     .status.busy i { background: var(--c2); box-shadow: 0 0 8px var(--c2); animation: blinkdot .8s infinite; }
     .msgs { flex: 1; overflow-y: auto; padding: 14px 18px 16px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; scrollbar-color: ${mix("--soft", 35)} transparent; }
 
@@ -495,11 +506,29 @@
     @media (max-width: 640px) {
       .g-text { font-size: 16px; }
     }
+    /* phones: the chat takes the whole screen like a messaging app */
     @media (max-width: 480px) {
-      .wrap { right: 10px; bottom: 10px; left: 10px; }
-      .panel { width: 100%; height: calc(100vh - 20px); }
+      .wrap { right: calc(12px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); left: 12px; }
+      .panel { position: fixed; inset: 0; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; box-shadow: none; transform-origin: bottom center;
+        animation: sheet .38s cubic-bezier(.2,.9,.3,1) both; }
+      .head { padding: calc(10px + env(safe-area-inset-top)) 12px 10px 14px; }
+      .msgs { padding: 14px 14px 12px; overscroll-behavior: contain; }
+      .m { max-width: 92%; }
+      .cards { margin: 0 -14px; padding: 4px 14px 10px; scroll-snap-type: x mandatory; scroll-padding: 14px; }
+      .pc { flex-basis: 158px; scroll-snap-align: start; }
+      .input { margin: 4px 10px calc(10px + env(safe-area-inset-bottom)); }
+      .field textarea { font-size: 16px; } /* under 16px iOS zooms the page in when typing */
+      .stage { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
       .tip { width: 100%; }
+      .quip { max-width: min(290px, 100%); }
       .launch-label { display: none; }
+      .chip, .gbtn, .send { -webkit-tap-highlight-color: transparent; }
+    }
+    @keyframes sheet { from { transform: translateY(40px); opacity: 0; } }
+    /* touch screens: no hover-only effects that stick after a tap */
+    @media (hover: none) {
+      .pc:hover { box-shadow: var(--card-shadow); } .pc:hover::after { opacity: 0; } .pc:hover .img img { transform: none; }
+      .send:hover, .gbtn:hover { transform: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -690,7 +719,7 @@
   function md(text) {
     const blocks = esc(text.trim())
       .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
-      .replace(/(\d{1,3}(?:[\s ]\d{3})*(?:,\d+)?[\s ]?(?:Kč|,-))/g, '<span class="kc">$1</span>')
+      .replace(/(?<!\d)(\d+(?:[\s ]\d{3})*(?:,\d+)?[\s ]?(?:Kč|,-))/g, '<span class="kc">$1</span>')
       .split(/\n{2,}/);
     return blocks.map((b, i) => {
       const lines = b.split("\n");
@@ -725,15 +754,25 @@
   // ------------------------------------------ floating cards (greeting / tips) ----
   let floatEl = null, floatTimer = null;
   function hideFloat() { clearTimeout(floatTimer); floatEl?.remove(); floatEl = null; }
-  function showFloat(node, autoHideMs) {
+  // fades out instead of vanishing
+  function fadeFloat() {
+    const n = floatEl;
+    if (!n) return;
+    n.classList.add("leaving");
+    setTimeout(() => { if (floatEl === n) hideFloat(); }, 280);
+  }
+  function showFloat(node, autoHideMs, { pauseOnHover = true } = {}) {
     hideFloat();
     floatEl = node;
     wrap.insertBefore(node, launcher);
     if (autoHideMs) {
       node.style.setProperty("--t", autoHideMs + "ms");
-      floatTimer = setTimeout(hideFloat, autoHideMs);
-      // reading it? then don't take it away
-      node.addEventListener("mouseenter", () => clearTimeout(floatTimer), { once: true });
+      floatTimer = setTimeout(fadeFloat, autoHideMs);
+      if (pauseOnHover) {
+        // reading it? then don't take it away – until the mouse leaves
+        node.addEventListener("mouseenter", () => clearTimeout(floatTimer));
+        node.addEventListener("mouseleave", () => { clearTimeout(floatTimer); floatTimer = setTimeout(fadeFloat, 2500); });
+      }
     }
   }
   const who = (mood = "") => `<div class="who">${avatar(48, { mood })}<div><b>${esc(cfg.name)}</b><span>prodavačka · AI asistentka</span></div></div>`;
@@ -767,7 +806,7 @@
     if (state.greeted || mode) return;
     state.greeted = true; saveState();
     const stage = el(`
-      <div class="stage" role="dialog" aria-modal="true" aria-labelledby="aip-greet">
+      <div class="arrive" role="dialog" aria-modal="true" aria-labelledby="aip-greet">
         <div class="scrim"></div>
         <div class="greeter">
           <div class="bubble">
@@ -839,8 +878,8 @@
     state.choice = "declined"; state.lastNudgeAt = Date.now(); saveState();
     api.track("offer_declined");
     // answer like a person would, then step back
-    const card = el(`<div class="tip glass" role="status">${aurora}${who("happy")}<p>Jasně, v klidu se porozhlédněte. 🙂 Kdyby něco, jsem tady vpravo dole.</p><span class="timer"></span></div>`);
-    showFloat(card, 3500);
+    const quip = el(`<div class="quip" role="status">Jasně, v klidu se porozhlédněte. Kdyby něco, jsem tady.</div>`);
+    showFloat(quip, 3000, { pauseOnHover: false });
   }
 
   // Tips based on behaviour, e.g. a bundle deal the customer would miss.
@@ -940,6 +979,7 @@
     hideFloat();
     launcher.style.display = "none";
     if (!panel) buildPanel();
+    lockPage(true);
     renderFooter();
     if (note) addNote(note);
     if (!history.length && !fromTip) { // from a tip the customer's question goes straight in
@@ -958,7 +998,17 @@
     else footer.querySelector("textarea")?.focus();
   }
 
+  // on a phone the chat covers the screen – the shop behind it shouldn't scroll along
+  const phone = matchMedia("(max-width: 480px)");
+  let pageOverflow = null;
+  function lockPage(on) {
+    const h = document.documentElement;
+    if (on && phone.matches && pageOverflow === null) { pageOverflow = h.style.overflow; h.style.overflow = "hidden"; }
+    else if (!on && pageOverflow !== null) { h.style.overflow = pageOverflow; pageOverflow = null; }
+  }
+
   function closePanel() {
+    lockPage(false);
     stopVoice();
     mode = null;
     panel?.remove();
@@ -1079,8 +1129,10 @@
             <button class="add">${ICON.cart} Do košíku</button>
           </div>
         </div>`);
-      card.querySelector(".name").onclick = () => api.onOpenProduct?.(p.id);
-      card.querySelector(".img").onclick = () => api.onOpenProduct?.(p.id);
+      // on a phone the chat covers the page – step aside so the product is visible (the chat stays saved)
+      const openIt = () => { if (phone.matches && api.onOpenProduct) closePanel(); api.onOpenProduct?.(p.id); };
+      card.querySelector(".name").onclick = openIt;
+      card.querySelector(".img").onclick = openIt;
       // 3D tilt + light that follows the cursor
       if (!reduced) {
         card.addEventListener("pointermove", (e) => {
@@ -1338,28 +1390,50 @@
   }
 
   // ---- natural neural voice from the server (ElevenLabs): sentences are fetched ahead and played in order ----
+  // At most 2 requests run at once – the ElevenLabs free plan refuses more in parallel, and every
+  // refused sentence used to be read by the browser voice, so the voice kept switching.
+  const TTS_PARALLEL = 2;
   const audioQueue = [];
-  let playing = null, ttsAbort = new AbortController(), ttsFailures = 0;
+  let playing = null, ttsAbort = new AbortController(), ttsInFlight = 0;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function fetchSpeech(text, signal) {
+    for (let attempt = 0; ; attempt++) {
+      const r = await fetch(cfg.api + "/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), signal });
+      if (r.ok) return r.blob();
+      // busy (too many requests at once) – wait a moment and try again
+      if (r.status === 429 && attempt < 5) { await wait(350 * 2 ** attempt); continue; }
+      throw new Error("tts " + r.status);
+    }
+  }
+  function pumpSpeech() {
+    for (const item of [playing, ...audioQueue]) {
+      if (ttsInFlight >= TTS_PARALLEL) return;
+      if (!item || item.blob) continue;
+      ttsInFlight++;
+      const signal = ttsAbort.signal;
+      item.blob = fetchSpeech(item.text, signal).finally(() => { ttsInFlight--; if (!signal.aborted) pumpSpeech(); });
+      item.blob.catch(() => {}); // handled when it's this sentence's turn
+    }
+  }
   function queueNeural(text) {
-    const item = {
-      text,
-      blob: fetch(cfg.api + "/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), signal: ttsAbort.signal })
-        .then((r) => (r.ok ? r.blob() : Promise.reject(new Error("tts " + r.status)))),
-    };
-    item.blob.catch(() => {}); // handled when it's this sentence's turn
-    audioQueue.push(item);
+    audioQueue.push({ text, blob: null });
+    pumpSpeech();
     if (!playing) playNext();
   }
   async function playNext() {
     const item = audioQueue.shift();
     playing = item || null;
     if (!item) return;
+    pumpSpeech();
     let blob;
-    try { blob = await item.blob; ttsFailures = 0; } catch (e) {
+    try { blob = await item.blob; } catch (e) {
       if (playing !== item) return; // interrupted meanwhile
-      if (++ttsFailures >= 2) ttsServer = false; // the service is down – switch to the browser voice for good
+      // the service is really down – finish in the browser voice for good, so the two voices never alternate
+      ttsServer = false;
+      const rest = [item, ...audioQueue.splice(0)];
       playing = null;
-      speakBrowser(item.text, () => playNext()); // say this sentence with the browser voice instead
+      const sayNext = () => { const it = rest.shift(); if (it) speakBrowser(it.text, sayNext); };
+      sayNext();
       return;
     }
     if (playing !== item) return;

@@ -111,7 +111,8 @@ app.post("/api/tts", rateLimit(120, 60e3), async (req, res) => {
   } catch (err) {
     if (abort.signal.aborted) return;
     console.error("TTS:", err.message);
-    if (!res.headersSent) res.status(502).json({ error: "TTS failed" }); else res.end();
+    // pass "too busy" through, so the widget waits and retries instead of switching voices
+    if (!res.headersSent) res.status(err.status === 429 ? 429 : 502).json({ error: "TTS failed" }); else res.end();
   }
 });
 
