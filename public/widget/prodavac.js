@@ -1118,7 +1118,9 @@
     try {
       const res = await fetch(cfg.api + "/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, text, context: signals({ via }) }),
+        // the transcript so far (without this message) travels along, so the conversation survives
+        // even if the server is a fresh serverless instance that never saw it
+        body: JSON.stringify({ sessionId, text, context: signals({ via, history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: h.text.slice(0, 2000) })) }) }),
         signal: ctrl.signal,
       });
       if (!res.ok || !res.body) {

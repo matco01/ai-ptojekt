@@ -64,6 +64,10 @@ function cleanSignals(raw = {}) {
     shown: (Array.isArray(raw.shown) ? raw.shown : []).map((x) => str(x, 80)).slice(0, 30),
     via: raw.via ? str(raw.via, 300) : null,
     brand: raw.brand ? str(raw.brand, 40) : null,
+    // the conversation so far as the widget saw it (text only) – lets any server instance continue it
+    history: (Array.isArray(raw.history) ? raw.history : []).slice(-12)
+      .filter((h) => (h?.role === "user" || h?.role === "assistant") && typeof h.text === "string" && h.text.trim())
+      .map((h) => ({ role: h.role, text: h.text.slice(0, 2000) })),
     agentName: /^\p{L}{2,12}$/u.test(raw.agentName ?? "") ? raw.agentName : null, // the name the widget gave the agent on this site
     behaviour: cleanBehaviour(raw.behaviour),
   };
@@ -204,12 +208,10 @@ app.post("/api/analytics/insights", admin, rateLimit(10, 10 * 60e3), async (req,
   }
 });
 
-// --- static: demo shop, widget, dashboard ------------------------------------
-app.use("/fa", express.static(path.join(here, "node_modules", "@fortawesome", "fontawesome-free")));
-app.use("/widget", express.static(path.join(here, "public", "widget")));
-app.use("/demo", express.static(path.join(here, "public", "demo"))); // other-looking sites for showing the widget adapts
-app.use("/admin", express.static(path.join(here, "public", "admin")));
-app.use("/", express.static(path.join(here, "public", "shop")));
+// --- static files: everything in public/ at the same path ------------------
+// (mirrors Vercel, which serves public/** from its CDN and ignores express.static):
+//   /  → the demo shop · /admin/ → dashboard · /widget/prodavac.js · /demo/kavarna.html
+app.use(express.static(path.join(here, "public")));
 
 app.listen(PORT, () => {
   console.log(`AI prodavač běží:`);

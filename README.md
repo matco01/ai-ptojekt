@@ -9,6 +9,19 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 | Dashboard | http://localhost:3000/admin/ | Chování zákazníků, výkon prodavačky a AI doporučení pro majitele |
 | Ukázka jiného webu | http://localhost:3000/demo/kavarna.html | Tmavý web kavárny: stejná prodavačka se sama přebarví a převezme písmo |
 
+## Nasazení na Vercel
+
+Projekt běží na Vercelu bez dalšího nastavení (Express se detekuje sám ze `server.js`).
+
+1. **Import repozitáře:** ve Vercelu zvolte Add New → Project, vyberte repozitář a nechte výchozí nastavení (Framework Preset: Express / Other, žádný build command).
+2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY` a volitelně `ELEVENLABS_API_KEY`. Soubor `.env.local` se na Vercel nenahrává.
+3. **Deploy.** Každý push na `main` nasadí novou verzi.
+
+**Co se na Vercelu chová jinak:**
+- Statické soubory servíruje Vercel přímo ze složky `public/` (`/` = e-shop, `/admin/`, `/demo/kavarna.html`, `/widget/prodavac.js`).
+- Konverzace přežije i přeskočení mezi instancemi, protože widget posílá s každou zprávou i dosavadní přepis.
+- **Data dashboardu a vymyšlená jména se ukládají jen do dočasné složky.** Jsou pro každou instanci zvlášť a po restartu zmizí. Pro trvalá data je potřeba databáze (např. Upstash Redis z Vercel Marketplace).
+
 ## Spuštění
 
 Potřebujete Node.js 22+.
@@ -102,7 +115,9 @@ lib/images.js        Ilustrace produktů pro demo (v ostré verzi fotky z e-shop
 lib/analytics.js     Sběr událostí a výpočty pro dashboard
 catalog/store.json   Data demo obchodu
 public/widget/       prodavac.js – vložitelný widget (Shadow DOM, funguje na jakémkoli webu)
-public/shop/         Demo e-shop
+public/              Demo e-shop (index.html, shop.js, shop.css) + vendor/ (ikony)
+public/demo/         Ukázka jiného webu (kavárna Bohème)
+lib/storage.js       Kam se smí zapisovat (lokálně data/, na Vercelu dočasná složka)
 public/admin/        Dashboard
 ```
 
@@ -140,7 +155,7 @@ Ruční nastavení je volitelné: `data-name`, `data-brand`, `data-avatar-color`
 
 Podle toho si nastaví barvy, pozadí panelu, písmo i rohy. Na světlém webu ve stylu Alzy je světlý s modrými akcenty, na tmavém webu kavárny tmavý, oranžový a s patkovým písmem. Ruční nastavení je volitelné: `data-color="#e8741a"`, `data-theme="light|dark"`, `data-font="…"`, `data-radius="8"`.
 
-E-shop předává, co zákazník dělá. Čím víc toho předá, tím lépe prodavačka radí. Ukázka je v `public/shop/shop.js`:
+E-shop předává, co zákazník dělá. Čím víc toho předá, tím lépe prodavačka radí. Ukázka je v `public/shop.js`:
 
 ```js
 AIProdavac.getContext = () => ({ pageType, category, currentProductId, viewedProductIds, cart });

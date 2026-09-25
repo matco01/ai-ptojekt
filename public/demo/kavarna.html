@@ -3,40 +3,546 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Kávovarna Bohemia – ukázka jiného webu</title>
-  <!-- A deliberately different-looking shop: dark, orange, serif, sharp corners.
-       It only shows that the same widget adapts its look to any website. -->
+  <title>Bohème – pražírna výběrové kávy</title>
+  <meta name="description" content="Pražírna výběrové kávy z Brna. Čerstvě pražená káva z malých farem, předplatné a vybavení pro domácí baristy.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Demo of a completely different shop: the same AI salesperson widget adapts to it on its own
+       (mascot from the logo, name, colours, font). Products are illustrated in SVG – no stock photos. -->
   <style>
-    body { margin: 0; background: #16110d; color: #f3e9dc; font-family: Georgia, "Times New Roman", serif; }
-    .note { background: #e8741a; color: #1b120b; font: 600 13px system-ui, sans-serif; text-align: center; padding: 6px; }
-    header { padding: 22px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3a2e24; }
-    header b { font-size: 26px; letter-spacing: .5px; }
-    nav a { color: #d9c7b2; margin-left: 24px; text-decoration: none; }
-    .btn { background: #e8741a; color: #fff; border: none; padding: 12px 26px; border-radius: 2px; font: inherit; text-decoration: none; display: inline-block; }
-    main { padding: 70px 40px; max-width: 1100px; margin: 0 auto; }
-    h1 { font-size: 52px; font-weight: 400; margin: 0 0 14px; }
-    p { color: #cdbba6; font-size: 19px; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 44px; }
-    .card { background: #221a14; border: 1px solid #3a2e24; padding: 22px; }
-    .card .pic { height: 150px; background: radial-gradient(circle at 50% 60%, #6b4226, #2b1d14 70%); margin-bottom: 14px; }
-    .card .btn { margin-top: 10px; padding: 9px 18px; }
+    :root {
+      --bg: #fbf8f3; --paper: #ffffff; --sand: #f3ece2; --ink: #231a14; --ink-2: #4a3d33; --muted: #85766a; --line: #e9e1d6;
+      --caramel: #b06f3e; --caramel-2: #9a5f33; --caramel-soft: #f4e6d8;
+      --sage: #a9b8a0; --blush: #e3b7a6; --sandbag: #d8c3a5; --sky: #a9bfcb; --espresso: #3a2a20;
+      --serif: "Fraunces", Georgia, "Times New Roman", serif; --sans: "Manrope", "Segoe UI", system-ui, sans-serif;
+      --r: 18px; --ease: cubic-bezier(.2,.8,.2,1);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    img, svg { display: block; }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+    .serif { font-family: var(--serif); }
+    .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--caramel); }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -.02em; margin: 0; color: var(--ink); }
+    h2 { font-size: clamp(34px, 4vw, 52px); line-height: 1.08; }
+    em { font-style: italic; color: var(--caramel); }
+
+    /* ---------- buttons ---------- */
+    .btn { display: inline-flex; align-items: center; gap: 10px; border: none; border-radius: 999px; padding: 15px 28px; font-weight: 600; font-size: 15px;
+      transition: transform .3s var(--ease), background .3s, box-shadow .3s, color .3s; }
+    .btn svg { width: 16px; height: 16px; transition: transform .3s var(--ease); }
+    .btn:hover svg { transform: translateX(4px); }
+    .btn.dark { background: var(--ink); color: #fff; }
+    .btn.dark:hover { background: #3a2c22; transform: translateY(-2px); box-shadow: 0 14px 30px rgba(35,26,20,.18); }
+    .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+    .btn.ghost:hover { box-shadow: inset 0 0 0 1.5px var(--ink); }
+    .btn.accent { background: var(--caramel); color: #fff; }
+    .btn.accent:hover { background: var(--caramel-2); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(176,111,62,.28); }
+
+    /* ---------- top bar + header ---------- */
+    .topbar { background: var(--ink); color: #eadfd2; font-size: 13px; text-align: center; padding: 9px 16px; letter-spacing: .02em; }
+    .topbar b { color: #fff; font-weight: 600; }
+    header.site { position: sticky; top: 0; z-index: 50; transition: background .4s, box-shadow .4s, backdrop-filter .4s; }
+    header.site.scrolled { background: rgba(251,248,243,.82); backdrop-filter: blur(14px) saturate(1.4); box-shadow: 0 1px 0 var(--line); }
+    .nav { display: flex; align-items: center; height: 84px; gap: 40px; transition: height .4s var(--ease); }
+    header.site.scrolled .nav { height: 68px; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo svg { width: 44px; height: 44px; }
+    .logo .word { font-family: var(--serif); font-size: 26px; letter-spacing: -.01em; line-height: 1; }
+    .logo .word small { display: block; font-family: var(--sans); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+    .menu { display: flex; gap: 30px; font-size: 14.5px; font-weight: 500; color: var(--ink-2); margin-left: auto; }
+    .menu a { position: relative; padding: 6px 0; }
+    .menu a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.5px; background: var(--caramel); transform: scaleX(0); transform-origin: right; transition: transform .35s var(--ease); }
+    .menu a:hover::after { transform: scaleX(1); transform-origin: left; }
+    .tools { display: flex; align-items: center; gap: 8px; }
+    .icon-btn { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-2); transition: background .2s; }
+    .icon-btn:hover { background: var(--sand); }
+    .icon-btn svg { width: 19px; height: 19px; }
+    .cart-pill { display: inline-flex; align-items: center; gap: 9px; background: var(--caramel); color: #fff; border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 600; transition: transform .3s var(--ease), background .3s; }
+    .cart-pill:hover { background: var(--caramel-2); }
+    .cart-pill svg { width: 17px; height: 17px; }
+    .cart-pill .n { background: rgba(255,255,255,.22); border-radius: 999px; min-width: 22px; padding: 1px 7px; text-align: center; font-size: 12.5px; }
+    .cart-pill.bump { animation: bump .5s var(--ease); }
+
+    /* ---------- hero ---------- */
+    .hero { padding: 56px 0 90px; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 64px; align-items: center; }
+    .hero h1 { font-size: clamp(48px, 6.4vw, 92px); line-height: .98; font-weight: 300; margin: 22px 0 26px; }
+    .hero p.lead { font-size: 19px; color: var(--ink-2); max-width: 480px; margin: 0 0 36px; }
+    .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .proof { display: flex; gap: 34px; margin-top: 54px; padding-top: 28px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+    .proof div { font-size: 13.5px; color: var(--muted); }
+    .proof b { display: block; font-family: var(--serif); font-weight: 400; font-size: 30px; color: var(--ink); letter-spacing: -.02em; line-height: 1.1; }
+    .stars { color: var(--caramel); letter-spacing: 2px; font-size: 13px; }
+    .stage { position: relative; aspect-ratio: 1 / 1.05; border-radius: 280px 280px 34px 34px; overflow: hidden;
+      background: radial-gradient(120% 90% at 30% 20%, #fbeee2 0%, #f3dccb 45%, #ead0bd 100%); }
+    .stage::after { content: ""; position: absolute; inset: 0; opacity: .35; mix-blend-mode: multiply; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.42 0 0 0 0 0.32 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+    .stage .sun { position: absolute; width: 58%; aspect-ratio: 1; border-radius: 50%; left: 21%; top: 12%; background: radial-gradient(circle, #fff6ec, #f7e2cf 70%); filter: blur(2px); }
+    .stage .bag { position: absolute; filter: drop-shadow(0 30px 40px rgba(90,55,30,.25)); transition: transform .8s var(--ease); }
+    .stage .b1 { width: 40%; left: 4%; bottom: 8%; transform: rotate(-9deg); }
+    .stage .b2 { width: 48%; left: 26%; bottom: 5%; z-index: 2; }
+    .stage .b3 { width: 38%; right: 3%; bottom: 10%; transform: rotate(9deg); }
+    .stage:hover .b1 { transform: rotate(-12deg) translate(-8px, -6px); }
+    .stage:hover .b3 { transform: rotate(12deg) translate(8px, -6px); }
+    .stage:hover .b2 { transform: translateY(-10px); }
+    .bean { position: absolute; width: 26px; animation: float 7s ease-in-out infinite; opacity: .9; }
+    .badge-new { position: absolute; top: 17%; right: 9%; z-index: 3; width: 112px; height: 112px; border-radius: 50%; background: var(--ink); color: #f6ead9; display: grid; place-items: center; box-shadow: 0 18px 40px rgba(35,26,20,.25); }
+    .badge-new svg { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); animation: spin 22s linear infinite; }
+    .badge-new b { position: relative; font-family: var(--serif); font-weight: 400; font-size: 26px; letter-spacing: -.02em; }
+
+    /* ---------- origins marquee ---------- */
+    .marquee { border-block: 1px solid var(--line); overflow: hidden; padding: 22px 0; background: var(--paper); }
+    .marquee .track { display: flex; gap: 56px; width: max-content; animation: slide 38s linear infinite; font-family: var(--serif); font-size: 30px; font-weight: 300; color: var(--ink-2); }
+    .marquee span { display: inline-flex; align-items: center; gap: 56px; white-space: nowrap; }
+    .marquee span::after { content: "✦"; font-size: 14px; color: var(--caramel); }
+
+    /* ---------- sections ---------- */
+    section.block { padding: 120px 0; }
+    .head { display: flex; justify-content: space-between; align-items: end; gap: 30px; margin-bottom: 56px; flex-wrap: wrap; }
+    .head p { max-width: 420px; color: var(--muted); margin: 0; }
+    .head .eyebrow { display: block; margin-bottom: 16px; }
+
+    /* products */
+    .filters { display: flex; gap: 8px; margin-bottom: 34px; flex-wrap: wrap; }
+    .chip { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 9px 18px; font-size: 14px; font-weight: 500; color: var(--ink-2); transition: all .25s; }
+    .chip:hover { border-color: var(--ink); }
+    .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+    .card { background: var(--paper); border-radius: var(--r); padding: 18px 18px 22px; display: flex; flex-direction: column; position: relative;
+      transition: transform .5s var(--ease), box-shadow .5s var(--ease); box-shadow: 0 1px 0 var(--line); }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 30px 60px -20px rgba(90,55,30,.22); }
+    .card .pic { border-radius: 14px; aspect-ratio: 1 / 1.08; display: grid; place-items: center; margin-bottom: 18px; overflow: hidden; }
+    .card .pic svg { width: 64%; filter: drop-shadow(0 18px 22px rgba(60,40,25,.18)); transition: transform .6s var(--ease); }
+    .card:hover .pic svg { transform: scale(1.05) rotate(-2deg); }
+    .tag { position: absolute; top: 28px; left: 28px; background: var(--paper); border-radius: 999px; padding: 5px 11px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .card .origin { font-size: 12.5px; color: var(--muted); letter-spacing: .04em; }
+    .card h3 { font-size: 24px; margin: 4px 0 10px; }
+    .notes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .notes span { font-size: 12px; background: var(--sand); color: var(--ink-2); border-radius: 999px; padding: 4px 10px; }
+    .roast { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+    .roast i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+    .roast i.on { background: var(--caramel); }
+    .buy { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .price { font-family: var(--serif); font-size: 24px; }
+    .price small { font-family: var(--sans); font-size: 12.5px; color: var(--muted); margin-left: 4px; }
+    .add { width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--caramel); color: #fff; display: grid; place-items: center; transition: transform .3s var(--ease), background .3s; }
+    .add:hover { background: var(--caramel-2); transform: rotate(90deg); }
+    .add svg { width: 18px; height: 18px; }
+    .add.done { background: var(--ink); transform: none; }
+
+    /* story */
+    .story { background: var(--paper); }
+    .story-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 90px; align-items: center; }
+    .story-art { aspect-ratio: 4 / 5; border-radius: 34px; background: linear-gradient(160deg, #e9eee4, #d9e2d1); position: relative; overflow: hidden; display: grid; place-items: center; }
+    .story-art svg { width: 78%; }
+    .steps { display: grid; gap: 34px; margin-top: 44px; }
+    .step { display: grid; grid-template-columns: 64px 1fr; gap: 22px; padding-bottom: 30px; border-bottom: 1px solid var(--line); }
+    .step:last-child { border-bottom: none; }
+    .step .num { font-family: var(--serif); font-size: 40px; font-weight: 300; color: var(--caramel); line-height: 1; }
+    .step h3 { font-size: 24px; margin-bottom: 6px; }
+    .step p { margin: 0; color: var(--muted); }
+
+    /* subscription */
+    .sub { background: var(--ink); color: #efe4d7; border-radius: 36px; padding: 72px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 60px; position: relative; overflow: hidden; }
+    .sub::before { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 50%; right: -160px; top: -200px; background: radial-gradient(circle, rgba(176,111,62,.45), transparent 65%); }
+    .sub h2 { color: #fff; }
+    .sub p { color: #cbbcad; max-width: 440px; }
+    .sub ul { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 12px; color: #e7dbcd; }
+    .sub li { display: flex; gap: 12px; align-items: center; }
+    .sub li svg { width: 18px; height: 18px; color: var(--caramel); flex: none; }
+    .plan { position: relative; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 26px; padding: 30px; backdrop-filter: blur(6px); }
+    .plan label { display: block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #bfae9c; margin: 0 0 10px; }
+    .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: rgba(0,0,0,.2); border-radius: 14px; padding: 5px; margin-bottom: 22px; }
+    .seg button { border: none; background: transparent; color: #d8cabb; border-radius: 10px; padding: 11px 6px; font-size: 14px; font-weight: 600; transition: all .25s; }
+    .seg button.on { background: #fff; color: var(--ink); box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+    .plan .total { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.1); padding-top: 22px; margin: 6px 0 20px; }
+    .plan .total b { font-family: var(--serif); font-weight: 400; font-size: 44px; color: #fff; letter-spacing: -.02em; }
+    .plan .total s { color: #9c8b7a; margin-right: 8px; }
+    .plan .btn { width: 100%; justify-content: center; }
+
+    /* equipment */
+    .gear { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .gear .item { background: var(--paper); border-radius: 26px; padding: 30px; display: grid; grid-template-columns: 1fr 120px; align-items: end; gap: 10px; min-height: 250px;
+      transition: transform .5s var(--ease), box-shadow .5s var(--ease); }
+    .gear .item:hover { transform: translateY(-6px); box-shadow: 0 30px 60px -24px rgba(90,55,30,.22); }
+    .gear h3 { font-size: 26px; margin: 8px 0; }
+    .gear p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+    .gear .price { font-size: 22px; }
+    .gear svg { width: 120px; height: 150px; }
+
+    /* quote */
+    .quote { text-align: center; max-width: 900px; margin: 0 auto; }
+    .quote blockquote { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.25; margin: 26px 0 30px; letter-spacing: -.01em; }
+    .quote cite { font-style: normal; color: var(--muted); font-size: 14.5px; }
+    .press { display: flex; justify-content: center; gap: 56px; margin-top: 60px; flex-wrap: wrap; font-family: var(--serif); font-size: 22px; color: #b3a494; font-style: italic; }
+
+    /* newsletter + footer */
+    .news { background: var(--caramel-soft); border-radius: 36px; padding: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+    .news form { display: flex; background: var(--paper); border-radius: 999px; padding: 6px; box-shadow: 0 10px 30px -12px rgba(90,55,30,.2); }
+    .news input { flex: 1; border: none; outline: none; background: transparent; padding: 0 20px; font: inherit; font-size: 15px; color: var(--ink); }
+    footer.site { padding: 90px 0 40px; }
+    .foot { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 40px; padding-bottom: 60px; border-bottom: 1px solid var(--line); }
+    .foot h4 { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 18px; font-weight: 700; }
+    .foot a { display: block; margin-bottom: 10px; color: var(--ink-2); font-size: 14.5px; }
+    .foot a:hover { color: var(--caramel); }
+    .foot p { color: var(--muted); font-size: 14.5px; max-width: 280px; }
+    .legal { display: flex; justify-content: space-between; padding-top: 26px; font-size: 13px; color: var(--muted); flex-wrap: wrap; gap: 10px; }
+
+    .toast { position: fixed; left: 50%; bottom: 34px; transform: translate(-50%, 30px); opacity: 0; background: var(--ink); color: #fff; padding: 13px 22px; border-radius: 999px; font-size: 14px; z-index: 60;
+      transition: all .45s var(--ease); pointer-events: none; }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+    /* reveal on scroll */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 1s var(--ease), transform 1s var(--ease); }
+    .reveal.in { opacity: 1; transform: none; }
+    .d1 { transition-delay: .08s; } .d2 { transition-delay: .16s; } .d3 { transition-delay: .24s; } .d4 { transition-delay: .32s; }
+
+    @keyframes float { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-14px) rotate(calc(var(--r, 0deg) + 12deg)); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes slide { to { transform: translateX(-50%); } }
+    @keyframes bump { 40% { transform: scale(1.12); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(24px); } }
+    .hero .rise { animation: rise 1.1s var(--ease) both; }
+    .hero .rise.d1 { animation-delay: .1s; } .hero .rise.d2 { animation-delay: .2s; } .hero .rise.d3 { animation-delay: .3s; } .hero .rise.d4 { animation-delay: .45s; }
+
+    @media (max-width: 1080px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .gear { grid-template-columns: 1fr; }
+      .menu { display: none; }
+      .tools { margin-left: auto; }
+    }
+    @media (max-width: 860px) {
+      .wrap { padding: 0 20px; }
+      .hero-grid, .story-grid, .sub, .news { grid-template-columns: 1fr; }
+      .hero-grid { gap: 40px; }
+      .sub, .news { padding: 40px 26px; }
+      .foot { grid-template-columns: 1fr 1fr; }
+      section.block { padding: 80px 0; }
+    }
+    @media (max-width: 560px) {
+      .nav { gap: 12px; height: 72px; }
+      .logo svg { width: 38px; height: 38px; }
+      .logo .word { font-size: 23px; }
+      .logo .word small { white-space: nowrap; font-size: 9.5px; letter-spacing: .18em; }
+      .tools { gap: 2px; }
+      .tools .icon-btn[aria-label="Účet"] { display: none; }
+      .cart-pill { padding: 9px 13px; gap: 7px; }
+      .cart-pill .label { display: none; }
+      .hero { padding-top: 32px; }
+      .grid { grid-template-columns: 1fr; }
+      .card .pic { aspect-ratio: 1.35 / 1; }
+      .card .pic svg { width: 44%; }
+      .foot { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>
-  <div class="note">Ukázka: stejná AI prodavačka na úplně jiném webu – jméno, postavičku z loga, barvy i písmo si vytvoří sama.</div>
-  <header><a class="logo" href="/demo/kavarna.html" style="display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none">
-    <svg width="46" height="46" viewBox="0 0 64 64" aria-label="Kávovarna Bohemia logo"><circle cx="32" cy="32" r="30" fill="#e8741a"/><circle cx="32" cy="32" r="30" fill="none" stroke="#b9530c" stroke-width="3"/><ellipse cx="32" cy="32" rx="12" ry="17" fill="#3b2213" transform="rotate(28 32 32)"/><path d="M27 18 Q36 32 37 46" stroke="#e8741a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
-    <b>Kávovarna Bohemia</b></a><nav><a href="#">Káva</a><a href="#">Kávovary</a><a href="#">Příslušenství</a><a class="btn" href="#kosik" style="margin-left:24px">Košík</a></nav></header>
-  <main>
-    <h1>Káva, která voní domovem</h1>
-    <p>Pražírna z Vysočiny a e-shop s kávovary pro domácí baristy.</p>
-    <a class="btn" href="#">Nakupovat</a>
-    <div class="grid">
-      <div class="card"><div class="pic"></div><b>Etiopie Yirgacheffe</b><p>Květinová, jemná · 349 Kč</p><a class="btn" href="#">Do košíku</a></div>
-      <div class="card"><div class="pic"></div><b>Brazílie Santos</b><p>Oříšková, čokoládová · 289 Kč</p><a class="btn" href="#">Do košíku</a></div>
-      <div class="card"><div class="pic"></div><b>Barista One kávovar</b><p>Cappuccino na 1 dotyk · 12 490 Kč</p><a class="btn" href="#">Do košíku</a></div>
+  <div class="topbar">Čerstvě pražíme každé úterý · <b>Doprava zdarma od 990 Kč</b></div>
+
+  <header class="site" id="header">
+    <div class="wrap nav">
+      <a class="logo" href="/demo/kavarna.html" aria-label="Bohème – úvod">
+        <svg viewBox="0 0 64 64" aria-label="Bohème logo">
+          <circle cx="32" cy="32" r="31" fill="#b06f3e"/>
+          <circle cx="32" cy="32" r="26.5" fill="none" stroke="#f4e6d8" stroke-width="1.2" opacity=".7"/>
+          <ellipse cx="32" cy="32" rx="11.5" ry="16" fill="#f7ede2" transform="rotate(28 32 32)"/>
+          <path d="M26.2 18.6 Q35.5 31 37.6 45.6" stroke="#b06f3e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="word">Bohème<small>Pražírna kávy</small></span>
+      </a>
+      <nav class="menu" aria-label="Hlavní nabídka">
+        <a href="#kava">Káva</a><a href="#predplatne">Předplatné</a><a href="#vybaveni">Vybavení</a><a href="#prazirna">Pražírna</a><a href="#journal">Journal</a>
+      </nav>
+      <div class="tools">
+        <a class="icon-btn" href="#kava" aria-label="Hledat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
+        <a class="icon-btn" href="#" aria-label="Účet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></a>
+        <a class="cart-pill" href="#kosik" id="cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="label">Košík</span><span class="n" id="cart-n">0</span></a>
+      </div>
     </div>
+  </header>
+
+  <main>
+    <!-- hero -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow rise">Pražírna výběrové kávy · Brno</span>
+          <h1 class="rise d1">Káva, která <em>zpomalí</em> čas.</h1>
+          <p class="lead rise d2">Pražíme v malých dávkách kávu z farem, které známe jménem. Každé balení je nejvýš sedm dní od pražení – přesně tak, jak má chutnat.</p>
+          <div class="cta rise d3">
+            <a class="btn dark" href="#kava">Vybrat kávu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="btn ghost" href="#predplatne">Předplatné −15 %</a>
+          </div>
+          <div class="proof rise d4">
+            <div><b>4,9</b><span class="stars">★★★★★</span><br>2 300 recenzí</div>
+            <div><b>2012</b>pražíme v Brně</div>
+            <div><b>38</b>farem ze 7 zemí</div>
+          </div>
+        </div>
+        <div class="stage rise d2" aria-hidden="true">
+          <div class="sun"></div>
+          <div class="badge-new"><svg viewBox="0 0 100 100"><defs><path id="ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0"/></defs><text font-family="Manrope, sans-serif" font-size="10.2" font-weight="700" letter-spacing="3.1" fill="#f6ead9"><textPath href="#ring">NOVÁ SKLIZEŇ · NOVÁ SKLIZEŇ ·</textPath></text></svg><b>2026</b></div>
+          <div class="bag b1" data-bag="sage|Kolumbie|Huila"></div>
+          <div class="bag b2" data-bag="blush|Etiopie|Yirgacheffe"></div>
+          <div class="bag b3" data-bag="sky|Keňa|Nyeri"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- origins -->
+    <div class="marquee" aria-hidden="true"><div class="track" id="marquee"></div></div>
+
+    <!-- coffees -->
+    <section class="block" id="kava">
+      <div class="wrap">
+        <div class="head reveal">
+          <div><span class="eyebrow">Aktuální nabídka</span><h2>Káva na <em>tento</em> týden</h2></div>
+          <p>Vybíráme jen kávy, které nás na cuppingu opravdu zastavily. Každou pražíme na míru – světleji pro filtr, tmavěji pro espresso.</p>
+        </div>
+        <div class="filters reveal" id="filters">
+          <button class="chip on" data-f="all">Vše</button><button class="chip" data-f="filtr">Filtr</button><button class="chip" data-f="espresso">Espresso</button><button class="chip" data-f="decaf">Bez kofeinu</button>
+        </div>
+        <div class="grid" id="products"></div>
+      </div>
+    </section>
+
+    <!-- story -->
+    <section class="block story" id="prazirna">
+      <div class="wrap story-grid">
+        <div class="story-art reveal" aria-hidden="true">
+          <svg viewBox="0 0 300 360">
+            <ellipse cx="150" cy="330" rx="110" ry="10" fill="rgba(60,80,50,.12)"/>
+            <path d="M92 150 H208 L196 300 Q194 318 176 318 H124 Q106 318 104 300 Z" fill="#fff"/>
+            <path d="M104 186 H196" stroke="#e8e1d6" stroke-width="2"/>
+            <path d="M208 190 Q252 192 246 232 Q240 266 200 262" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round"/>
+            <ellipse cx="150" cy="152" rx="58" ry="10" fill="#6b4226"/>
+            <path d="M126 118 Q116 98 128 80 Q140 62 130 44" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"><animate attributeName="d" dur="5s" repeatCount="indefinite" values="M126 118 Q116 98 128 80 Q140 62 130 44;M126 118 Q136 98 124 80 Q112 62 124 44;M126 118 Q116 98 128 80 Q140 62 130 44"/></path>
+            <path d="M156 118 Q146 96 158 76 Q170 56 160 36" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".6"><animate attributeName="d" dur="6s" repeatCount="indefinite" values="M156 118 Q146 96 158 76 Q170 56 160 36;M156 118 Q166 96 154 76 Q142 56 154 36;M156 118 Q146 96 158 76 Q170 56 160 36"/></path>
+            <path d="M178 120 Q170 104 180 90" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+          </svg>
+        </div>
+        <div>
+          <span class="eyebrow reveal">Od farmy do šálku</span>
+          <h2 class="reveal d1">Každé zrnko má <em>svůj</em> příběh.</h2>
+          <div class="steps">
+            <div class="step reveal d1"><span class="num">01</span><div><h3>Farmáři, které známe</h3><p>Nakupujeme přímo od 38 farem. Platíme o třetinu víc než burzovní cena a každý rok je osobně navštěvujeme.</p></div></div>
+            <div class="step reveal d2"><span class="num">02</span><div><h3>Pražení v malých dávkách</h3><p>Na našem Giesenu pražíme po 12 kilech. Každý profil ladíme tak dlouho, dokud z kávy nevytáhneme to nejlepší.</p></div></div>
+            <div class="step reveal d3"><span class="num">03</span><div><h3>U vás do sedmi dnů</h3><p>Odesíláme den po pražení, v obalu s ventilkem. Káva tak dorazí v ideálním okně pro přípravu.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- subscription -->
+    <section class="block" id="predplatne">
+      <div class="wrap">
+        <div class="sub reveal">
+          <div>
+            <span class="eyebrow">Předplatné</span>
+            <h2 style="margin-top:14px">Čerstvá káva, <em>aniž</em> byste na ni mysleli.</h2>
+            <p>Každý měsíc vám pošleme jinou kávu z aktuální nabídky, vybranou podle toho, jak ji připravujete.</p>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>O 15 % levnější než jednotlivé nákupy</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Doprava vždy zdarma</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Pozastavíte nebo zrušíte jedním klikem</li>
+            </ul>
+          </div>
+          <div class="plan" id="plan">
+            <label>Jak kávu připravujete</label>
+            <div class="seg" data-k="method"><button class="on" data-v="filtr">Filtr</button><button data-v="espresso">Espresso</button><button data-v="mix">Obojí</button></div>
+            <label>Množství měsíčně</label>
+            <div class="seg" data-k="size"><button data-v="250">250 g</button><button class="on" data-v="500">500 g</button><button data-v="1000">1 kg</button></div>
+            <div class="total"><span style="color:#bfae9c">Měsíčně</span><span><s id="plan-old"></s><b id="plan-price"></b></span></div>
+            <a class="btn accent" href="#kosik" id="plan-add">Začít předplatné <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- equipment -->
+    <section class="block" id="vybaveni" style="padding-top:0">
+      <div class="wrap">
+        <div class="head reveal">
+          <div><span class="eyebrow">Vybavení</span><h2>Nástroje pro <em>domácí</em> baristy</h2></div>
+          <p>Vybavení, které sami používáme v pražírně. Vyzkoušené, spolehlivé a krásné na kuchyňské lince.</p>
+        </div>
+        <div class="gear">
+          <div class="item reveal d1"><div><span class="eyebrow">Mlýnek</span><h3>Ruční mlýnek Kiri</h3><p>Ocelové kameny, 40 stupňů hrubosti.</p><span class="price">2 490 Kč</span></div>
+            <svg viewBox="0 0 120 150" fill="none" stroke="#231a14" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="38" y="50" width="44" height="80" rx="10" fill="#f3ece2"/><path d="M38 72h44M38 108h44"/><path d="M60 50V34"/><path d="M60 34h34"/><circle cx="98" cy="34" r="7" fill="#b06f3e" stroke="none"/><rect x="48" y="130" width="24" height="8" rx="3" fill="#231a14"/></svg></div>
+          <div class="item reveal d2"><div><span class="eyebrow">Konvice</span><h3>Konvice Gooseneck</h3><p>Přesné nalévání, teploměr ve víku.</p><span class="price">1 890 Kč</span></div>
+            <svg viewBox="0 0 120 150" fill="none" stroke="#231a14" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M34 62h52l-4 64a8 8 0 0 1-8 8H46a8 8 0 0 1-8-8Z" fill="#f3ece2"/><path d="M34 76 Q12 70 8 44"/><path d="M86 72 Q104 74 102 96 Q100 114 84 112"/><rect x="48" y="50" width="24" height="12" rx="4" fill="#b06f3e" stroke="none"/></svg></div>
+          <div class="item reveal d3"><div><span class="eyebrow">Espresso</span><h3>Barista One</h3><p>Plnoautomat s mlýnkem, cappuccino na 1 dotyk.</p><span class="price">12 490 Kč</span></div>
+            <svg viewBox="0 0 120 150" fill="none" stroke="#231a14" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="20" y="22" width="80" height="112" rx="12" fill="#f3ece2"/><rect x="32" y="34" width="56" height="26" rx="5" fill="#231a14" stroke="none"/><circle cx="46" cy="47" r="4" fill="#b06f3e" stroke="none"/><path d="M52 76h16v8H52z"/><path d="M50 100h20l-2 18H52Z" fill="#fff"/><path d="M28 134h64"/></svg></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- quote -->
+    <section class="block" id="journal" style="background:var(--paper)">
+      <div class="wrap quote reveal">
+        <span class="eyebrow">Co o nás píšou</span>
+        <blockquote>„Bohème dělá přesně to, co by měla dělat každá dobrá pražírna – nechává mluvit kávu. Jejich Etiopie chutná jako jarní zahrada.“</blockquote>
+        <cite>— Magazín Dobrá chuť, 2026</cite>
+        <div class="press"><span>Dobrá chuť</span><span>Food &amp; Home</span><span>Brněnský deník</span><span>Barista Weekly</span></div>
+      </div>
+    </section>
+
+    <!-- newsletter -->
+    <section class="block">
+      <div class="wrap">
+        <div class="news reveal">
+          <div><span class="eyebrow">Newsletter</span><h2 style="font-size:clamp(30px,3.2vw,42px);margin-top:12px">Nové sklizně <em>jako první</em>.</h2></div>
+          <form onsubmit="event.preventDefault(); this.innerHTML='<span style=&quot;padding:14px 20px;color:#231a14&quot;>Díky! Brzy se ozveme ☕</span>'">
+            <input type="email" placeholder="váš@email.cz" aria-label="E-mail" required>
+            <button class="btn dark" type="submit">Odebírat</button>
+          </form>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <div class="foot">
+        <div><a class="logo" href="/demo/kavarna.html" style="margin-bottom:18px"><span class="word">Bohème<small>Pražírna kávy</small></span></a><p>Pražírna výběrové kávy v Brně. Pražíme s respektem k farmářům i k vašemu ránu.</p></div>
+        <div><h4>Obchod</h4><a href="#kava">Káva</a><a href="#predplatne">Předplatné</a><a href="#vybaveni">Vybavení</a><a href="#">Dárkové poukazy</a></div>
+        <div><h4>Pražírna</h4><a href="#prazirna">Náš příběh</a><a href="#">Kurzy přípravy</a><a href="#journal">Journal</a><a href="#">Velkoodběr</a></div>
+        <div><h4>Pomoc</h4><a href="#">Doprava a platba</a><a href="#">Vrácení zboží</a><a href="#">Kontakt</a><a href="#">Časté dotazy</a></div>
+      </div>
+      <div class="legal"><span>© 2026 Bohème · Ukázkový web – smyšlený obchod pro demo AI prodavače</span><span>Brno · Údolní 12 · po–so 8–18</span></div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---------- illustrated coffee bags (no stock photos) ----------
+    const TONES = {
+      sage:  { bag: "#a9b8a0", dark: "#8fa086", pic: "#e6ece1" },
+      blush: { bag: "#e3b7a6", dark: "#cf9f8c", pic: "#f6e4dc" },
+      sand:  { bag: "#d8c3a5", dark: "#c3ab89", pic: "#f3ebdf" },
+      sky:   { bag: "#a9bfcb", dark: "#8ea7b5", pic: "#e3ebef" },
+      dark:  { bag: "#3a2a20", dark: "#2a1e17", pic: "#e9e0d6" },
+    };
+    function bagSVG(tone, origin, region) {
+      const t = TONES[tone] || TONES.sand;
+      const ink = tone === "dark" ? "#f4e6d8" : "#231a14";
+      return `<svg viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="sh-${tone}${origin}" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".12"/><stop offset=".25" stop-color="#fff" stop-opacity=".12"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".14"/></linearGradient></defs>
+        <path d="M40 44 L160 44 L168 238 Q168 250 156 250 L44 250 Q32 250 32 238 Z" fill="${t.bag}"/>
+        <path d="M40 44 L160 44 L168 238 Q168 250 156 250 L44 250 Q32 250 32 238 Z" fill="url(#sh-${tone}${origin})"/>
+        <rect x="36" y="18" width="128" height="32" rx="5" fill="${t.dark}"/>
+        <path d="M40 26 ${Array.from({ length: 16 }, (_, i) => `L${44 + i * 7.6} ${i % 2 ? 26 : 30}`).join(" ")}" fill="none" stroke="${ink}" stroke-opacity=".25" stroke-width="1.2"/>
+        <circle cx="100" cy="74" r="7" fill="none" stroke="${ink}" stroke-opacity=".3" stroke-width="1.5"/>
+        <rect x="56" y="100" width="88" height="118" rx="6" fill="#fffdf9"/>
+        <text x="100" y="124" text-anchor="middle" font-family="Manrope, sans-serif" font-size="8" letter-spacing="3" font-weight="700" fill="#b06f3e">BOHÈME</text>
+        <path d="M76 132 H124" stroke="#e9e1d6"/>
+        <text x="100" y="160" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="19" fill="#231a14">${origin}</text>
+        <text x="100" y="177" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="11" fill="#85766a">${region}</text>
+        <g transform="translate(76 194)">${[0, 1, 2, 3, 4].map((i) => `<circle cx="${i * 12}" cy="0" r="3" fill="${i < 2 ? "#b06f3e" : "#e9e1d6"}"/>`).join("")}</g>
+        <text x="100" y="210" text-anchor="middle" font-family="Manrope, sans-serif" font-size="6.5" letter-spacing="1.5" fill="#85766a">250 G · ZRNKOVÁ</text>
+      </svg>`;
+    }
+    document.querySelectorAll("[data-bag]").forEach((el) => { const [tone, o, r] = el.dataset.bag.split("|"); el.innerHTML = bagSVG(tone, o, r); });
+
+    // floating beans in the hero
+    const stage = document.querySelector(".stage");
+    const bean = (c) => `<svg viewBox="0 0 26 34"><ellipse cx="13" cy="17" rx="11" ry="15" fill="${c}"/><path d="M9 4 Q17 17 12 30" stroke="#f7ede2" stroke-width="2" fill="none" stroke-linecap="round" opacity=".7"/></svg>`;
+    [[14, 16, "#6b4226", -20, 0], [80, 30, "#8a5733", 30, 1.5], [70, 62, "#6b4226", 10, 3], [8, 52, "#8a5733", 50, 2.2], [48, 6, "#6b4226", -40, 4]].forEach(([x, y, c, r, d]) => {
+      const b = document.createElement("div"); b.className = "bean"; b.innerHTML = bean(c);
+      Object.assign(b.style, { left: x + "%", top: y + "%", animationDelay: -d + "s" }); b.style.setProperty("--r", r + "deg");
+      stage.append(b);
+    });
+
+    // origins marquee
+    const origins = ["Etiopie", "Kolumbie", "Keňa", "Guatemala", "Brazílie", "Rwanda", "Kostarika"];
+    document.getElementById("marquee").innerHTML = [...origins, ...origins].map((o) => `<span>${o}</span>`).join("");
+
+    // ---------- products ----------
+    const products = [
+      { id: "et", tone: "blush", origin: "Etiopie", region: "Yirgacheffe", name: "Etiopie Yirgacheffe", notes: ["jasmín", "bergamot", "broskev"], roast: 1, type: "filtr", price: 349, tag: "Novinka" },
+      { id: "co", tone: "sage", origin: "Kolumbie", region: "Huila", name: "Kolumbie Huila", notes: ["karamel", "červené jablko", "kakao"], roast: 2, type: "filtr", price: 319 },
+      { id: "ke", tone: "sky", origin: "Keňa", region: "Nyeri", name: "Keňa Nyeri AA", notes: ["černý rybíz", "grapefruit", "třtina"], roast: 1, type: "filtr", price: 389, tag: "Limitka" },
+      { id: "br", tone: "sand", origin: "Brazílie", region: "Santos", name: "Brazílie Santos", notes: ["oříšek", "mléčná čokoláda"], roast: 3, type: "espresso", price: 289, tag: "Bestseller" },
+      { id: "gu", tone: "dark", origin: "Guatemala", region: "Antigua", name: "Guatemala Antigua", notes: ["hořká čokoláda", "kouř", "švestka"], roast: 4, type: "espresso", price: 329 },
+      { id: "bl", tone: "sand", origin: "Směs", region: "Bohème Blend", name: "Bohème Espresso Blend", notes: ["kakao", "lískový oříšek", "med"], roast: 3, type: "espresso", price: 299 },
+      { id: "rw", tone: "blush", origin: "Rwanda", region: "Nyamasheke", name: "Rwanda Nyamasheke", notes: ["brusinka", "čaj", "hibiscus"], roast: 1, type: "filtr", price: 359 },
+      { id: "dc", tone: "sage", origin: "Kolumbie", region: "Decaf · Sugarcane", name: "Kolumbie Decaf", notes: ["panela", "mandle", "pomeranč"], roast: 2, type: "decaf", price: 339 },
+    ];
+    const kc = (n) => n.toLocaleString("cs-CZ");
+    function renderProducts(filter = "all") {
+      const list = products.filter((p) => filter === "all" || p.type === filter);
+      document.getElementById("products").innerHTML = list.map((p, i) => `
+        <article class="card reveal d${(i % 4) + 1}">
+          <div class="pic" style="background:${TONES[p.tone].pic}">${bagSVG(p.tone, p.origin, p.region)}</div>
+          ${p.tag ? `<span class="tag">${p.tag}</span>` : ""}
+          <span class="origin">${p.type === "espresso" ? "Pro espresso" : p.type === "decaf" ? "Bez kofeinu" : "Pro filtr"} · ${p.region}</span>
+          <h3>${p.name}</h3>
+          <div class="notes">${p.notes.map((n) => `<span>${n}</span>`).join("")}</div>
+          <div class="roast">Pražení ${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= p.roast ? "on" : ""}"></i>`).join("")}</div>
+          <div class="buy"><span class="price">${kc(p.price)} Kč<small>/ 250 g</small></span>
+            <button class="add" data-add="${p.id}" aria-label="Přidat ${p.name} do košíku"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        </article>`).join("");
+      observe();
+    }
+    document.getElementById("filters").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-f]"); if (!b) return;
+      document.querySelectorAll("#filters .chip").forEach((c) => c.classList.toggle("on", c === b));
+      renderProducts(b.dataset.f);
+    });
+
+    // ---------- cart ----------
+    let count = 0;
+    const toastEl = document.getElementById("toast");
+    function toast(t) { toastEl.textContent = t; toastEl.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove("show"), 2200); }
+    function addToCart(name) {
+      count++;
+      document.getElementById("cart-n").textContent = count;
+      const pill = document.getElementById("cart"); pill.classList.remove("bump"); void pill.offsetWidth; pill.classList.add("bump");
+      toast(`${name} je v košíku`);
+    }
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-add]"); if (!b) return;
+      const p = products.find((x) => x.id === b.dataset.add);
+      addToCart(p.name);
+      b.classList.add("done"); b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+      window.AIProdavac?.track?.("add_to_cart", { quantity: 1, source: "user" });
+    });
+
+    // ---------- subscription plan ----------
+    const plan = { method: "filtr", size: "500" };
+    const BASE = { 250: 339, 500: 629, 1000: 1190 };
+    function renderPlan() {
+      const full = BASE[plan.size] + (plan.method === "mix" ? 40 : 0);
+      document.getElementById("plan-old").textContent = kc(full) + " Kč";
+      document.getElementById("plan-price").textContent = kc(Math.round(full * 0.85)) + " Kč";
+    }
+    document.querySelectorAll("#plan .seg").forEach((seg) => seg.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      seg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+      plan[seg.dataset.k] = b.dataset.v; renderPlan();
+    }));
+    document.getElementById("plan-add").addEventListener("click", (e) => { e.preventDefault(); addToCart("Předplatné"); });
+    renderPlan();
+
+    // ---------- header on scroll + reveal on scroll ----------
+    const header = document.getElementById("header");
+    addEventListener("scroll", () => header.classList.toggle("scrolled", scrollY > 20), { passive: true });
+    const io = new IntersectionObserver((entries) => entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } }), { threshold: 0.12 });
+    function observe() { document.querySelectorAll(".reveal:not(.in)").forEach((el) => io.observe(el)); }
+    renderProducts();
+    observe();
+  </script>
+  <!-- The AI salesperson: one line, it adapts to this site by itself -->
   <script src="/widget/prodavac.js" defer></script>
 </body>
 </html>
