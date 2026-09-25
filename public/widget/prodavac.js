@@ -318,34 +318,39 @@
     .gbtn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--edge); background: var(--glass); color: var(--ink); display: grid; place-items: center; font-size: 17px; transition: background .2s, transform .2s; }
     .gbtn:hover { background: ${mix("--c", 14)}; transform: rotate(8deg) scale(1.06); }
 
-    /* ---------- arrival pop-up: wide, three big choices side by side ---------- */
-    .overlay { position: fixed; inset: 0; z-index: 2147483001; background: var(--dim); backdrop-filter: blur(6px) saturate(1.2);
-      display: grid; place-items: center; padding: 16px; animation: fade .25s ease-out; }
-    .modal { width: min(440px, 100%); padding: 24px; border-radius: 20px; box-shadow: 0 1px 2px rgba(15,21,34,.06), 0 24px 60px -12px rgba(15,21,34,.28);
-      animation: pop .32s cubic-bezier(.2,.9,.3,1) both; }
-    .modal .x { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 8px; border: 0; background: none; color: var(--soft);
-      display: grid; place-items: center; font-size: 16px; transition: background .15s, color .15s; }
-    .modal .x:hover { background: var(--glass); color: var(--strong); }
-    .m-head { display: flex; align-items: center; gap: 12px; }
-    .m-name { font-weight: 650; font-size: 15.5px; letter-spacing: -.1px; color: var(--strong); }
-    .m-status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--soft); margin-top: 2px; }
-    .m-status i { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.18); }
-    .m-text { font-size: 15.5px; line-height: 1.55; margin: 18px 0 18px; min-height: 48px; color: var(--ink); }
+    /* ---------- arrival: the mascot hops over to you and asks ---------- */
+    .stage { position: fixed; inset: 0; z-index: 2147483001; }
+    .scrim { position: absolute; inset: 0; background: var(--dim); backdrop-filter: blur(3px); animation: fade .4s ease-out both; }
+    .stage.out .scrim { animation: fade .35s ease-in reverse both; }
+    .greeter { position: absolute; left: 50%; bottom: max(28px, 9vh); transform: translateX(-50%); width: min(430px, calc(100vw - 32px));
+      display: flex; flex-direction: column; align-items: center; gap: 18px; }
+    .hop { position: relative; transform-origin: 50% 100%; will-change: transform; }
+    .ground { position: absolute; left: 50%; bottom: -8px; width: 84px; height: 12px; margin-left: -42px; border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(0,0,0,.28), transparent); opacity: 0; transition: opacity .3s; }
+    .landed .ground { opacity: 1; }
+    .bubble { position: relative; width: 100%; padding: 20px 20px 16px; border-radius: 22px; background: var(--bg2); color: var(--strong);
+      border: 1px solid var(--edge); box-shadow: 0 30px 70px -20px rgba(10,14,30,.4), 0 2px 8px rgba(10,14,30,.06);
+      transform-origin: 50% calc(100% + 18px); opacity: 0; transform: scale(.4) translateY(30px); pointer-events: none; }
+    .bubble::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 16px; height: 16px; margin-left: -8px; background: inherit;
+      border: solid var(--edge); border-width: 0 1px 1px 0; transform: rotate(45deg); border-radius: 0 0 4px 0; }
+    .landed .bubble { opacity: 1; transform: none; pointer-events: auto; transition: transform .5s cubic-bezier(.3,1.6,.5,1), opacity .2s; }
+    .stage.out .bubble { opacity: 0; transform: scale(.6) translateY(30px); transition: transform .22s ease-in, opacity .18s; }
+    .bubble .x { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: var(--soft);
+      display: grid; place-items: center; font-size: 15px; transition: background .15s, color .15s; }
+    .bubble .x:hover { background: var(--glass); color: var(--strong); }
+    .g-name { font-size: 13px; font-weight: 700; color: var(--c); letter-spacing: .02em; margin: 0 0 6px; }
+    .g-text { font-size: 16.5px; line-height: 1.5; margin: 0 24px 16px 0; min-height: 50px; color: var(--strong); }
     .caret::after { content: ""; display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: -3px; background: var(--c); animation: caret .8s steps(1) infinite; }
-    .m-ask { display: flex; align-items: center; gap: 6px; padding: 5px 5px 5px 14px; border: 1px solid var(--edge); border-radius: 12px; background: var(--bg2);
-      transition: border-color .15s, box-shadow .15s; animation: rise .3s ease-out .1s both; }
-    .m-ask:focus-within { border-color: var(--c); box-shadow: 0 0 0 4px ${mix("--c", 14)}; }
-    .m-ask input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 15px; color: var(--strong); padding: 8px 0; }
-    .m-ask input::placeholder { color: var(--ph); }
-    .m-ask button { width: 38px; height: 38px; flex: none; border: 0; border-radius: 9px; background: var(--c); color: #fff; display: grid; place-items: center; font-size: 17px; transition: filter .15s, transform .15s; }
-    .m-ask button:hover { filter: brightness(1.08); } .m-ask button:active { transform: scale(.94); }
-    .m-alt { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; animation: rise .3s ease-out .16s both; }
-    .m-voice { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 9px; border: 1px solid var(--edge); background: none; color: var(--ink); font-size: 13.5px; font-weight: 550; transition: background .15s, border-color .15s; }
-    .m-voice svg { font-size: 15px; color: var(--c); }
-    .m-voice:hover { background: var(--glass); }
-    .m-skip { border: 0; background: none; padding: 8px 4px; color: var(--soft); font-size: 13.5px; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: color .15s, text-decoration-color .15s; }
-    .m-skip:hover { color: var(--strong); text-decoration-color: currentColor; }
-    @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+    .g-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .g-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 13px; border: 0; font-size: 15px; font-weight: 600;
+      background: var(--glass); color: var(--strong); transition: transform .15s, filter .15s, background .15s; }
+    .g-btn svg { font-size: 18px; }
+    .g-btn:hover { background: ${mix("--c", 12)}; } .g-btn:active { transform: scale(.97); }
+    .g-btn.pri { background: var(--c); color: #fff; } .g-btn.pri:hover { filter: brightness(1.08); }
+    .g-skip { grid-column: 1 / -1; justify-self: center; border: 0; background: none; padding: 8px 10px 2px; color: var(--soft); font-size: 14px; transition: color .15s; }
+    .g-skip:hover { color: var(--strong); }
+    .landed .g-acts > * { animation: rise .35s cubic-bezier(.2,.8,.2,1) both; }
+    .landed .g-acts > :nth-child(2) { animation-delay: .05s; } .landed .g-acts > :nth-child(3) { animation-delay: .1s; }
 
     /* ---------- floating cards: tips and short replies ---------- */
     .tip { width: 400px; padding: 18px; animation: swoop .45s cubic-bezier(.34,1.45,.64,1) both; }
@@ -488,7 +493,7 @@
     @keyframes drift3 { to { transform: translate(90px, -160px) scale(1.15); } }
 
     @media (max-width: 640px) {
-      .modal { padding: 20px; }
+      .g-text { font-size: 16px; }
     }
     @media (max-width: 480px) {
       .wrap { right: 10px; bottom: 10px; left: 10px; }
@@ -735,62 +740,98 @@
 
   // Like a salesperson walking up to you: shows up right after you come in.
   let greetingData = null;
-  // Arrival pop-up: wide, centred over the page, the customer picks how they want to shop.
+  // Arrival: the mascot hops over from its corner, lands in front of you and asks – like a
+  // salesperson walking up. The customer picks how they want to shop.
+  // Keyframes for the jump from an offset (dx, dy, scale s0) to its spot: crouch, a big hop,
+  // a small hop, then a springy landing. Computed here so the arc is a real parabola.
+  function hopFrames(dx, dy, s0) {
+    const H1 = Math.min(240, 110 + Math.abs(dx) * 0.22), H2 = H1 * 0.32, lean = dx > 0 ? -1 : 1;
+    const frames = [];
+    for (let i = 0; i <= 60; i++) {
+      const t = i / 60;
+      let p = 0, lift = 0, sx = 1, sy = 1, r = 0;
+      if (t < 0.08) { const u = t / 0.08; sy = 1 - 0.16 * u; sx = 1 + 0.1 * u; }                          // crouch
+      else if (t < 0.52) { const u = (t - 0.08) / 0.44; p = 0.72 * u; lift = H1 * 4 * u * (1 - u);            // big hop
+        r = lean * 10 * Math.sin(u * Math.PI); sy = 1 + 0.12 * (1 - u) * (1 - u); sx = 1 / sy; }
+      else if (t < 0.78) { const u = (t - 0.52) / 0.26; p = 0.72 + 0.28 * u; lift = H2 * 4 * u * (1 - u);   // small hop
+        r = lean * 4 * Math.sin(u * Math.PI); }
+      else { const u = (t - 0.78) / 0.22; p = 1; sy = 1 - 0.2 * Math.exp(-4 * u) * Math.cos(u * 3 * Math.PI); sx = 1 + (1 - sy) * 0.8; } // landing
+      const sc = s0 + (1 - s0) * p;
+      frames.push({ transform: `translate(${(dx * (1 - p)).toFixed(1)}px, ${(dy * (1 - p) - lift).toFixed(1)}px) rotate(${r.toFixed(2)}deg) scale(${(sc * sx).toFixed(3)}, ${(sc * sy).toFixed(3)})` });
+    }
+    frames[frames.length - 1] = { transform: "none" };
+    return frames;
+  }
+
   async function greet() {
     if (state.greeted || mode) return;
     state.greeted = true; saveState();
-    const overlay = el(`
-      <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="aip-greet">
-        <div class="modal glass">
-          <button class="x" data-m="no" aria-label="Zavřít">${ICON.close}</button>
-          <div class="m-head">
-            ${avatar(52, { mood: "think" })}
-            <div><div class="m-name">${esc(cfg.name)}</div><div class="m-status"><i></i>Online · odpovídá hned</div></div>
+    const stage = el(`
+      <div class="stage" role="dialog" aria-modal="true" aria-labelledby="aip-greet">
+        <div class="scrim"></div>
+        <div class="greeter">
+          <div class="bubble">
+            <button class="x" data-m="no" aria-label="Zavřít">${ICON.close}</button>
+            <p class="g-name">${esc(cfg.name)}</p>
+            <p class="g-text" id="aip-greet"></p>
+            <div class="g-acts">
+              <button class="g-btn pri" data-m="chat">${ICON.chat}Napsat</button>
+              <button class="g-btn" data-m="voice">${ICON.mic}Promluvit si</button>
+              <button class="g-skip" data-m="no">Díky, jen se dívám</button>
+            </div>
           </div>
-          <p class="m-text" id="aip-greet"></p>
-          <form class="m-ask" data-m="chat">
-            <input type="text" maxlength="500" placeholder="Napište, s čím poradit…" aria-label="Vaše zpráva" autocomplete="off">
-            <button type="submit" aria-label="Odeslat">${ICON.send}</button>
-          </form>
-          <div class="m-alt">
-            <button class="m-voice" data-m="voice">${ICON.mic}Raději hlasem</button>
-            <button class="m-skip" data-m="no">Jen se porozhlédnu</button>
-          </div>
+          <div class="hop">${avatar(96)}<span class="ground"></span></div>
         </div>
       </div>`);
-    root.append(overlay);
-    updateEyes();
-    const input = overlay.querySelector(".m-ask input");
-    input.focus({ preventScroll: true });
+    root.append(stage);
+    const hop = stage.querySelector(".hop"), av = hop.querySelector(".av");
 
-    const close = () => { overlay.remove(); removeEventListener("keydown", onKey); };
+    // jump from where the mascot sits in the corner (or from off-screen if it isn't there)
+    const from = launcher.querySelector(".av")?.getBoundingClientRect();
+    const to = av.getBoundingClientRect();
+    const [dx, dy, s0] = from?.width
+      ? [from.left + from.width / 2 - (to.left + to.width / 2), from.bottom - to.bottom, from.width / to.width]
+      : [innerWidth / 2 + 120, 0, 0.7];
+    const frames = hopFrames(dx, dy, s0);
+    launcher.style.visibility = "hidden";
+    const jump = hop.animate(frames, { duration: reduced ? 1 : 1150, fill: "both" });
+
+    const close = () => { stage.remove(); removeEventListener("keydown", onKey); launcher.style.visibility = ""; };
     let chosen = false;
-    const choose = (m, text = "") => {
+    const choose = async (m) => {
       if (chosen) return;
       chosen = true;
-      if (m === "no") { close(); return declineGreeting(); }
+      stage.classList.add("out");
+      if (m === "no") {
+        // hops back to its corner
+        await new Promise((r) => setTimeout(r, reduced ? 0 : 120));
+        await hop.animate(frames, { duration: reduced ? 1 : 750, direction: "reverse", fill: "both" }).finished.catch(() => {});
+        close();
+        return declineGreeting();
+      }
       state.choice = m; saveState();
       api.track("offer_accepted", { mode: m });
+      await hop.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(-10px) scale(.7)" }], { duration: 200, fill: "both" }).finished.catch(() => {});
       close();
-      // typed a question right away? it goes straight into the chat
-      if (text) { openPanel("chat", { fromTip: true }); send(text); }
-      else openPanel(m, { fromGreeting: true });
+      openPanel(m, { fromGreeting: true });
     };
-    overlay.querySelector(".m-ask").onsubmit = (e) => { e.preventDefault(); choose("chat", input.value.trim()); };
     const onKey = (e) => { if (e.key === "Escape") choose("no"); };
     addEventListener("keydown", onKey);
-    overlay.onclick = (e) => {
-      if (e.target === overlay) return choose("no"); // click outside = "just browsing"
-      const b = e.target.closest("button[data-m]");
-      if (b && b.type !== "submit") choose(b.dataset.m);
+    stage.onclick = (e) => {
+      if (e.target.classList.contains("scrim")) return choose("no"); // click outside = "just browsing"
+      const m = e.target.closest("[data-m]")?.dataset.m;
+      if (m) choose(m);
     };
     api.track("offer_shown");
 
-    try { greetingData = (await post("/api/proactive", { sessionId, trigger: "greeting", signals: signals() })).greeting; } catch {}
-    greetingData ??= { text: `Dobrý den, vítejte! 👋 Jsem ${cfg.name}. Chcete s něčím poradit, nebo se radši porozhlédnete sami?` };
-    const av = overlay.querySelector(".av");
+    const text = post("/api/proactive", { sessionId, trigger: "greeting", signals: signals() }).then((r) => r.greeting).catch(() => null);
+    await jump.finished.catch(() => {});
+    if (chosen) return;
+    stage.querySelector(".greeter").classList.add("landed");
+    updateEyes();
+    greetingData = (await text) ?? { text: `Dobrý den, vítejte! Jsem ${cfg.name}. Chcete s něčím poradit, nebo se radši porozhlédnete sami?` };
     setAv(av, "talk");
-    await typeInto(overlay.querySelector(".m-text"), greetingData.text.replace(/\s*\p{Extended_Pictographic}️?/gu, ""));
+    await typeInto(stage.querySelector(".g-text"), greetingData.text.replace(/\s*\p{Extended_Pictographic}️?/gu, ""));
     setAv(av, "idle");
   }
 
@@ -875,7 +916,7 @@
   let panel, msgs, footer;
   const history = []; // rendered transcript kept across close/reopen and mode switches
 
-  const MOOD_TEXT = { idle: "Online · ráda poradím", think: "Přemýšlím…", talk: "Píšu…", speak: "Mluvím…", listen: "Poslouchám…", happy: "Skvělá volba! 🎉" };
+  const MOOD_TEXT = { idle: "Ráda poradím", think: "Přemýšlím…", talk: "Píšu…", speak: "Mluvím…", listen: "Poslouchám…", happy: "Skvělá volba! 🎉" };
   let happyTimer = null;
   /** Klára's mood drives her face in the header (and on the voice stage) plus the status line. */
   function setMood(mood, text) {
@@ -931,7 +972,7 @@
       <div class="panel glass" role="dialog" aria-label="Prodavačka ${esc(cfg.name)}">
         ${aurora}
         <div class="head">
-          ${avatar(46, { live: true })}
+          ${avatar(46)}
           <div class="title"><b>${esc(cfg.name)}</b><div class="status"><i></i><span>${MOOD_TEXT.idle}</span></div></div>
           <button class="gbtn" data-a="switch" title="Přepnout hlas / psaní"></button>
           <button class="gbtn" data-a="close" title="Zavřít">${ICON.close}</button>
@@ -1519,7 +1560,7 @@
     theme = detectTheme();
     AV = detectPersona();
     nameReady = loadName();
-    launcher.innerHTML = avatar(60, { live: true }) + `<span class="launch-label">Poradit s nákupem</span>`;
+    launcher.innerHTML = avatar(60) + `<span class="launch-label">Poradit s nákupem</span>`;
     nameReady.then(() => launcher.setAttribute("aria-label", `Otevřít prodavačku ${cfg.name}`));
     document.body.append(host);
     wrap.append(launcher);
