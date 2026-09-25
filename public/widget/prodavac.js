@@ -321,26 +321,31 @@
     /* ---------- arrival pop-up: wide, three big choices side by side ---------- */
     .overlay { position: fixed; inset: 0; z-index: 2147483001; background: var(--dim); backdrop-filter: blur(6px) saturate(1.2);
       display: grid; place-items: center; padding: 16px; animation: fade .25s ease-out; }
-    .modal { width: min(680px, 100%); padding: 34px 32px 22px; text-align: center; animation: unfold .45s cubic-bezier(.34,1.4,.64,1) both; }
-    .modal .x { position: absolute; top: 16px; right: 16px; }
-    .modal .av { animation: drop .7s cubic-bezier(.34,1.56,.64,1) both; }
-    .m-name { margin-top: 12px; font-weight: 800; font-size: 19px; letter-spacing: -.2px; color: var(--strong); }
-    .m-name span { font-weight: 500; color: var(--soft); font-size: 14px; }
-    .m-text { font-size: 18.5px; line-height: 1.55; margin: 12px auto 24px; max-width: 540px; min-height: 58px; color: var(--strong); }
+    .modal { width: min(440px, 100%); padding: 24px; border-radius: 20px; box-shadow: 0 1px 2px rgba(15,21,34,.06), 0 24px 60px -12px rgba(15,21,34,.28);
+      animation: pop .32s cubic-bezier(.2,.9,.3,1) both; }
+    .modal .x { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 8px; border: 0; background: none; color: var(--soft);
+      display: grid; place-items: center; font-size: 16px; transition: background .15s, color .15s; }
+    .modal .x:hover { background: var(--glass); color: var(--strong); }
+    .m-head { display: flex; align-items: center; gap: 12px; }
+    .m-name { font-weight: 650; font-size: 15.5px; letter-spacing: -.1px; color: var(--strong); }
+    .m-status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--soft); margin-top: 2px; }
+    .m-status i { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.18); }
+    .m-text { font-size: 15.5px; line-height: 1.55; margin: 18px 0 18px; min-height: 48px; color: var(--ink); }
     .caret::after { content: ""; display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: -3px; background: var(--c); animation: caret .8s steps(1) infinite; }
-    .m-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .m-choice { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 14px 18px; border-radius: var(--rb); color: var(--ink);
-      background: var(--glass); border: 1px solid var(--edge); transition: transform .2s cubic-bezier(.34,1.56,.64,1), background .2s, box-shadow .2s;
-      animation: rise .4s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(.2s + var(--i) * .06s); overflow: hidden; }
-    .m-choice:hover { transform: translateY(-4px); background: ${mix("--c", 10)}; box-shadow: 0 14px 30px ${mix("--c", 22)}; }
-    .m-choice .ic { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 25px; flex: none; background: ${mix("--c", 12)}; color: var(--c); }
-    .m-choice b { display: block; font-size: 16px; color: var(--strong); line-height: 1.25; } .m-choice small { color: var(--soft); font-size: 13px; line-height: 1.35; }
-    .m-choice.primary { color: #fff; background: linear-gradient(120deg, var(--c), var(--c2) 70%, var(--c3)); background-size: 180% 100%; border-color: transparent;
-      animation: rise .4s cubic-bezier(.2,.8,.2,1) both, hue 5s ease-in-out infinite alternate; animation-delay: calc(.2s + var(--i) * .06s), 0s; }
-    .m-choice.primary b { color: #fff; } .m-choice.primary small { color: #ffffffdd; }
-    .m-choice.primary .ic { background: rgba(255,255,255,.22); color: #fff; }
-    .m-choice.primary::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.35), transparent 70%); transform: translateX(-120%); animation: sheen 3.4s ease-in-out 1s infinite; }
-    .m-foot { font-size: 12px; color: var(--soft); margin-top: 18px; }
+    .m-ask { display: flex; align-items: center; gap: 6px; padding: 5px 5px 5px 14px; border: 1px solid var(--edge); border-radius: 12px; background: var(--bg2);
+      transition: border-color .15s, box-shadow .15s; animation: rise .3s ease-out .1s both; }
+    .m-ask:focus-within { border-color: var(--c); box-shadow: 0 0 0 4px ${mix("--c", 14)}; }
+    .m-ask input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 15px; color: var(--strong); padding: 8px 0; }
+    .m-ask input::placeholder { color: var(--ph); }
+    .m-ask button { width: 38px; height: 38px; flex: none; border: 0; border-radius: 9px; background: var(--c); color: #fff; display: grid; place-items: center; font-size: 17px; transition: filter .15s, transform .15s; }
+    .m-ask button:hover { filter: brightness(1.08); } .m-ask button:active { transform: scale(.94); }
+    .m-alt { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; animation: rise .3s ease-out .16s both; }
+    .m-voice { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 9px; border: 1px solid var(--edge); background: none; color: var(--ink); font-size: 13.5px; font-weight: 550; transition: background .15s, border-color .15s; }
+    .m-voice svg { font-size: 15px; color: var(--c); }
+    .m-voice:hover { background: var(--glass); }
+    .m-skip { border: 0; background: none; padding: 8px 4px; color: var(--soft); font-size: 13.5px; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: color .15s, text-decoration-color .15s; }
+    .m-skip:hover { color: var(--strong); text-decoration-color: currentColor; }
+    @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 
     /* ---------- floating cards: tips and short replies ---------- */
     .tip { width: 400px; padding: 18px; animation: swoop .45s cubic-bezier(.34,1.45,.64,1) both; }
@@ -483,10 +488,7 @@
     @keyframes drift3 { to { transform: translate(90px, -160px) scale(1.15); } }
 
     @media (max-width: 640px) {
-      .m-choices { grid-template-columns: 1fr; }
-      .m-choice { flex-direction: row; text-align: left; padding: 13px 14px; }
-      .m-choice .ic { width: 44px; height: 44px; font-size: 21px; }
-      .modal { padding: 28px 18px 18px; } .m-text { font-size: 16.5px; }
+      .modal { padding: 20px; }
     }
     @media (max-width: 480px) {
       .wrap { right: 10px; bottom: 10px; left: 10px; }
@@ -740,40 +742,47 @@
     const overlay = el(`
       <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="aip-greet">
         <div class="modal glass">
-          ${aurora}
-          <button class="x gbtn" data-m="no" aria-label="Zavřít">${ICON.close}</button>
-          ${avatar(100, { live: true, mood: "think" })}
-          <div class="m-name">${esc(cfg.name)} <span>· vaše prodavačka</span></div>
-          <p class="m-text" id="aip-greet"></p>
-          <div class="m-choices">
-            <button class="m-choice primary" data-m="voice" style="--i:0"><span class="ic">${ICON.mic}</span><b>Promluvit si</b><small>Poradím vám hlasem, jako v obchodě</small></button>
-            <button class="m-choice" data-m="chat" style="--i:1"><span class="ic">${ICON.chat}</span><b>Napsat zprávu</b><small>Zeptejte se v chatu, odpovím hned</small></button>
-            <button class="m-choice" data-m="no" style="--i:2"><span class="ic">${ICON.eye}</span><b>Porozhlédnu se sám/sama</b><small>Kdybyste mě potřebovali, budu vpravo dole</small></button>
+          <button class="x" data-m="no" aria-label="Zavřít">${ICON.close}</button>
+          <div class="m-head">
+            ${avatar(52, { mood: "think" })}
+            <div><div class="m-name">${esc(cfg.name)}</div><div class="m-status"><i></i>Online · odpovídá hned</div></div>
           </div>
-          <div class="m-foot">Odpovídá AI asistentka · kdykoli ji můžete zavřít</div>
+          <p class="m-text" id="aip-greet"></p>
+          <form class="m-ask" data-m="chat">
+            <input type="text" maxlength="500" placeholder="Napište, s čím poradit…" aria-label="Vaše zpráva" autocomplete="off">
+            <button type="submit" aria-label="Odeslat">${ICON.send}</button>
+          </form>
+          <div class="m-alt">
+            <button class="m-voice" data-m="voice">${ICON.mic}Raději hlasem</button>
+            <button class="m-skip" data-m="no">Jen se porozhlédnu</button>
+          </div>
         </div>
       </div>`);
     root.append(overlay);
     updateEyes();
-    overlay.querySelector('[data-m="chat"]').focus({ preventScroll: true });
+    const input = overlay.querySelector(".m-ask input");
+    input.focus({ preventScroll: true });
 
     const close = () => { overlay.remove(); removeEventListener("keydown", onKey); };
     let chosen = false;
-    const choose = (m) => {
+    const choose = (m, text = "") => {
       if (chosen) return;
       chosen = true;
       if (m === "no") { close(); return declineGreeting(); }
       state.choice = m; saveState();
       api.track("offer_accepted", { mode: m });
       close();
-      openPanel(m, { fromGreeting: true });
+      // typed a question right away? it goes straight into the chat
+      if (text) { openPanel("chat", { fromTip: true }); send(text); }
+      else openPanel(m, { fromGreeting: true });
     };
+    overlay.querySelector(".m-ask").onsubmit = (e) => { e.preventDefault(); choose("chat", input.value.trim()); };
     const onKey = (e) => { if (e.key === "Escape") choose("no"); };
     addEventListener("keydown", onKey);
     overlay.onclick = (e) => {
       if (e.target === overlay) return choose("no"); // click outside = "just browsing"
-      const m = e.target.closest("[data-m]")?.dataset.m;
-      if (m) choose(m);
+      const b = e.target.closest("button[data-m]");
+      if (b && b.type !== "submit") choose(b.dataset.m);
     };
     api.track("offer_shown");
 
@@ -781,7 +790,7 @@
     greetingData ??= { text: `Dobrý den, vítejte! 👋 Jsem ${cfg.name}. Chcete s něčím poradit, nebo se radši porozhlédnete sami?` };
     const av = overlay.querySelector(".av");
     setAv(av, "talk");
-    await typeInto(overlay.querySelector(".m-text"), greetingData.text);
+    await typeInto(overlay.querySelector(".m-text"), greetingData.text.replace(/\s*\p{Extended_Pictographic}️?/gu, ""));
     setAv(av, "idle");
   }
 
