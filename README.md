@@ -113,7 +113,7 @@ lib/offline.js       Zjednodušené odpovědi, když není API klíč
 lib/catalog.js       Katalog, vyhledávání, ceny košíku a sety (v ostré verzi feed e-shopu)
 lib/images.js        Ilustrace produktů pro demo (v ostré verzi fotky z e-shopu)
 lib/analytics.js     Sběr událostí a výpočty pro dashboard
-catalog/store.json   Data demo obchodu
+catalog/store.js     Data demo obchodu
 public/widget/       prodavac.js – vložitelný widget (Shadow DOM, funguje na jakémkoli webu)
 public/              Demo e-shop (index.html, shop.js, shop.css) + vendor/ (ikony)
 public/demo/         Ukázka jiného webu (kavárna Bohème)

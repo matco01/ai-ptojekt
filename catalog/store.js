@@ -1,4 +1,5 @@
-{
+// Demo catalog data (JS module so serverless bundlers always ship it).
+export default {
   "store": {
     "name": "TechMarket",
     "tagline": "Elektronika, která dává smysl – s poradenstvím jako v kamenné prodejně",
@@ -299,4 +300,4 @@
     "g1": ["g2", "x7", "t1"], "g3": ["x1"],
     "h1": ["h3"], "h2": [], "h3": ["h1"]
   }
-}
+};
