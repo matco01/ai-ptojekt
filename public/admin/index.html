@@ -7,84 +7,121 @@
   <style>
     :root {
       color-scheme: light;
-      --surface-0: #f4f4f2; --surface-1: #fcfcfb; --line: #dedcd6;
-      --text-primary: #0b0b0b; --text-secondary: #43423e; --text-muted: #67655f;
-      --series-1: #2a78d6; --series-2: #eb6834; --track: #e7e5df;
-      --accent: #2e7d5b;
+      --bg: #f3f5f8; --card: #ffffff; --card-2: #f7f8fa; --line: #e3e7ed;
+      --text: #151922; --text-2: #465061; --text-3: #667085;
+      --blue: #2f6fdb; --orange: #e0662f; --green: #1f8a5c; --violet: #6b4fd8; --amber: #b7791f;
+      --track: #eceff4; --shadow: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.05);
+      --notice-bg: #fff6dd; --notice-text: #6b5000;
     }
     @media (prefers-color-scheme: dark) {
       :root:where(:not([data-theme="light"])) {
         color-scheme: dark;
-        --surface-0: #111110; --surface-1: #1a1a19; --line: #333331;
-        --text-primary: #ffffff; --text-secondary: #cecdc3; --text-muted: #a3a29a;
-        --series-1: #3987e5; --series-2: #d95926; --track: #2b2b29;
-        --accent: #4aa37c;
+        --bg: #14171d; --card: #1d2129; --card-2: #232833; --line: #2d333f;
+        --text: #eef1f6; --text-2: #c0c7d3; --text-3: #959eae;
+        --blue: #5b95f0; --orange: #f08352; --green: #4cc38a; --violet: #9a85f5; --amber: #e0a943;
+        --track: #2a303b; --shadow: 0 1px 2px rgba(0,0,0,.3);
+        --notice-bg: #3a3218; --notice-text: #f1d98b;
       }
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--surface-0); color: var(--text-primary); font-size: 15px; line-height: 1.45; }
-    header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 18px 28px; background: var(--surface-1); border-bottom: 1px solid var(--line); }
-    header h1 { font-size: 21px; margin: 0; flex: 1; }
-    header h1 small { font-weight: 400; color: var(--text-secondary); font-size: 14.5px; margin-left: 8px; }
-    button { font: inherit; font-size: 14.5px; cursor: pointer; border-radius: 10px; padding: 9px 15px; border: 1px solid var(--line); background: var(--surface-1); color: var(--text-primary); }
-    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+
+    header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .head-in { max-width: 1180px; margin: 0 auto; padding: 16px 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    header h1 { font-size: 20px; margin: 0; flex: 1; letter-spacing: -.2px; }
+    header h1 small { display: block; font-weight: 500; color: var(--text-3); font-size: 14px; letter-spacing: 0; }
+    button { font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--line); background: var(--card); color: var(--text); transition: background .15s, border-color .15s; }
+    button:hover { background: var(--card-2); border-color: var(--text-3); }
+    button.primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+    button.primary:hover { filter: brightness(1.08); }
+    button.danger:hover { border-color: var(--orange); color: var(--orange); }
     button:disabled { opacity: .55; cursor: default; }
-    main { max-width: 1200px; margin: 0 auto; padding: 26px 28px 60px; display: grid; gap: 22px; }
+
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 28px 72px; display: grid; gap: 22px; }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); margin: 18px 0 -8px; }
+    .section-title:first-of-type { margin-top: 0; }
+
     .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-    .tile, .card { background: var(--surface-1); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
-    .tile .label { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
-    .tile .value { font-size: 32px; font-weight: 700; margin: 6px 0 3px; font-variant-numeric: tabular-nums; }
-    .tile .sub { font-size: 13.5px; color: var(--text-muted); }
-    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
-    .card h2 { font-size: 16.5px; font-weight: 700; margin: 0 0 5px; }
-    .card .hint { font-size: 13.5px; color: var(--text-muted); margin: 0 0 16px; line-height: 1.5; }
-    .bars { display: grid; gap: 12px; }
-    .bar { display: grid; grid-template-columns: minmax(140px, 42%) 1fr 56px; align-items: center; gap: 12px; font-size: 14.5px; position: relative; }
-    .bar .name { color: var(--text-primary); font-weight: 500; overflow-wrap: break-word; }
-    .bar .track { height: 18px; background: var(--track); border-radius: 999px; }
-    .bar .fill { height: 100%; border-radius: 999px; background: var(--series-1); min-width: 4px; }
-    .bar .num { text-align: right; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
-    .bar:hover .fill { filter: brightness(1.12); }
-    .legend { display: flex; gap: 16px; font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px; }
-    .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
-    .empty { color: var(--text-muted); font-size: 14px; }
-    .questions { list-style: none; padding: 0; margin: 0; max-height: 360px; overflow-y: auto; }
-    .questions li { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; line-height: 1.5; }
-    .questions li small { color: var(--text-muted); margin-left: 6px; }
-    .insights { line-height: 1.65; font-size: 15.5px; }
-    .insights h2 { font-size: 16.5px; font-weight: 700; margin: 20px 0 8px; } .insights h2:first-child { margin-top: 0; }
+    .tile, .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+    .tile { padding: 18px 20px 20px; position: relative; overflow: hidden; }
+    .tile::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 4px; background: var(--accent, var(--blue)); }
+    .tile .label { font-size: 14px; color: var(--text-2); font-weight: 600; }
+    .tile .value { font-size: 34px; font-weight: 750; margin: 8px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: -.5px; color: var(--text); }
+    .tile .sub { font-size: 13.5px; color: var(--text-3); }
+
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; align-items: start; }
+    .card { padding: 22px 24px; }
+    .card h2 { font-size: 17px; font-weight: 700; margin: 0 0 4px; letter-spacing: -.1px; }
+    .card .hint { font-size: 14px; color: var(--text-3); margin: 0 0 18px; }
+
+    .bars { display: grid; gap: 4px; }
+    .bar { display: grid; grid-template-columns: minmax(140px, 40%) 1fr 60px; align-items: center; gap: 14px; font-size: 14.5px; padding: 7px 10px; margin: 0 -10px; border-radius: 10px; }
+    .bar:hover { background: var(--card-2); }
+    .bar .name { color: var(--text); font-weight: 500; overflow-wrap: anywhere; }
+    .bar .track { height: 12px; background: var(--track); border-radius: 999px; overflow: hidden; }
+    .bar .fill { height: 100%; border-radius: 999px; background: var(--blue); }
+    .bar .num { text-align: right; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .bar.zero .name, .bar.zero .num { color: var(--text-3); font-weight: 500; }
+    .bar.zero .fill { display: none; }
+    .summary { margin: 14px 0 0; padding: 12px 14px; background: var(--card-2); border-radius: 10px; font-size: 14.5px; color: var(--text-2); }
+    .summary b { color: var(--text); font-size: 16px; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 14px; color: var(--text-2); margin-bottom: 12px; }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 7px; vertical-align: -1px; }
+    .empty { color: var(--text-3); font-size: 14.5px; padding: 18px; text-align: center; background: var(--card-2); border-radius: 10px; margin: 0; }
+
+    .questions { list-style: none; padding: 0; margin: 0; max-height: 420px; overflow-y: auto; display: grid; gap: 8px; }
+    .questions li { padding: 12px 14px; background: var(--card-2); border-radius: 10px; font-size: 15px; }
+    .questions li .meta { display: flex; gap: 10px; align-items: center; margin-top: 4px; font-size: 13px; color: var(--text-3); }
+    .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: color-mix(in srgb, var(--blue) 16%, transparent); color: var(--blue); }
+    .chip.voice { background: color-mix(in srgb, var(--violet) 16%, transparent); color: var(--violet); }
+
+    .ai-card { border-color: color-mix(in srgb, var(--green) 40%, var(--line)); background: linear-gradient(180deg, color-mix(in srgb, var(--green) 7%, var(--card)), var(--card) 140px); }
+    .insights { line-height: 1.7; font-size: 15.5px; color: var(--text-2); }
+    .insights h2 { font-size: 16.5px; font-weight: 700; margin: 22px 0 6px; color: var(--text); } .insights h2:first-child { margin-top: 0; }
     .insights ul { margin: 0; padding-left: 22px; }
-    .insights li { margin: 3px 0; }
-    .tip { position: fixed; pointer-events: none; background: var(--text-primary); color: var(--surface-1); font-size: 13px; padding: 6px 10px; border-radius: 8px; z-index: 9; display: none; }
-    .notice { background: #fff4d6; color: #6b5300; border-radius: 10px; padding: 12px 16px; font-size: 14.5px; }
+    .insights li { margin: 4px 0; }
+    .insights b { color: var(--text); }
+
+    .tip { position: fixed; pointer-events: none; background: var(--text); color: var(--card); font-size: 13.5px; padding: 7px 11px; border-radius: 8px; z-index: 9; display: none; max-width: 320px; }
+    .notice { background: var(--notice-bg); color: var(--notice-text); border-radius: 12px; padding: 12px 16px; font-size: 14.5px; }
+
     @media (max-width: 600px) {
-      header, main { padding-left: 16px; padding-right: 16px; }
-      .bar { grid-template-columns: minmax(110px, 40%) 1fr 46px; gap: 8px; font-size: 13.5px; }
+      .head-in, main { padding-left: 16px; padding-right: 16px; }
+      .cols { grid-template-columns: 1fr; }
+      .card { padding: 18px; }
+      .bar { grid-template-columns: minmax(110px, 42%) 1fr 48px; gap: 10px; font-size: 14px; }
+      .tile .value { font-size: 28px; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>AI prodavač · přehled pro e-shop <small>TechMarket (demo)</small></h1>
-    <button id="refresh">↻ Obnovit</button>
-    <button id="seed" title="Vygeneruje simulované návštěvy pro ukázku">Naplnit demo daty</button>
-    <button id="reset">Smazat data</button>
+    <div class="head-in">
+      <h1>AI prodavač · přehled <small>TechMarket (demo)</small></h1>
+      <button id="refresh">↻ Obnovit</button>
+      <button id="seed" title="Vygeneruje simulované návštěvy pro ukázku">Naplnit demo daty</button>
+      <button id="reset" class="danger">Smazat data</button>
+    </div>
   </header>
   <main>
     <div id="demo-notice" class="notice" hidden>Data obsahují simulované (demo) návštěvy. Pro reálná čísla klikněte „Smazat data“ a projděte si obchod.</div>
+
+    <h3 class="section-title">Souhrn</h3>
     <section class="tiles" id="tiles"></section>
 
-    <section class="card">
+    <section class="card ai-card">
       <h2>✨ Doporučení od AI pro majitele obchodu</h2>
       <p class="hint">Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.</p>
       <div id="insights" class="insights"><button class="primary" id="gen">Vygenerovat doporučení</button></div>
     </section>
 
+    <h3 class="section-title">AI prodavačka</h3>
     <section class="cols">
       <div class="card">
         <h2>Konverze: s AI vs. bez AI</h2>
         <p class="hint">Podíl návštěv, které skončily objednávkou.</p>
-        <div class="legend"><span><i style="background:var(--series-1)"></i>S AI prodavačkou</span><span><i style="background:var(--series-2)"></i>Bez AI</span></div>
+        <div class="legend"><span><i style="background:var(--blue)"></i>S AI prodavačkou</span><span><i style="background:var(--orange)"></i>Bez AI</span></div>
         <div class="bars" id="conv"></div>
       </div>
       <div class="card">
@@ -97,10 +134,10 @@
     <section class="card">
       <h2>Proaktivní tipy prodavačky</h2>
       <p class="hint">Kdy se prodavačka sama ozvala podle chování zákazníka a jak často zákazník tip využil.</p>
-      <div class="legend"><span><i style="background:var(--series-1)"></i>Využito (%)</span></div>
       <div class="bars" id="nudges"></div>
     </section>
 
+    <h3 class="section-title">Zákazníci a produkty</h3>
     <section class="cols">
       <div class="card"><h2>Co zákazníci hledají</h2><p class="hint">Nejčastější dotazy ve vyhledávání na webu.</p><div class="bars" id="searches"></div></div>
       <div class="card"><h2>Hledání bez výsledku</h2><p class="hint">Poptávka, kterou obchod nepokryl – kandidáti na rozšíření sortimentu nebo synonyma ve vyhledávání.</p><div class="bars" id="misses"></div></div>
@@ -112,7 +149,7 @@
     </section>
     <section class="cols">
       <div class="card"><h2>Přidáno do košíku díky AI</h2><p class="hint">Kusy přidané z doporučení asistentky.</p><div class="bars" id="cartai"></div></div>
-      <div class="card"><h2>Hodně prohlížené, málo kupované</h2><p class="hint">Zobrazení detailu u produktů, které si do košíku přidá méně než 15 % zájemců – kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div></div>
+      <div class="card"><h2>Hodně prohlížené, málo kupované</h2><p class="hint">Produkty, které si do košíku přidá méně než 15 % zájemců – kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div></div>
     </section>
     <section class="card">
       <h2>Na co se zákazníci ptají</h2>
@@ -129,18 +166,18 @@
   const token = new URLSearchParams(location.search).get("token") || "";
   const call = (url, opts = {}) => fetch(url, { ...opts, headers: { "X-Admin-Token": token, ...(opts.headers || {}) } });
 
-  function tile(label, value, sub = "") {
-    return `<div class="tile"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+  function tile(label, value, sub = "", accent = "var(--blue)") {
+    return `<div class="tile" style="--accent:${accent}"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
   }
 
-  // single-series horizontal bar list; rows: {name, value, tip, color?, fmt?}
+  // single-series horizontal bar list; rows: {name, value, tip, color?, label?}
   function bars(el, rows, emptyText = "Zatím žádná data.") {
     if (!rows.length) { el.innerHTML = `<p class="empty">${emptyText}</p>`; return; }
     const max = Math.max(...rows.map((r) => r.value), 1);
     el.innerHTML = rows.map((r) => `
-      <div class="bar" data-tip="${esc(r.tip ?? `${r.name}: ${r.value}`)}">
+      <div class="bar${r.value ? "" : " zero"}" data-tip="${esc(r.tip ?? `${r.name}: ${r.value}`)}">
         <span class="name">${esc(r.name)}</span>
-        <div class="track"><div class="fill" style="width:${(r.value / max) * 100}%;${r.color ? `background:${r.color}` : ""}"></div></div>
+        <div class="track"><div class="fill" style="width:${Math.max((r.value / max) * 100, 2)}%;${r.color ? `background:${r.color}` : ""}"></div></div>
         <span class="num">${r.label ?? r.value}</span>
       </div>`).join("");
   }
@@ -162,27 +199,27 @@
     const d = await r.json();
     const t = d.totals;
     $("tiles").innerHTML = [
-      tile("Návštěvy", t.sessions.toLocaleString("cs-CZ"), `${t.events.toLocaleString("cs-CZ")} zaznamenaných událostí`),
-      tile("Využilo AI prodavačku", t.sessions ? Math.round((t.aiSessions / t.sessions) * 100) + " %" : "–", `${t.aiSessions} návštěv · ${t.userMessages} dotazů`),
-      tile("Konverze s AI", t.conversionAi + " %", `bez AI ${t.conversionNonAi} %`),
-      tile("Průměrná objednávka s AI", t.avgOrderAi ? kc(t.avgOrderAi) : "–", `bez AI ${t.avgOrderNonAi ? kc(t.avgOrderNonAi) : "–"}`),
-      tile("Tržby celkem", kc(t.revenue), `${t.orders} objednávek, z toho ${t.ordersAi} s AI`),
+      tile("Návštěvy", t.sessions.toLocaleString("cs-CZ"), `${t.events.toLocaleString("cs-CZ")} zaznamenaných událostí`, "var(--blue)"),
+      tile("Využilo AI prodavačku", t.sessions ? Math.round((t.aiSessions / t.sessions) * 100) + " %" : "–", `${t.aiSessions} návštěv · ${t.userMessages} dotazů`, "var(--violet)"),
+      tile("Konverze s AI", t.conversionAi + " %", `bez AI ${t.conversionNonAi} %`, "var(--green)"),
+      tile("Průměrná objednávka s AI", t.avgOrderAi ? kc(t.avgOrderAi) : "–", `bez AI ${t.avgOrderNonAi ? kc(t.avgOrderNonAi) : "–"}`, "var(--amber)"),
+      tile("Tržby celkem", kc(t.revenue), `${t.orders} objednávek, z toho ${t.ordersAi} s AI`, "var(--orange)"),
     ].join("");
 
     bars($("conv"), [
-      { name: "S AI prodavačkou", value: t.conversionAi, label: t.conversionAi + " %", color: "var(--series-1)", tip: `S AI: ${t.conversionAi} % z ${t.aiSessions} návštěv` },
-      { name: "Bez AI", value: t.conversionNonAi, label: t.conversionNonAi + " %", color: "var(--series-2)", tip: `Bez AI: ${t.conversionNonAi} % z ${t.sessions - t.aiSessions} návštěv` },
+      { name: "S AI prodavačkou", value: t.conversionAi, label: t.conversionAi + " %", color: "var(--blue)", tip: `S AI: ${t.conversionAi} % z ${t.aiSessions} návštěv` },
+      { name: "Bez AI", value: t.conversionNonAi, label: t.conversionNonAi + " %", color: "var(--orange)", tip: `Bez AI: ${t.conversionNonAi} % z ${t.sessions - t.aiSessions} návštěv` },
     ].filter(() => t.sessions));
 
     const o = d.offer;
     bars($("offer"), o.shown ? [
       { name: "Nabídka zobrazena", value: o.shown },
-      { name: "Přijato – chat", value: o.chat },
-      { name: "Přijato – hlas", value: o.voice },
-      { name: "Odmítnuto", value: o.declined },
+      { name: "Přijato – chat", value: o.chat, color: "var(--green)" },
+      { name: "Přijato – hlas", value: o.voice, color: "var(--violet)" },
+      { name: "Odmítnuto", value: o.declined, color: "var(--orange)" },
       { name: "Otevřeno později ručně", value: o.reopened },
     ].map((r) => ({ ...r, tip: `${r.name}: ${r.value}` })) : []);
-    if (o.shown) $("offer").insertAdjacentHTML("beforeend", `<p class="hint" style="margin:8px 0 0">Míra přijetí nabídky: <b>${o.acceptRate} %</b></p>`);
+    if (o.shown) $("offer").insertAdjacentHTML("beforeend", `<p class="summary">Míra přijetí nabídky: <b>${o.acceptRate} %</b></p>`);
 
     bars($("nudges"), d.nudges.map((n) => ({
       name: n.name, value: n.clickRate, label: n.clickRate + " %",
@@ -190,14 +227,14 @@
     })), "Zatím se žádný tip nezobrazil.");
     const list = (rows) => rows.map((r) => ({ name: r.name, value: r.count }));
     bars($("searches"), list(d.topSearches));
-    bars($("misses"), list(d.searchMisses), "Všechna hledání něco našla.");
+    bars($("misses"), list(d.searchMisses).map((r) => ({ ...r, color: "var(--orange)" })), "Všechna hledání něco našla.");
     bars($("viewed"), list(d.topViewed));
-    bars($("recs"), list(d.topRecommended));
-    bars($("cartai"), list(d.addToCartAi));
-    bars($("vnb"), d.viewedNotBought.map((r) => ({ name: r.name, value: r.views, label: `${r.views}×`, tip: `${r.name}: ${r.views} zobrazení, ${r.carts} přidání do košíku` })));
+    bars($("recs"), list(d.topRecommended).map((r) => ({ ...r, color: "var(--violet)" })));
+    bars($("cartai"), list(d.addToCartAi).map((r) => ({ ...r, color: "var(--green)" })));
+    bars($("vnb"), d.viewedNotBought.map((r) => ({ name: r.name, value: r.views, label: `${r.views}×`, color: "var(--amber)", tip: `${r.name}: ${r.views} zobrazení, ${r.carts} přidání do košíku` })));
 
     $("questions").innerHTML = d.recentQuestions.length
-      ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<small>${q.mode === "voice" ? "🎙️ hlas" : "💬 chat"} · ${new Date(q.ts).toLocaleString("cs-CZ")}</small></li>`).join("")
+      ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<div class="meta"><span class="chip${q.mode === "voice" ? " voice" : ""}">${q.mode === "voice" ? "hlas" : "chat"}</span>${new Date(q.ts).toLocaleString("cs-CZ")}</div></li>`).join("")
       : `<li class="empty">Zatím žádné dotazy.</li>`;
 
     $("demo-notice").hidden = !d.hasDemoData;
