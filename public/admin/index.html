@@ -36,6 +36,7 @@
     button.primary:hover { filter: brightness(1.08); }
     button.danger:hover { border-color: var(--orange); color: var(--orange); }
     button:disabled { opacity: .55; cursor: default; }
+    select { font: inherit; font-size: 14.5px; border-radius: 10px; padding: 9px 12px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
 
     main { max-width: 1180px; margin: 0 auto; padding: 28px 28px 72px; display: grid; gap: 22px; }
     .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); margin: 18px 0 -8px; }
@@ -98,7 +99,8 @@
 <body>
   <header>
     <div class="head-in">
-      <h1>AI prodavač · přehled <small>TechMarket (demo)</small></h1>
+      <h1>AI prodavač · přehled <small id="client-name">&nbsp;</small></h1>
+      <select id="client-pick" hidden aria-label="Klient"></select>
       <button id="refresh">↻ Obnovit</button>
       <button id="seed" title="Vygeneruje simulované návštěvy pro ukázku">Naplnit demo daty</button>
       <button id="reset" class="danger">Smazat data</button>
@@ -163,8 +165,12 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const kc = (n) => Math.round(n).toLocaleString("cs-CZ") + " Kč";
-  const token = new URLSearchParams(location.search).get("token") || "";
-  const call = (url, opts = {}) => fetch(url, { ...opts, headers: { "X-Admin-Token": token, ...(opts.headers || {}) } });
+  const params = new URLSearchParams(location.search);
+  const token = params.get("token") || "";
+  const clientId = params.get("client") || "";
+  const call = (url, opts = {}) => fetch(url + (clientId ? `?client=${encodeURIComponent(clientId)}` : ""), { ...opts, headers: { "X-Admin-Token": token, ...(opts.headers || {}) } });
+
+  $("client-pick").onchange = (e) => { params.set("client", e.target.value); location.search = params; };
 
   function tile(label, value, sub = "", accent = "var(--blue)") {
     return `<div class="tile" style="--accent:${accent}"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
@@ -195,8 +201,17 @@
 
   async function load() {
     const r = await call("/api/analytics");
-    if (!r.ok) { $("tiles").innerHTML = `<p class="empty">Nelze načíst data (${r.status}).</p>`; return; }
+    if (!r.ok) {
+      $("tiles").innerHTML = `<p class="empty">${r.status === 401 ? "Chybí nebo nesedí heslo – otevřete dashboard přes odkaz s ?token=…" : r.status === 404 ? "Tento klient neexistuje." : `Nelze načíst data (${r.status}).`}</p>`;
+      return;
+    }
     const d = await r.json();
+    $("client-name").textContent = d.client.name;
+    document.title = `${d.client.name} – AI prodavač`;
+    if (d.clients?.length > 1) {
+      $("client-pick").innerHTML = d.clients.map((c) => `<option value="${esc(c.id)}"${c.id === d.client.id ? " selected" : ""}>${esc(c.name)}${c.active ? "" : " (neaktivní)"}</option>`).join("");
+      $("client-pick").hidden = false;
+    }
     const t = d.totals;
     $("tiles").innerHTML = [
       tile("Návštěvy", t.sessions.toLocaleString("cs-CZ"), `${t.events.toLocaleString("cs-CZ")} zaznamenaných událostí`, "var(--blue)"),

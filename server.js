@@ -5,9 +5,11 @@ import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { store, categories, products, related, activePromotions, getProduct, priceCart } from "./lib/catalog.js";
 import { productSvg } from "./lib/images.js";
-import { record, summarize, seedDemo, reset, EVENT_TYPES, NUDGE_LABELS } from "./lib/analytics.js";
+import { recordMany, summarize, seedDemo, reset, EVENT_TYPES, NUDGE_LABELS } from "./lib/analytics.js";
 import { chat, generateInsights, writeHesitationOffer, ChatError, MODEL, hasApiKey } from "./lib/assistant.js";
 import { personaName } from "./lib/persona.js";
+import { getClient, listClients, originAllowed } from "./lib/clients.js";
+import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
 
@@ -39,6 +41,15 @@ function rateLimit(max, windowMs) {
     hits.set(key, arr);
     next();
   };
+}
+
+// Which shop a widget request belongs to (the embed's data-client); rejected on foreign domains.
+async function withClient(req, res, next) {
+  const client = await getClient(req.body?.client ?? req.query.client);
+  if (!client) return res.status(404).json({ error: "Neznámý klient." });
+  if (!originAllowed(client, req.get("Origin"), req.get("Host"))) return res.status(403).json({ error: "Tento web nemá povolený přístup." });
+  req.client = client;
+  next();
 }
 
 const validSession = (id) => typeof id === "string" && /^[\w-]{8,80}$/.test(id);
@@ -89,17 +100,17 @@ function cleanBehaviour(b = {}) {
 }
 
 // --- public API -------------------------------------------------------------
-app.get("/api/health", (req, res) => res.json({ ok: true, model: MODEL, hasApiKey: hasApiKey(), tts: ttsProvider() }));
+app.get("/api/health", (req, res) => res.json({ ok: true, model: MODEL, hasApiKey: hasApiKey(), tts: ttsProvider(), storage: db ? "supabase" : "files" }));
 
-// The agent's name on a given website – derived once per brand, deterministic and remembered.
-app.post("/api/persona", rateLimit(20, 60e3), (req, res) => {
+// The agent's name on a given website – the client's configured name, or derived from the brand.
+app.post("/api/persona", rateLimit(20, 60e3), withClient, (req, res) => {
   const brand = str(req.body?.brand, 60).trim();
-  if (!brand) return res.status(400).json({ error: "brand is required" });
-  res.json({ name: personaName(brand), tts: ttsProvider() });
+  if (!brand && !req.client.agentName) return res.status(400).json({ error: "brand is required" });
+  res.json({ name: req.client.agentName || personaName(brand), tts: ttsProvider() });
 });
 
 // Natural voice (ElevenLabs). 404 when not configured → the widget uses the browser voice.
-app.post("/api/tts", rateLimit(120, 60e3), async (req, res) => {
+app.post("/api/tts", rateLimit(120, 60e3), withClient, async (req, res) => {
   if (ttsProvider() !== "elevenlabs") return res.status(404).json({ error: "TTS not configured" });
   const text = str(req.body?.text, 600).trim();
   if (!text) return res.status(400).json({ error: "text is required" });
@@ -128,7 +139,7 @@ app.get("/api/img/:id.svg", (req, res) => {
 app.post("/api/cart/price", (req, res) => res.json(priceCart(cleanSignals({ cart: req.body?.cart }).cart)));
 
 // Greeting on arrival + behaviour-based tips. Rule-based: instant and free.
-app.post("/api/proactive", rateLimit(60, 60e3), async (req, res) => {
+app.post("/api/proactive", rateLimit(60, 60e3), withClient, async (req, res) => {
   const { sessionId, trigger, signals } = req.body ?? {};
   if (!validSession(sessionId)) return res.status(400).json({ error: "Neplatná session." });
   const s = cleanSignals(signals);
@@ -142,7 +153,7 @@ app.post("/api/proactive", rateLimit(60, 60e3), async (req, res) => {
   res.json({ nudge });
 });
 
-app.post("/api/chat", rateLimit(30, 5 * 60e3), async (req, res) => {
+app.post("/api/chat", rateLimit(30, 5 * 60e3), withClient, async (req, res) => {
   const { sessionId, text, context } = req.body ?? {};
   if (!validSession(sessionId)) return res.status(400).json({ error: "Neplatná session." });
 
@@ -154,7 +165,7 @@ app.post("/api/chat", rateLimit(30, 5 * 60e3), async (req, res) => {
   res.on("close", () => { if (!res.writableEnded) abort.abort(); });
 
   try {
-    await chat({ sessionId, text, context: cleanSignals(context), send, signal: abort.signal });
+    await chat({ sessionId, text, context: { ...cleanSignals(context), clientId: req.client.id }, send, signal: abort.signal });
     send({ type: "done" });
   } catch (err) {
     if (abort.signal.aborted) return; // nobody is listening any more
@@ -169,14 +180,15 @@ app.post("/api/chat", rateLimit(30, 5 * 60e3), async (req, res) => {
   res.end();
 });
 
-app.post("/api/events", rateLimit(120, 60e3), (req, res) => {
+app.post("/api/events", rateLimit(120, 60e3), withClient, async (req, res) => {
   const { sessionId, events } = req.body ?? {};
   if (!validSession(sessionId) || !Array.isArray(events)) return res.status(400).json({ error: "bad request" });
+  const batch = [];
   for (const e of events.slice(0, 50)) {
     // chat messages and AI recommendations are recorded server-side only
     if (!EVENT_TYPES.has(e?.type) || ["chat_message", "ai_recommended"].includes(e.type)) continue;
     if (e.type === "add_to_cart" && e.source === "ai") continue;
-    const clean = { type: e.type, sessionId, ts: Date.now() };
+    const clean = { type: e.type, clientId: req.client.id, sessionId, ts: Date.now() };
     if (e.productId && getProduct(e.productId)) clean.productId = e.productId;
     if (e.category) clean.category = str(e.category, 30);
     if (e.mode) clean.mode = e.mode === "voice" ? "voice" : "chat";
@@ -186,22 +198,45 @@ app.post("/api/events", rateLimit(120, 60e3), (req, res) => {
     // "ai_card" = customer clicked "add to cart" on a card the AI recommended
     if (e.type === "add_to_cart") { clean.source = e.source === "ai_card" ? "ai" : "user"; clean.quantity = Math.min(Number(e.quantity) || 1, 99); }
     if (e.type === "purchase") clean.value = Math.max(0, Math.min(Number(e.value) || 0, 1e6));
-    record(clean);
+    batch.push(clean);
   }
+  await recordMany(batch); // awaited: serverless hosts may freeze the function right after the response
   res.json({ ok: true });
 });
 
 // --- owner dashboard API ----------------------------------------------------
-const admin = (req, res, next) =>
-  !ADMIN_TOKEN || req.get("X-Admin-Token") === ADMIN_TOKEN ? next() : res.status(401).json({ error: "unauthorized" });
+// ADMIN_TOKEN (env) = your master password for every client; a client's own admin_token opens only its dashboard.
+// With neither set, the dashboard is open (local development).
+async function admin(req, res, next) {
+  const client = await getClient(req.query.client);
+  if (!client) return res.status(404).json({ error: "Neznámý klient." });
+  const token = req.get("X-Admin-Token") || "";
+  const master = Boolean(ADMIN_TOKEN) && token === ADMIN_TOKEN;
+  const open = !ADMIN_TOKEN && !client.adminToken;
+  if (!master && !open && !(client.adminToken && token === client.adminToken)) return res.status(401).json({ error: "unauthorized" });
+  req.client = client;
+  req.isMaster = master || open;
+  next();
+}
 
-app.get("/api/analytics", admin, (req, res) => res.json(summarize()));
-app.post("/api/analytics/seed", admin, (req, res) => { seedDemo(); res.json({ ok: true }); });
-app.post("/api/analytics/reset", admin, (req, res) => { reset(); res.json({ ok: true }); });
+const fail = (res, err) => { console.error(err); res.status(500).json({ error: "Operace se nepodařila." }); };
+
+app.get("/api/analytics", admin, async (req, res) => {
+  try {
+    const stats = await summarize(req.client.id);
+    res.json({ ...stats, client: { id: req.client.id, name: req.client.name }, clients: req.isMaster ? await listClients() : null });
+  } catch (err) { fail(res, err); }
+});
+app.post("/api/analytics/seed", admin, async (req, res) => {
+  try { await seedDemo(req.client.id); res.json({ ok: true }); } catch (err) { fail(res, err); }
+});
+app.post("/api/analytics/reset", admin, async (req, res) => {
+  try { await reset(req.client.id); res.json({ ok: true }); } catch (err) { fail(res, err); }
+});
 app.post("/api/analytics/insights", admin, rateLimit(10, 10 * 60e3), async (req, res) => {
   if (!hasApiKey()) return res.status(503).json({ error: "Doporučení generuje Claude – nastavte ANTHROPIC_API_KEY v souboru .env." });
   try {
-    res.json({ markdown: await generateInsights(summarize()) });
+    res.json({ markdown: await generateInsights(await summarize(req.client.id)) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Analýzu se nepodařilo vygenerovat." });
@@ -221,4 +256,5 @@ app.listen(PORT, () => {
   console.log(`  Demo e-shop:  http://localhost:${PORT}/`);
   console.log(`  Dashboard:    http://localhost:${PORT}/admin/`);
   console.log(hasApiKey() ? `  Model:        ${MODEL}` : `  Režim:        bez AI (ANTHROPIC_API_KEY není nastaven) – chat odpovídá zjednodušeně`);
+  console.log(`  Data:         ${db ? "Supabase" : "lokální soubory (SUPABASE_URL / SUPABASE_SECRET_KEY nejsou nastaveny)"}`);
 });

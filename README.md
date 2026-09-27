@@ -7,20 +7,42 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 | Demo e-shop | http://localhost:3000/ | Smyšlený obchod s elektronikou „TechMarket“ ve stylu velkých českých e-shopů (38 produktů, akce, sety, filtry, košík) |
 | AI prodavačka | vpravo dole | Widget, který se vkládá na libovolný web jedním řádkem |
 | Dashboard | http://localhost:3000/admin/ | Chování zákazníků, výkon prodavačky a AI doporučení pro majitele |
-| Ukázka jiného webu | http://localhost:3000/demo/kavarna.html | Tmavý web kavárny: stejná prodavačka se sama přebarví a převezme písmo |
+| Ukázka jiného webu | http://localhost:3000/kavarna | Tmavý web kavárny: stejná prodavačka se sama přebarví a převezme písmo |
+
+## Klienti (více e-shopů)
+
+Každý e-shop, který prodavačku používá, je řádek v tabulce `clients` v Supabase. Ukázkové weby jsou klienti `techmarket` a `kavarna`.
+
+**Přidání nového klienta:**
+1. V Supabase → Table Editor → `clients` přidejte řádek:
+   - `id`: krátký identifikátor, např. `kavarna-boheme`
+   - `name`: název obchodu
+   - `domains`: domény obchodu, např. `{kavarna-boheme.cz}` (subdomény jako `www.` jsou povolené automaticky)
+   - `admin_token`: heslo majitele k dashboardu
+   - `agent_name`: jméno prodavačky (nepovinné; jinak se odvodí od značky)
+2. Na web klienta vložte:
+   ```html
+   <script src="https://ai-ptojekt.vercel.app/widget/prodavac.js" data-client="kavarna-boheme" defer></script>
+   ```
+3. Majitel otevře dashboard přes `https://ai-ptojekt.vercel.app/admin/?client=kavarna-boheme&token=<admin_token>`.
+
+Widget funguje jen na doménách klienta (a na našem vlastním webu). Vaše hlavní heslo `ADMIN_TOKEN` otevře dashboard kteréhokoli klienta a ukáže přepínač mezi klienty.
+
+**Zatím sdílené:** katalog produktů je pro všechny klienty ten ukázkový (TechMarket). Vlastní produkty každého klienta (z jeho XML feedu) jsou další krok.
 
 ## Nasazení na Vercel
 
 Projekt běží na Vercelu bez dalšího nastavení (Express se detekuje sám ze `server.js`).
 
 1. **Import repozitáře:** ve Vercelu zvolte Add New → Project, vyberte repozitář a nechte výchozí nastavení (Framework Preset: Express / Other, žádný build command).
-2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY` a volitelně `ELEVENLABS_API_KEY`. Soubor `.env.local` se na Vercel nenahrává.
-3. **Deploy.** Každý push na `main` nasadí novou verzi.
+2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN` a volitelně `ELEVENLABS_API_KEY`. Soubor `.env.local` se na Vercel nenahrává.
+3. **Databáze:** jednou spusťte `supabase/schema.sql` v Supabase → SQL Editor.
+4. **Deploy.** Každý push na `main` nasadí novou verzi.
 
 **Co se na Vercelu chová jinak:**
 - Statické soubory servíruje Vercel přímo ze složky `public/` (`/` = e-shop, `/admin/`, `/demo/kavarna.html`, `/widget/prodavac.js`).
 - Konverzace přežije i přeskočení mezi instancemi, protože widget posílá s každou zprávou i dosavadní přepis.
-- **Data dashboardu a vymyšlená jména se ukládají jen do dočasné složky.** Jsou pro každou instanci zvlášť a po restartu zmizí. Pro trvalá data je potřeba databáze (např. Upstash Redis z Vercel Marketplace).
+- **Data dashboardu se ukládají do Supabase.** Bez `SUPABASE_URL` a `SUPABASE_SECRET_KEY` jdou jen do dočasné složky, jsou pro každou instanci zvlášť a po restartu zmizí.
 
 ## Spuštění
 

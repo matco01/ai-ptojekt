@@ -20,6 +20,7 @@
   const script = document.currentScript;
   const cfg = {
     api: script?.dataset.api || new URL(script?.src || location.href).origin,
+    client: script?.dataset.client || undefined, // which shop this embed belongs to (server default: techmarket)
     name: script?.dataset.name || "Klára",
     color: script?.dataset.color || "#1a8f4c",
     greetDelay: Number(script?.dataset.greetDelay ?? 0.6) * 1000,
@@ -103,7 +104,7 @@
   };
   function flush() {
     if (!queue.length) return;
-    const body = JSON.stringify({ sessionId, events: queue });
+    const body = JSON.stringify({ client: cfg.client, sessionId, events: queue });
     queue = [];
     const url = cfg.api + "/api/events";
     if (!navigator.sendBeacon?.(url, new Blob([body], { type: "application/json" }))) {
@@ -129,7 +130,7 @@
       ...extra,
     };
   }
-  const post = (path, body) => fetch(cfg.api + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
+  const post = (path, body) => fetch(cfg.api + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client: cfg.client, ...body }) }).then((r) => r.json());
 
   // -------------------------------------------------------------- DOM ----
   // Design: Klára is a living character (a morphing blob with eyes that blink and
@@ -1222,7 +1223,7 @@
         method: "POST", headers: { "Content-Type": "application/json" },
         // the transcript so far (without this message) travels along, so the conversation survives
         // even if the server is a fresh serverless instance that never saw it
-        body: JSON.stringify({ sessionId, text, context: signals({ via, history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: h.text.slice(0, 2000) })) }) }),
+        body: JSON.stringify({ client: cfg.client, sessionId, text, context: signals({ via, history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: h.text.slice(0, 2000) })) }) }),
         signal: ctrl.signal,
       });
       if (!res.ok || !res.body) {
@@ -1398,7 +1399,7 @@
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   async function fetchSpeech(text, signal) {
     for (let attempt = 0; ; attempt++) {
-      const r = await fetch(cfg.api + "/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), signal });
+      const r = await fetch(cfg.api + "/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client: cfg.client, text }), signal });
       if (r.ok) return r.blob();
       // busy (too many requests at once) – wait a moment and try again
       if (r.status === 429 && attempt < 5) { await wait(350 * 2 ** attempt); continue; }
