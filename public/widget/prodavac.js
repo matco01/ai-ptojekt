@@ -506,12 +506,10 @@
     @media (max-width: 640px) {
       .g-text { font-size: 16px; }
     }
-    /* phones: the chat takes the whole screen like a messaging app */
+    /* phones: a floating card near the launcher, not a full-screen sheet – the shop stays visible behind it, like on desktop */
     @media (max-width: 480px) {
       .wrap { right: calc(12px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); left: 12px; }
-      .panel { position: fixed; inset: 0; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; box-shadow: none; transform-origin: bottom center;
-        animation: sheet .38s cubic-bezier(.2,.9,.3,1) both; }
-      .head { padding: calc(10px + env(safe-area-inset-top)) 12px 10px 14px; }
+      .panel { width: 100%; height: min(68vh, 620px); }
       .msgs { padding: 14px 14px 12px; overscroll-behavior: contain; }
       .m { max-width: 92%; }
       .cards { margin: 0 -14px; padding: 4px 14px 10px; scroll-snap-type: x mandatory; scroll-padding: 14px; }
@@ -524,7 +522,6 @@
       .launch-label { display: none; }
       .chip, .gbtn, .send { -webkit-tap-highlight-color: transparent; }
     }
-    @keyframes sheet { from { transform: translateY(40px); opacity: 0; } }
     /* touch screens: no hover-only effects that stick after a tap */
     @media (hover: none) {
       .pc:hover { box-shadow: var(--card-shadow); } .pc:hover::after { opacity: 0; } .pc:hover .img img { transform: none; }

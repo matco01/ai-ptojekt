@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { store, categories, products, related, activePromotions, getProduct, priceCart } from "./lib/catalog.js";
 import { productSvg } from "./lib/images.js";
 import { record, summarize, seedDemo, reset, EVENT_TYPES, NUDGE_LABELS } from "./lib/analytics.js";
-import { chat, generateInsights, writeHesitationOffer, inventAgentName, ChatError, MODEL, hasApiKey } from "./lib/assistant.js";
+import { chat, generateInsights, writeHesitationOffer, ChatError, MODEL, hasApiKey } from "./lib/assistant.js";
 import { personaName } from "./lib/persona.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
@@ -91,12 +91,11 @@ function cleanBehaviour(b = {}) {
 // --- public API -------------------------------------------------------------
 app.get("/api/health", (req, res) => res.json({ ok: true, model: MODEL, hasApiKey: hasApiKey(), tts: ttsProvider() }));
 
-// The agent's name on a given website – invented once per brand and remembered.
-app.post("/api/persona", rateLimit(20, 60e3), async (req, res) => {
+// The agent's name on a given website – derived once per brand, deterministic and remembered.
+app.post("/api/persona", rateLimit(20, 60e3), (req, res) => {
   const brand = str(req.body?.brand, 60).trim();
   if (!brand) return res.status(400).json({ error: "brand is required" });
-  const about = str(req.body?.about, 160).trim(); // what the site is about (its description) – helps the name fit
-  res.json({ name: await personaName(brand, inventAgentName, about), tts: ttsProvider() });
+  res.json({ name: personaName(brand), tts: ttsProvider() });
 });
 
 // Natural voice (ElevenLabs). 404 when not configured → the widget uses the browser voice.
