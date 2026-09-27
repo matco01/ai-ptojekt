@@ -208,6 +208,9 @@ app.post("/api/analytics/insights", admin, rateLimit(10, 10 * 60e3), async (req,
   }
 });
 
+// short link to the second demo site, so it's not just the raw file path
+app.get("/kavarna", (req, res) => res.sendFile(path.join(here, "public", "demo", "kavarna.html")));
+
 // --- static files: everything in public/ at the same path ------------------
 // (mirrors Vercel, which serves public/** from its CDN and ignores express.static):
 //   /  → the demo shop · /admin/ → dashboard · /widget/prodavac.js · /demo/kavarna.html
