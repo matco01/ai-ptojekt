@@ -1055,8 +1055,10 @@
           <div class="interim"></div>
           <button class="toChat">${ICON.keys} Raději budu psát</button>
         </div>`;
+      // tap while she talks = interrupt and listen right away; tap while listening = cancel
       footer.querySelector(".orbbtn").onclick = () => {
-        if (speaking || listening) { stopVoice(); setVoiceState("idle"); } else listen();
+        if (listening) { stopVoice(); setVoiceState("idle"); }
+        else { if (speaking) stopVoice(); listen(); }
       };
       footer.querySelector(".toChat").onclick = () => { stopVoice(); openPanel("chat"); };
       updateEyes();
@@ -1304,6 +1306,8 @@
   // best voice the browser has. The mouth follows the sound (loudness from the audio, or word
   // boundaries from the browser), and the customer can cut in by simply talking.
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  // phones: the open mic ducks the speaker and hears her own voice, so there she is interrupted by a tap instead
+  const touchDevice = matchMedia("(hover: none) and (pointer: coarse)").matches;
   let rec = null, listening = false, speaking = false;
   let speechQueue = 0, afterSpeechCb = null;
 
@@ -1358,7 +1362,7 @@
     if (!vstat) return;
     const mood = { listening: "listen", thinking: "think", speaking: "speak", idle: "idle" }[st];
     setMood(mood);
-    vstat.textContent = { listening: "Poslouchám vás…", thinking: "Přemýšlím…", speaking: "Mluvím… (klidně mi skočte do řeči)", idle: "Klepněte na mě a mluvte" }[st];
+    vstat.textContent = { listening: "Poslouchám vás…", thinking: "Přemýšlím…", speaking: touchDevice ? "Mluvím… (klepnutím mě přerušíte)" : "Mluvím… (klidně mi skočte do řeči)", idle: "Klepněte na mě a mluvte" }[st];
   }
 
   let speakingText = ""; // what she is saying right now – to tell her own voice from the customer's
@@ -1394,6 +1398,20 @@
   // At most 2 requests run at once – the ElevenLabs free plan refuses more in parallel, and every
   // refused sentence used to be read by the browser voice, so the voice kept switching.
   const TTS_PARALLEL = 2;
+  // Phones only play sound started by a tap, and each sentence arrives later, after a fetch. So one
+  // audio element is unlocked on the customer's tap and then reused for every sentence.
+  const player = new Audio();
+  const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+  let audioUnlocked = false;
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    player.src = SILENCE;
+    player.play().catch(() => {});
+    if (!ttsServer && window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+    try { actx ??= new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch {}
+  }
+  for (const t of ["click", "touchend"]) root.addEventListener(t, unlockAudio, { capture: true });
   const audioQueue = [];
   let playing = null, ttsAbort = new AbortController(), ttsInFlight = 0;
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -1438,33 +1456,38 @@
       return;
     }
     if (playing !== item) return;
-    const audio = new Audio(URL.createObjectURL(blob));
-    item.audio = audio;
-    audio.onplay = () => { setVoiceState("speaking"); startBargeIn(); lipSync(audio); };
-    audio.onended = audio.onerror = () => {
+    const url = URL.createObjectURL(blob);
+    item.audio = player;
+    player.onplay = () => { setVoiceState("speaking"); startBargeIn(); lipSync(); };
+    player.onended = player.onerror = () => {
       stopLipSync();
-      URL.revokeObjectURL(audio.src);
+      URL.revokeObjectURL(url);
       if (playing !== item) return;
       playing = null;
       speechDone();
       playNext();
     };
-    audio.play().catch(() => audio.onended());
+    player.src = url;
+    player.play().catch(() => player.onended());
   }
 
-  // the mouth opens as wide as the voice is loud – real lip-sync from the audio signal
-  let lipRaf = 0;
-  function lipSync(audio) {
-    let analyser, data;
+  // the mouth opens as wide as the voice is loud – real lip-sync from the audio signal.
+  // Not on phones: routing the voice through Web Audio goes silent there when the system suspends it.
+  let lipRaf = 0, analyser = null, lipData = null;
+  function lipSync() {
+    if (touchDevice) { mouthTalk(true); return; }
     try {
       actx ??= new (window.AudioContext || window.webkitAudioContext)();
-      if (actx.state === "suspended") actx.resume();
-      const src = actx.createMediaElementSource(audio);
-      analyser = actx.createAnalyser();
-      analyser.fftSize = 512;
-      src.connect(analyser); analyser.connect(actx.destination);
-      data = new Uint8Array(analyser.fftSize);
+      if (!analyser) {
+        if (actx.state !== "running") throw new Error("audio context not running"); // routing now would mute the voice
+        analyser = actx.createAnalyser();
+        analyser.fftSize = 512;
+        actx.createMediaElementSource(player).connect(analyser);
+        analyser.connect(actx.destination);
+        lipData = new Uint8Array(analyser.fftSize);
+      }
     } catch { mouthTalk(true); return; }
+    const data = lipData;
     let open = 0;
     const tick = () => {
       analyser.getByteTimeDomainData(data);
@@ -1543,7 +1566,7 @@
     return words.filter((w) => mine.has(w)).length / words.length >= 0.6;
   }
   function startBargeIn() {
-    if (!Recognition || bargeRec || barged || mode !== "voice") return;
+    if (!Recognition || touchDevice || bargeRec || barged || mode !== "voice") return;
     const r = new Recognition();
     r.lang = cfg.lang;
     r.interimResults = true;
