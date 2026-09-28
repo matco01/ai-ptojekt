@@ -2,6 +2,8 @@
 export default {
   "store": {
     "name": "TechMarket",
+    "description": "e-shop s elektronikou",
+    "welcome": "v TechMarketu",
     "tagline": "Elektronika, která dává smysl – s poradenstvím jako v kamenné prodejně",
     "currency": "Kč",
     "assistantName": "Klára",
@@ -299,5 +301,28 @@ export default {
     "p1": ["x2", "a3"], "p2": ["a3"],
     "g1": ["g2", "x7", "t1"], "g3": ["x1"],
     "h1": ["h3"], "h2": [], "h3": ["h1"]
+  },
+  // simulated traffic for the dashboard's "Naplnit demo daty"
+  "demo": {
+    "questions": [
+      "Jaký telefon s dobrým foťákem do 12 tisíc?",
+      "Jaký je rozdíl mezi Nova X15 a X15 Pro?",
+      "Potřebuju notebook na školu, hlavně aby vydržel baterie.",
+      "Hodí se ta OLED televize na PS5?",
+      "Jaká sluchátka do letadla?",
+      "Kdy mi to přijde, když objednám dnes?",
+      "Dá se telefon koupit na splátky?",
+      "Hledám dárek pro tátu do 2000 Kč.",
+      "Má ten telefon v balení nabíječku?",
+      "Jak funguje výkup starého telefonu?",
+      "Který robotický vysavač je dobrý na psí chlupy?",
+      "Stačí 16 GB RAM na střih videa?"
+    ],
+    "searches": [
+      ["iphone", 0], ["sluchátka", 4], ["notebook", 5], ["televize 55", 2], ["nabíječka", 2], ["ps5", 0],
+      ["powerbanka", 1], ["tablet pro děti", 1], ["vysavač", 2], ["macbook", 0], ["hodinky", 3], ["airpods", 0]
+    ],
+    "popular": ["m1", "m1", "m1", "m4", "m4", "n1", "n3", "n3", "t1", "a1", "a2", "g1", "h1", "h1"],
+    "addOns": ["x2", "x3", "a2", "x1"]
   }
 };

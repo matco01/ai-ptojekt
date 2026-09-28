@@ -518,8 +518,19 @@
       const p = products.find((x) => x.id === b.dataset.add);
       addToCart(p.name);
       b.classList.add("done"); b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
-      window.AIProdavac?.track?.("add_to_cart", { quantity: 1, source: "user" });
+      // standard Google Analytics 4 e-commerce event – what most shops already send; the AI widget reads it
+      (window.dataLayer = window.dataLayer || []).push({ event: "add_to_cart", ecommerce: { currency: "CZK", value: p.price, items: [{ item_id: p.id, item_name: p.name, price: p.price, quantity: 1 }] } });
     });
+
+    // product links from the shop's feed (/kavarna?kava=et) show that coffee
+    const linked = new URLSearchParams(location.search).get("kava");
+    if (linked && products.some((p) => p.id === linked)) {
+      requestAnimationFrame(() => {
+        const card = document.querySelector(`[data-add="${linked}"]`)?.closest(".card");
+        card?.scrollIntoView({ block: "center" });
+        card?.animate([{ boxShadow: "0 0 0 0 rgba(176,111,62,.6)" }, { boxShadow: "0 0 0 14px rgba(176,111,62,0)" }], { duration: 1400, iterations: 2 });
+      });
+    }
 
     // ---------- subscription plan ----------
     const plan = { method: "filtr", size: "500" };

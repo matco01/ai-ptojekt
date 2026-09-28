@@ -7,7 +7,7 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 | Demo e-shop | http://localhost:3000/ | Smyšlený obchod s elektronikou „TechMarket“ ve stylu velkých českých e-shopů (38 produktů, akce, sety, filtry, košík) |
 | AI prodavačka | vpravo dole | Widget, který se vkládá na libovolný web jedním řádkem |
 | Dashboard | http://localhost:3000/admin/ | Chování zákazníků, výkon prodavačky a AI doporučení pro majitele |
-| Ukázka jiného webu | http://localhost:3000/kavarna | Tmavý web kavárny: stejná prodavačka se sama přebarví a převezme písmo |
+| Ukázka jiného webu | http://localhost:3000/kavarna | Pražírna kávy „Bohème“: vlastní produkty z XML feedu, napojená bez jediného řádku kódu navíc (viz níže) |
 
 ## Klienti (více e-shopů)
 
@@ -15,20 +15,37 @@ Každý e-shop, který prodavačku používá, je řádek v tabulce `clients` v 
 
 **Přidání nového klienta:**
 1. V Supabase → Table Editor → `clients` přidejte řádek:
-   - `id`: krátký identifikátor, např. `kavarna-boheme`
+   - `id`: krátký identifikátor, např. `datart`
    - `name`: název obchodu
-   - `domains`: domény obchodu, např. `{kavarna-boheme.cz}` (subdomény jako `www.` jsou povolené automaticky)
+   - `domains`: domény obchodu, např. `{datart.cz}` (subdomény jako `www.` jsou povolené automaticky)
+   - `feed_url`: adresa produktového XML feedu – Heureka / Zboží.cz nebo Google Merchant (skoro každý e-shop ho má)
+   - `description`: co je to za obchod, např. `e-shop s elektronikou a spotřebiči` (AI podle toho mluví)
+   - `info`: informace o obchodě jako JSON, téma → text, např. `{"doprava": "...", "vraceni": "...", "platba": "...", "kontakt": "..."}`. Na tyhle otázky AI odpovídá jen odsud.
+   - `free_shipping_from`: od kolika Kč je doprava zdarma (nepovinné)
    - `admin_token`: heslo majitele k dashboardu
-   - `agent_name`: jméno prodavačky (nepovinné; jinak se odvodí od značky)
-2. Na web klienta vložte:
+   - `agent_name`: jméno prodavačky (nepovinné; jinak se odvodí od názvu obchodu)
+2. Na web klienta vložte (přímo, nebo přes jeho Google Tag Manager):
    ```html
-   <script src="https://ai-ptojekt.vercel.app/widget/prodavac.js" data-client="kavarna-boheme" defer></script>
+   <script src="https://ai-ptojekt.vercel.app/widget/prodavac.js" data-client="datart" defer></script>
    ```
-3. Majitel otevře dashboard přes `https://ai-ptojekt.vercel.app/admin/?client=kavarna-boheme&token=<admin_token>`.
+3. Majitel otevře dashboard přes `https://ai-ptojekt.vercel.app/admin/?client=datart&token=<admin_token>`. V kartě „Katalog produktů“ vidí, kolik produktů se z feedu načetlo.
 
 Widget funguje jen na doménách klienta (a na našem vlastním webu). Vaše hlavní heslo `ADMIN_TOKEN` otevře dashboard kteréhokoli klienta a ukáže přepínač mezi klienty.
 
-**Zatím sdílené:** katalog produktů je pro všechny klienty ten ukázkový (TechMarket). Vlastní produkty každého klienta (z jeho XML feedu) jsou další krok.
+**Produkty z feedu:** server feed stáhne při první návštěvě a pak každých 6 hodin, uloží ho do Supabase (tabulka `catalogs`) a AI doporučuje jen z něj. Když stažení selže, jede se dál na posledním funkčním katalogu a chyba se ukáže v dashboardu. Tlačítko „Stáhnout feed znovu“ ho stáhne hned.
+
+**Napojení bez kódu u klienta:** widget si sám přečte, co web publikuje kvůli Googlu:
+- na jakém produktu zákazník je – ze strukturovaných dat produktu (JSON-LD / microdata) nebo z adresy stránky porovnané s URL ve feedu,
+- co dal do košíku, co odebral a kdy nakoupil (i s částkou) – z e-commerce událostí Google Analytics v `dataLayer` (GA4 i starší Universal Analytics); záložně pozná stránku „Děkujeme za objednávku“,
+- co hledal – z adresy stránky s výsledky hledání.
+
+Když AI přidává do košíku, widget stiskne tlačítko „Do košíku“ přímo na stránce obchodu. Když tam takové tlačítko není, kartička produktu místo toho otevře stránku produktu (chat se na počítači otevře znovu vedle něj). Z košíku obchodu AI odebírat neumí a zákazníkovi to řekne.
+
+Neobvyklý web opravíte v nastavení klienta, ne u klienta: sloupec `integration` jako JSON, např. `{"addToCart": "#buy-button", "cart": ".header-cart", "thankYou": "objednavka/hotovo"}` (tlačítko do košíku na stránce produktu, ikona košíku, adresa stránky po objednávce).
+
+TechMarket má místo toho vlastní napojení přes JavaScript (`window.AIProdavac.getContext`, `onAddToCart` – viz začátek `public/widget/prodavac.js`), které umí i odebírat z košíku.
+
+Po aktualizaci aplikace spusťte `supabase/schema.sql` v Supabase znovu – přidá jen to, co chybí.
 
 ## Nasazení na Vercel
 

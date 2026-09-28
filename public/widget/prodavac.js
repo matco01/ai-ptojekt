@@ -2,13 +2,16 @@
  * AI Prodavač – embeddable widget
  *
  * Usage on any website:
- *   <script src="https://YOUR-SERVER/widget/prodavac.js"
- *           data-name="Klára" defer></script>
+ *   <script src="https://YOUR-SERVER/widget/prodavac.js" data-client="shop-id" defer></script>
  *
  * The look adapts to the host site automatically (brand colour, font, roundness,
- * light/dark). Optional overrides: data-color, data-theme="light|dark", data-font, data-radius.
+ * light/dark). Optional overrides: data-color, data-theme="light|dark", data-font, data-radius, data-name.
  *
- * Integration hooks (set by the host shop, all optional):
+ * Without any code from the shop, the widget reads the page itself: product structured data
+ * (JSON-LD / microdata), the page address (matched against the shop's feed) and the analytics
+ * dataLayer (view_item, add_to_cart, remove_from_cart, purchase, search).
+ *
+ * Integration hooks (set by the host shop, all optional – they replace the automatic reading):
  *   AIProdavac.getContext    = () => ({ pageType, category, currentProductId, viewedProductIds, cart:[{id,quantity}] })
  *   AIProdavac.onAddToCart   = (item) => { ... }     // item: {id,name,price,quantity}
  *   AIProdavac.onOpenProduct = (id) => { ... }
@@ -107,17 +110,21 @@
     const body = JSON.stringify({ client: cfg.client, sessionId, events: queue });
     queue = [];
     const url = cfg.api + "/api/events";
-    if (!navigator.sendBeacon?.(url, new Blob([body], { type: "application/json" }))) {
-      fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
-    }
+    // text/plain: a beacon to another domain (every client shop) is blocked by the browser if it is
+    // sent as application/json – that would need a CORS preflight, which beacons can't pass
+    let sent = false;
+    try { sent = navigator.sendBeacon?.(url, new Blob([body], { type: "text/plain;charset=UTF-8" })); } catch {}
+    if (!sent) fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
   }
   addEventListener("pagehide", flush);
   if (isNewSession) api.track("session_start");
 
   function signals(extra = {}) {
+    const hosted = hostIntegrated();
     let c = {};
-    try { c = api.getContext?.() || {}; } catch {}
+    try { c = (hosted ? api.getContext() : autoContext()) || {}; } catch {}
     return {
+      integration: hosted ? "host" : "auto",
       pageType: c.pageType, category: c.category, currentProductId: c.currentProductId,
       viewedProductIds: c.viewedProductIds, cart: c.cart,
       searches: searches.slice(-5), secondsOnPage: Math.round((Date.now() - pageStart) / 1000),
@@ -131,6 +138,206 @@
     };
   }
   const post = (path, body) => fetch(cfg.api + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client: cfg.client, ...body }) }).then((r) => r.json());
+
+  // ------------------------------------------- automatic shop integration ----
+  // Shops that don't call our JS API (no AIProdavac.getContext) are read from what their pages
+  // already publish for Google: structured product data (JSON-LD / microdata), the product URL
+  // (matched against the shop's feed on the server) and the analytics dataLayer (view_item,
+  // add_to_cart, purchase…). Nothing has to be added to the shop's code apart from the widget line.
+  const hostIntegrated = () => typeof api.getContext === "function";
+  let integ = {}; // per-client overrides from the server: { addToCart: css, cart: css, thankYou: regex }
+  const autoKey = (k) => `auto_${cfg.client || "default"}_${k}`;
+  const auto = { pageType: "other", productId: null, category: null };
+  let autoViewed = ls.get(autoKey("viewed")) || [];
+  let autoCart = ls.get(autoKey("cart")) || [];
+  const saveAutoCart = () => ls.set(autoKey("cart"), autoCart);
+  let pendingAdd = null; // our own click on the shop's button – the shop's analytics reports it too
+  const autoContext = () => ({ pageType: auto.pageType, category: auto.category, currentProductId: auto.productId, viewedProductIds: autoViewed, cart: autoCart });
+
+  const one = (v) => (v == null ? "" : String(Array.isArray(v) ? v[0] ?? "" : v).trim());
+  const plainText = (t) => String(t ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+  const urlKey = (u) => { try { const x = new URL(u, location.href); return (x.pathname.replace(/\/+$/, "") + x.search).toLowerCase(); } catch { return ""; } };
+  const resolveRefs = (refs, categoryName) => post("/api/resolve", { refs, categoryName }).catch(() => ({ ids: [], categories: [] }));
+
+  function ldNodes(type) {
+    const out = [];
+    const walk = (n) => {
+      if (!n || typeof n !== "object") return;
+      if (Array.isArray(n)) return n.forEach(walk);
+      if ([].concat(n["@type"] || []).some((t) => type.test(t))) out.push(n);
+      walk(n["@graph"]); walk(n.mainEntity);
+    };
+    for (const el of document.querySelectorAll('script[type="application/ld+json"]')) { try { walk(JSON.parse(el.textContent)); } catch {} }
+    return out;
+  }
+  // what the page says about its product: code, EAN, name – plus always its address
+  function pageProductRef() {
+    const ld = ldNodes(/^(Product|ProductGroup|IndividualProduct)$/i)[0];
+    const md = document.querySelector('[itemtype*="schema.org/Product" i]');
+    const prop = (n) => { const e = md?.querySelector(`[itemprop="${n}"]`); return e ? one(e.getAttribute("content") || e.textContent) : ""; };
+    const meta = (n) => one(document.querySelector(`meta[property="${n}"]`)?.content);
+    const ref = { url: location.href };
+    if (ld || md || meta("og:type") === "product") {
+      ref.sku = one(ld?.sku ?? ld?.productID ?? ld?.mpn) || prop("sku") || prop("productID");
+      ref.gtin = one(ld?.gtin13 ?? ld?.gtin ?? ld?.gtin14 ?? ld?.gtin12 ?? ld?.gtin8) || prop("gtin13") || prop("gtin");
+      ref.name = one(ld?.name) || prop("name") || meta("og:title");
+    }
+    return ref;
+  }
+  const breadcrumbLast = () => { const items = [].concat(ldNodes(/^BreadcrumbList$/i)[0]?.itemListElement || []); const l = items.at(-1); return one(l?.name ?? l?.item?.name); };
+  function searchQuery() {
+    const p = new URLSearchParams(location.search);
+    for (const k of ["q", "query", "search", "s", "hledat", "string", "phrase", "term"]) if (p.get(k)) return p.get(k).slice(0, 60);
+    return null;
+  }
+  function isThankYou() {
+    try { if (integ.thankYou && new RegExp(integ.thankYou, "i").test(location.href)) return true; } catch {}
+    return /dekujeme|dekuji|objednavka-(odeslana|dokoncena|prijata)|order-(received|confirmation|complete)|thank-?you|checkout\/success|dokonceni-objednavky/i.test(location.pathname + location.search);
+  }
+
+  function rememberViewed(id) {
+    autoViewed = [...autoViewed.filter((x) => x !== id), id].slice(-8);
+    ls.set(autoKey("viewed"), autoViewed);
+    api.track("product_view", { productId: id });
+  }
+
+  let purchaseSeen = false;
+  async function detectPage() {
+    Object.assign(auto, { productId: null, category: null });
+    const ref = pageProductRef();
+    const r = await resolveRefs([ref], ref.name ? "" : breadcrumbLast());
+    auto.productId = r.ids?.[0] ?? null;
+    auto.category = r.categories?.[0] ?? r.category ?? null;
+    const path = location.pathname.toLowerCase(), q = searchQuery();
+    auto.pageType = auto.productId ? "product"
+      : /kosik|cart|basket|checkout|pokladna/.test(path) ? "cart"
+      : q || /hledat|vyhledavani|search/.test(path) ? "search"
+      : path === "/" ? "home"
+      : auto.category ? "category" : "other";
+    api.track("page_view");
+    if (auto.productId) rememberViewed(auto.productId);
+    else if (auto.pageType === "category") api.track("category_view", { category: auto.category });
+    if (q) {
+      const empty = /nenalezen|nic jsme nena|zadne vysledky|0 vysledku|nebyl nalezen/.test(plainText(document.body.innerText.slice(0, 20000)));
+      api.track("search", { query: q, results: empty ? 0 : 1 });
+    }
+    // an order confirmation page without an analytics "purchase" event still counts as a purchase
+    if (isThankYou() && !ss.get("bought:" + location.pathname)) {
+      ss.set("bought:" + location.pathname, true);
+      setTimeout(() => { if (!purchaseSeen) { api.track("purchase", { value: 0 }); autoCart = []; saveAutoCart(); } }, 3000);
+    }
+  }
+
+  // ---- the shop's analytics dataLayer (GA4 and Universal Analytics e-commerce events) ----
+  const dlItems = (list) => [].concat(list || []).map((i) => ({
+    ref: { id: one(i.item_id ?? i.id ?? i.sku), name: one(i.item_name ?? i.name) },
+    quantity: Math.max(1, Number(i.quantity) || 1), price: Number(i.price) || 0,
+  }));
+  async function onDataLayer(raw) {
+    if (!raw || typeof raw !== "object") return;
+    const e = raw[0] === "event" ? { event: raw[1], ...(raw[2] || {}) } : raw; // gtag("event", …) pushes `arguments`
+    const ec = e.ecommerce || {}, name = String(e.event || "");
+    let kind = null, items = [];
+    if (/^(add_to_cart|addToCart)$/.test(name)) { kind = "add"; items = dlItems(ec.items ?? e.items ?? ec.add?.products); }
+    else if (/^(remove_from_cart|removeFromCart)$/.test(name)) { kind = "remove"; items = dlItems(ec.items ?? e.items ?? ec.remove?.products); }
+    else if (name === "purchase" || ec.purchase) { kind = "purchase"; items = dlItems(ec.items ?? e.items ?? ec.purchase?.products); }
+    else if (name === "view_item" || ec.detail) { kind = "view"; items = dlItems(ec.items ?? e.items ?? ec.detail?.products); }
+    else if (name === "search" || name === "view_search_results") {
+      const q = one(e.search_term ?? ec.search_term);
+      if (q) api.track("search", { query: q.slice(0, 60), results: 1 });
+      return;
+    }
+    if (kind === "purchase") {
+      if (purchaseSeen) return;
+      purchaseSeen = true;
+      const value = Number(ec.value ?? e.value ?? ec.purchase?.actionField?.revenue) || items.reduce((t, i) => t + i.price * i.quantity, 0);
+      api.track("purchase", { value });
+      autoCart = []; saveAutoCart();
+      return;
+    }
+    if (!kind || !items.length) return;
+    const { ids = [] } = await resolveRefs(items.map((i) => i.ref));
+    items.forEach((it, n) => {
+      const id = ids[n];
+      if (!id) return;
+      if (kind === "view") { if (!auto.productId) { auto.productId = id; auto.pageType = "product"; rememberViewed(id); } return; }
+      const line = autoCart.find((c) => c.id === id);
+      if (kind === "add") {
+        if (pendingAdd?.id === id && Date.now() < pendingAdd.until) { pendingAdd = null; return; } // already counted
+        if (line) line.quantity += it.quantity; else autoCart.push({ id, quantity: it.quantity });
+        api.track("add_to_cart", { productId: id, quantity: it.quantity, source: "user" });
+      } else {
+        if (line) { line.quantity -= it.quantity; if (line.quantity <= 0) autoCart = autoCart.filter((c) => c !== line); }
+        api.track("cart_remove", { productId: id });
+      }
+    });
+    saveAutoCart();
+  }
+  let dlSeen = 0;
+  function pollDataLayer() {
+    const dl = window.dataLayer;
+    if (!Array.isArray(dl)) return;
+    if (dlSeen > dl.length) dlSeen = 0;
+    while (dlSeen < dl.length) onDataLayer(dl[dlSeen++]);
+  }
+
+  async function autoInit() {
+    // a shop's own integration may register its hooks only after its scripts finish loading
+    if (document.readyState !== "complete") await new Promise((r) => addEventListener("load", r, { once: true }));
+    await new Promise((r) => setTimeout(r, 300));
+    if (hostIntegrated()) return;
+    await detectPage();
+    pollDataLayer();
+    // polling, not wrapping push(): Tag Manager replaces push() with its own
+    setInterval(() => { if (!hostIntegrated()) pollDataLayer(); }, 500);
+    // single-page shops change the address without reloading
+    let href = location.href;
+    setInterval(() => { if (location.href !== href && !hostIntegrated()) { href = location.href; detectPage(); } }, 1000);
+  }
+
+  // ---- putting a product into the shop's own cart by pressing the shop's own button ----
+  const ADD_RE = /do ko[sš][ií]ku|koupit|vlo[zž]it do|p[rř]idat do|add to (cart|bag|basket)|buy now/i;
+  const labelOf = (b) => [b.getAttribute("aria-label"), b.title, b.value, b.textContent].filter(Boolean).join(" ");
+  const shown = (b) => b.getClientRects().length > 0 && !b.disabled && getComputedStyle(b).visibility !== "hidden";
+  const area = (b) => { const r = b.getBoundingClientRect(); return r.width * r.height; };
+  function findAddButton(item) {
+    if (integ.addToCart && auto.productId === item.id) {
+      const b = document.querySelector(integ.addToCart);
+      if (b && shown(b)) return b;
+    }
+    const all = [...document.querySelectorAll('button, [role="button"], input[type="submit"], input[type="button"]')].filter((b) => shown(b) && ADD_RE.test(labelOf(b)));
+    if (!all.length) return null;
+    const name = plainText(item.name);
+    const named = all.find((b) => plainText(labelOf(b)).includes(name));
+    if (named) return named;
+    // the product's own card: the largest block around the button that holds no other add button
+    const inCard = all.find((b) => {
+      let box = b;
+      while (box.parentElement && box.parentElement !== document.body && all.filter((x) => box.parentElement.contains(x)).length === 1) box = box.parentElement;
+      return plainText(box.textContent).includes(name) || (item.url && [...box.querySelectorAll("a[href]")].some((a) => urlKey(a.href) === urlKey(item.url)));
+    });
+    if (inCard) return inCard;
+    return auto.productId === item.id ? all.sort((a, b) => area(b) - area(a))[0] : null; // the page's main button
+  }
+  /** Adds to the shop's cart: through the shop's JS hook, or by pressing its button. False = not possible here. */
+  function addToShopCart(item) {
+    if (api.onAddToCart || hostIntegrated()) { api.onAddToCart?.(item); return true; }
+    const btn = findAddButton(item);
+    if (!btn) return false;
+    pendingAdd = { id: item.id, until: Date.now() + 4000 };
+    btn.click();
+    const line = autoCart.find((c) => c.id === item.id);
+    if (line) line.quantity += item.quantity || 1; else autoCart.push({ id: item.id, quantity: item.quantity || 1 });
+    saveAutoCart();
+    return true;
+  }
+  /** Opens a product: through the shop's JS hook, or by going to its page (the chat comes along). */
+  function openProduct(p) {
+    if (api.onOpenProduct) { if (phone.matches) closePanel(); api.onOpenProduct(p.id); return; }
+    if (!p.url) return;
+    if (mode && !phone.matches) ss.set("reopen", mode); // on a computer the chat reopens next to the product
+    location.assign(p.url);
+  }
 
   // -------------------------------------------------------------- DOM ----
   // Design: Klára is a living character (a morphing blob with eyes that blink and
@@ -683,12 +890,14 @@
   async function loadName() {
     AV ??= detectPersona();
     fetch(cfg.api + "/api/health").then((r) => r.json()).then((h) => { ttsServer = h.tts === "elevenlabs"; }).catch(() => {});
-    if (script?.dataset.name) return (cfg.name = script.dataset.name);
     const key = "agent-name:" + (cfg.client || "default");
-    const cached = ls.get(key);
+    const cached = script?.dataset.name || ls.get(key);
     if (cached) cfg.name = cached;
     const fresh = post("/api/persona", { brand: AV.brand })
-      .then((r) => { if (r?.name) { ls.set(key, r.name); cfg.name = r.name; } })
+      .then((r) => {
+        integ = r?.integration || {};
+        if (r?.name && !script?.dataset.name) { ls.set(key, r.name); cfg.name = r.name; }
+      })
       .catch(() => {});
     if (!cached) await fresh;
     return cfg.name;
@@ -954,7 +1163,9 @@
 
   // ------------------------------------------------------------- panel ----
   let panel, msgs, footer;
-  const history = []; // rendered transcript kept across close/reopen and mode switches
+  // rendered transcript, kept across close/reopen, mode switches and page loads within the visit
+  const history = ss.get("history") || [];
+  const saveHistory = () => ss.set("history", history.slice(-60));
 
   const MOOD_TEXT = { idle: "Ráda poradím", think: "Přemýšlím…", talk: "Píšu…", speak: "Mluvím…", listen: "Poslouchám…", happy: "Skvělá volba! 🎉" };
   let happyTimer = null;
@@ -1095,14 +1306,15 @@
   function addBubble(role, text) {
     const entry = { role, text };
     history.push(entry);
+    saveHistory();
     const b = bubbleEl(role, text);
     msgs?.append(b);
     scrollDown();
     return { entry, b };
   }
   const noteEl = (text) => el(`<div class="note">${ICON.spark}<span>${esc(text)}</span></div>`);
-  function addNote(text) { history.push({ kind: "note", text }); msgs?.append(noteEl(text)); scrollDown(); }
-  function addCards(items) { history.push({ kind: "cards", items }); const c = renderCards(items); msgs?.append(c); scrollDown(); return c; }
+  function addNote(text) { history.push({ kind: "note", text }); saveHistory(); msgs?.append(noteEl(text)); scrollDown(); }
+  function addCards(items) { history.push({ kind: "cards", items }); saveHistory(); const c = renderCards(items); msgs?.append(c); scrollDown(); return c; }
   function addChips(chips) {
     const box = el(`<div class="chips"></div>`);
     chips.forEach((ch, i) => {
@@ -1133,9 +1345,12 @@
           </div>
         </div>`);
       // on a phone the chat covers the page – step aside so the product is visible (the chat stays saved)
-      const openIt = () => { if (phone.matches && api.onOpenProduct) closePanel(); api.onOpenProduct?.(p.id); };
+      const openIt = () => openProduct(p);
       card.querySelector(".name").onclick = openIt;
       card.querySelector(".img").onclick = openIt;
+      // on a shop we only watch, a product whose "add" button isn't on this page is opened instead
+      const canAdd = hostIntegrated() || Boolean(findAddButton(p));
+      if (!canAdd && p.url) card.querySelector(".add").innerHTML = `Zobrazit produkt`;
       // 3D tilt + light that follows the cursor
       if (!reduced) {
         card.addEventListener("pointermove", (e) => {
@@ -1147,7 +1362,7 @@
       }
       card.querySelector(".add").onclick = (e) => {
         const btn = e.currentTarget;
-        api.onAddToCart?.({ id: p.id, name: p.name, price: p.price, quantity: 1 });
+        if (!addToShopCart({ id: p.id, name: p.name, price: p.price, quantity: 1, url: p.url })) return openProduct(p);
         api.track("add_to_cart", { productId: p.id, quantity: 1, source: "ai_card" });
         btn.innerHTML = `${ICON.check} V košíku`;
         btn.disabled = true;
@@ -1162,7 +1377,7 @@
 
   // the product image flies in an arc into the shop's cart icon, which then bounces
   function cartTarget() {
-    return document.querySelector(script?.dataset.cartSelector || '[data-cart], a[href*="kosik"], a[href*="cart"], a[href*="basket"]');
+    return document.querySelector(integ.cart || script?.dataset.cartSelector || '[data-cart], a[href*="kosik"], a[href*="cart"], a[href*="basket"]');
   }
   function flyToCart(fromImg) {
     const target = cartTarget();
@@ -1266,10 +1481,13 @@
             const t = cartTarget()?.getBoundingClientRect();
             if (t) burst(t.left + t.width / 2, t.top + t.height / 2, cartTarget());
           } else if (ev.type === "cart") {
-            api.onAddToCart?.(ev.item);
-            addNote(`Přidáno do košíku: ${ev.item.name}`);
-            flyToCart(msgs.querySelector(`.pc[data-id="${CSS.escape(ev.item.id)}"] .img img`));
-            setMood("happy");
+            if (addToShopCart(ev.item)) {
+              addNote(`Přidáno do košíku: ${ev.item.name}`);
+              flyToCart(msgs.querySelector(`.pc[data-id="${CSS.escape(ev.item.id)}"] .img img`));
+              setMood("happy");
+            } else {
+              addNote(`${ev.item.name} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`);
+            }
           } else if (ev.type === "replace") {
             turnEls.forEach((n) => n.remove());
             cur = addBubble("bot", ev.text);
@@ -1289,6 +1507,7 @@
     } catch (e) {
       if (e.name !== "AbortError") addBubble("err", e.message || "Spojení se nezdařilo.");
     } finally {
+      saveHistory(); // the streamed answer grew in place
       typing.remove();
       msgs?.querySelectorAll(".streaming").forEach((b) => b.classList.remove("streaming"));
       busy = false;
@@ -1658,14 +1877,18 @@
     theme = detectTheme();
     AV = detectPersona();
     nameReady = loadName();
+    const pageReady = autoInit().catch(() => {});
     launcher.innerHTML = avatar(60) + `<span class="launch-label">Poradit s nákupem</span>`;
     nameReady.then(() => launcher.setAttribute("aria-label", `Otevřít prodavačku ${cfg.name}`));
     document.body.append(host);
     wrap.append(launcher);
     updateEyes();
-    // greet as soon as she knows her name – only the very first visitor of a new shop waits for it
-    // to be invented (up to 5 s); after that the server and the browser remember it
-    if (!state.greeted) setTimeout(() => Promise.race([nameReady, new Promise((r) => setTimeout(r, 5000))]).then(greet), cfg.greetDelay);
+    // a product opened from the chat: the conversation continues next to it
+    const reopen = ss.get("reopen");
+    if (reopen) { ss.set("reopen", null); nameReady.then(() => openPanel(reopen === "voice" ? "chat" : reopen)); return; }
+    // greet once she knows her name and what page the customer is on (the greeting can mention
+    // the product) – but never keep the customer waiting more than 5 s
+    if (!state.greeted) setTimeout(() => Promise.race([Promise.all([nameReady, pageReady]), new Promise((r) => setTimeout(r, 5000))]).then(greet), cfg.greetDelay);
   }
   document.readyState === "loading" ? addEventListener("DOMContentLoaded", boot) : boot();
 })();

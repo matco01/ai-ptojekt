@@ -85,6 +85,8 @@
     .insights b { color: var(--text); }
 
     .tip { position: fixed; pointer-events: none; background: var(--text); color: var(--card); font-size: 13.5px; padding: 7px 11px; border-radius: 8px; z-index: 9; display: none; max-width: 320px; }
+    .catalog-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .catalog-card .err { color: var(--orange); font-weight: 600; }
     .notice { background: var(--notice-bg); color: var(--notice-text); border-radius: 12px; padding: 12px 16px; font-size: 14.5px; }
 
     @media (max-width: 600px) {
@@ -111,6 +113,11 @@
 
     <h3 class="section-title">Souhrn</h3>
     <section class="tiles" id="tiles"></section>
+
+    <section class="card catalog-card" id="catalog-card" hidden>
+      <div><h2>Katalog produktů</h2><p class="hint" id="catalog-text" style="margin:0"></p></div>
+      <button id="catalog-refresh" hidden>↻ Stáhnout feed znovu</button>
+    </section>
 
     <section class="card ai-card">
       <h2>✨ Doporučení od AI pro majitele obchodu</h2>
@@ -206,6 +213,7 @@
       return;
     }
     const d = await r.json();
+    renderCatalog(d.catalog);
     $("client-name").textContent = d.client.name;
     document.title = `${d.client.name} – AI prodavač`;
     if (d.clients?.length > 1) {
@@ -254,6 +262,26 @@
 
     $("demo-notice").hidden = !d.hasDemoData;
   }
+
+  function renderCatalog(c) {
+    $("catalog-card").hidden = !c;
+    if (!c) return;
+    const when = c.updatedAt ? new Date(c.updatedAt).toLocaleString("cs-CZ") : null;
+    $("catalog-text").innerHTML =
+      c.source === "demo" ? `Ukázkový katalog, ${c.products} produktů.`
+      : c.source === "none" ? `Klient zatím nemá nastavený feed (<code>feed_url</code>), AI prodavačka tak nezná žádné produkty.`
+      : `${c.products.toLocaleString("cs-CZ")} produktů z feedu${when ? `, staženo ${when}` : ""}. Obnovuje se samo každých 6 hodin.`
+        + (c.error ? `<br><span class="err">Poslední stažení selhalo: ${esc(c.error)}${c.products ? " – používá se předchozí katalog." : ""}</span>` : "");
+    $("catalog-refresh").hidden = c.source !== "feed";
+  }
+  $("catalog-refresh").onclick = async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = "Stahuji feed…";
+    const r = await call("/api/analytics/catalog", { method: "POST" });
+    if (r.ok) renderCatalog(await r.json());
+    e.target.disabled = false;
+    e.target.textContent = "↻ Stáhnout feed znovu";
+  };
 
   // tiny markdown → HTML for the insights (headings, bullets, bold)
   function md(text) {
