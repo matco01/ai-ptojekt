@@ -677,20 +677,20 @@
     </span>`;
   };
 
-  // the agent's name, made up for this website (once per brand, then remembered)
+  // the agent's name belongs to the shop (set by the server per client), so every visitor meets the same one.
+  // The cached name only makes the start instant – it is re-checked on every page load.
   let ttsServer = false; // true when the server has a natural neural voice (ElevenLabs)
   async function loadName() {
     AV ??= detectPersona();
     fetch(cfg.api + "/api/health").then((r) => r.json()).then((h) => { ttsServer = h.tts === "elevenlabs"; }).catch(() => {});
     if (script?.dataset.name) return (cfg.name = script.dataset.name);
-    const key = "persona2:" + AV.brand.toLowerCase(); // v2 = mascot-style names
+    const key = "agent-name:" + (cfg.client || "default");
     const cached = ls.get(key);
-    if (cached) return (cfg.name = cached);
-    try {
-      const about = document.querySelector('meta[name="description"]')?.content || document.title;
-      const r = await post("/api/persona", { brand: AV.brand, about: about.slice(0, 160) });
-      if (r?.name) { ls.set(key, r.name); cfg.name = r.name; }
-    } catch {}
+    if (cached) cfg.name = cached;
+    const fresh = post("/api/persona", { brand: AV.brand })
+      .then((r) => { if (r?.name) { ls.set(key, r.name); cfg.name = r.name; } })
+      .catch(() => {});
+    if (!cached) await fresh;
     return cfg.name;
   }
   let nameReady = Promise.resolve();

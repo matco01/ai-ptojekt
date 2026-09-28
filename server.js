@@ -79,7 +79,6 @@ function cleanSignals(raw = {}) {
     history: (Array.isArray(raw.history) ? raw.history : []).slice(-12)
       .filter((h) => (h?.role === "user" || h?.role === "assistant") && typeof h.text === "string" && h.text.trim())
       .map((h) => ({ role: h.role, text: h.text.slice(0, 2000) })),
-    agentName: /^\p{L}{2,12}$/u.test(raw.agentName ?? "") ? raw.agentName : null, // the name the widget gave the agent on this site
     behaviour: cleanBehaviour(raw.behaviour),
   };
 }
@@ -102,11 +101,12 @@ function cleanBehaviour(b = {}) {
 // --- public API -------------------------------------------------------------
 app.get("/api/health", (req, res) => res.json({ ok: true, model: MODEL, hasApiKey: hasApiKey(), tts: ttsProvider(), storage: db ? "supabase" : "files" }));
 
-// The agent's name on a given website – the client's configured name, or derived from the brand.
+const agentName = (client) => client.agentName || personaName(client.name);
+
+// The agent's name for a shop – the client's configured name, or derived from the shop's name.
+// Tied to the client, not to what a browser reads off the page, so every visitor gets the same one.
 app.post("/api/persona", rateLimit(20, 60e3), withClient, (req, res) => {
-  const brand = str(req.body?.brand, 60).trim();
-  if (!brand && !req.client.agentName) return res.status(400).json({ error: "brand is required" });
-  res.json({ name: req.client.agentName || personaName(brand), tts: ttsProvider() });
+  res.json({ name: agentName(req.client), tts: ttsProvider() });
 });
 
 // Natural voice (ElevenLabs). 404 when not configured → the widget uses the browser voice.
@@ -142,7 +142,7 @@ app.post("/api/cart/price", (req, res) => res.json(priceCart(cleanSignals({ cart
 app.post("/api/proactive", rateLimit(60, 60e3), withClient, async (req, res) => {
   const { sessionId, trigger, signals } = req.body ?? {};
   if (!validSession(sessionId)) return res.status(400).json({ error: "Neplatná session." });
-  const s = cleanSignals(signals);
+  const s = { ...cleanSignals(signals), agentName: agentName(req.client) };
   if (trigger === "greeting") return res.json({ greeting: greeting(s) });
   const nudge = nextNudge(s);
   if (nudge?.hesitation) {
@@ -165,7 +165,7 @@ app.post("/api/chat", rateLimit(30, 5 * 60e3), withClient, async (req, res) => {
   res.on("close", () => { if (!res.writableEnded) abort.abort(); });
 
   try {
-    await chat({ sessionId, text, context: { ...cleanSignals(context), clientId: req.client.id }, send, signal: abort.signal });
+    await chat({ sessionId, text, context: { ...cleanSignals(context), clientId: req.client.id, agentName: agentName(req.client) }, send, signal: abort.signal });
     send({ type: "done" });
   } catch (err) {
     if (abort.signal.aborted) return; // nobody is listening any more
