@@ -6,33 +6,31 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 |---|---|---|
 | Demo e-shop | http://localhost:3000/ | Smyšlený obchod s elektronikou „TechMarket“ ve stylu velkých českých e-shopů (38 produktů, akce, sety, filtry, košík) |
 | AI prodavačka | vpravo dole | Widget, který se vkládá na libovolný web jedním řádkem |
-| Dashboard | http://localhost:3000/admin/ | Chování zákazníků, výkon prodavačky a AI doporučení pro majitele |
+| Dashboard | http://localhost:3000/admin/ | Chování zákazníků, výkon prodavačky, využití tarifu a AI doporučení pro majitele (s přihlášením) |
+| Klienti | http://localhost:3000/admin/clients.html | Jen pro provozovatele: zakládání obchodů, přihlášení majitelů, využití a export pro fakturaci |
 | Ukázka jiného webu | http://localhost:3000/kavarna | Pražírna kávy „Bohème“: vlastní produkty z XML feedu, napojená bez jediného řádku kódu navíc (viz níže) |
 
 ## Klienti (více e-shopů)
 
-Každý e-shop, který prodavačku používá, je řádek v tabulce `clients` v Supabase. Ukázkové weby jsou klienti `techmarket` a `kavarna`.
+Každý e-shop, který prodavačku používá, je klient s vlastním ID. Ukázkové weby jsou klienti `techmarket` a `kavarna`.
 
-**Přidání nového klienta:**
-1. V Supabase → Table Editor → `clients` přidejte řádek:
-   - `id`: krátký identifikátor, např. `datart`
-   - `name`: název obchodu
-   - `domains`: domény obchodu, např. `{datart.cz}` (subdomény jako `www.` jsou povolené automaticky)
-   - `feed_url`: adresa produktového XML feedu – Heureka / Zboží.cz nebo Google Merchant (skoro každý e-shop ho má)
-   - `description`: co je to za obchod, např. `e-shop s elektronikou a spotřebiči` (AI podle toho mluví)
-   - `info`: informace o obchodě jako JSON, téma → text, např. `{"doprava": "...", "vraceni": "...", "platba": "...", "kontakt": "..."}`. Na tyhle otázky AI odpovídá jen odsud.
-   - `free_shipping_from`: od kolika Kč je doprava zdarma (nepovinné)
-   - `admin_token`: heslo majitele k dashboardu
-   - `agent_name`: jméno prodavačky (nepovinné; jinak se odvodí od názvu obchodu)
-2. Na web klienta vložte (přímo, nebo přes jeho Google Tag Manager):
-   ```html
-   <script src="https://ai-ptojekt.vercel.app/widget/prodavac.js" data-client="datart" defer></script>
-   ```
-3. Majitel otevře dashboard přes `https://ai-ptojekt.vercel.app/admin/?client=datart&token=<admin_token>`. V kartě „Katalog produktů“ vidí, kolik produktů se z feedu načetlo.
+**Jak funguje ID klienta:** web obchodu vkládá widget s `data-client="id"`. Server podle ID načte nastavení obchodu, ověří, že stránka běží na jedné z jeho domén (jinak 403), načte jeho produkty z feedu a všechno, co se stane, uloží pod tímto ID. Obchody tak nikdy nevidí data jiných obchodů. Vložení bez `data-client` se nespustí (dřív se tiše počítalo jako TechMarket).
 
-Widget funguje jen na doménách klienta (a na našem vlastním webu). Vaše hlavní heslo `ADMIN_TOKEN` otevře dashboard kteréhokoli klienta a ukáže přepínač mezi klienty.
+**Přidání nového klienta** (potřebuje Supabase):
+1. Přihlaste se na `/admin/` jako **admin** s heslem `ADMIN_TOKEN` a otevřete **Klienti** → **+ Nový klient**.
+2. Vyplňte ID (např. `datart`), název, domény obchodu, adresu produktového feedu (Heureka / Zboží.cz nebo Google Merchant), popis obchodu, tarif a e-mail majitele. Informace o obchodě (doprava, vrácení, platba, kontakt) zadejte jako JSON – na tyhle otázky AI odpovídá jen odsud.
+3. Po uložení klikněte **Vytvořit nové přihlášení majitele**. Stránka ukáže kód pro web, adresu přehledu, ID a vygenerované heslo – jako hotovou zprávu, kterou zkopírujete nebo otevřete v e-mailu. Heslo se ukáže jen jednou; ukládá se jen jeho otisk.
 
-**Produkty z feedu:** server feed stáhne při první návštěvě a pak každých 6 hodin, uloží ho do Supabase (tabulka `catalogs`) a AI doporučuje jen z něj. Když stažení selže, jede se dál na posledním funkčním katalogu a chyba se ukáže v dashboardu. Tlačítko „Stáhnout feed znovu“ ho stáhne hned.
+Kód pro web klienta (přímo, nebo přes jeho Google Tag Manager):
+```html
+<script src="https://ai-ptojekt.vercel.app/widget/prodavac.js" data-client="datart" defer></script>
+```
+
+**Přihlášení do přehledu:** majitel se přihlásí na `/admin/` svým ID a heslem a vidí jen svůj obchod. Vy se přihlásíte ID `admin` a heslem `ADMIN_TOKEN` a přepínáte mezi všemi klienty. Přihlášení drží podepsaná HttpOnly cookie 14 dní; hesla nikdy nejsou v adrese. Staré odkazy s `?token=` už nefungují – klient se přihlásí formulářem; jeho staré heslo z `admin_token` platí a při prvním přihlášení se převede na otisk. Lokálně bez `ADMIN_TOKEN` je přehled otevřený jen z vašeho počítače.
+
+**Tarify a limity** (`lib/plans.js`): každý tarif má měsíční limit zpráv, na které odpovídá AI, a znaků přirozeného hlasu; u klienta jde nastavit vlastní limit. Server počítá každé volání Claude (tokeny → cena v USD) a hlas do tabulky `usage`. Po vyčerpání limitu obchod dál funguje: chat odpovídá zjednodušeně bez AI a hlas přejde na hlas prohlížeče. Při 80 % a 100 % limitu přijde upozornění. Majitel vidí čerpání v přehledu, vy u všech klientů na stránce Klienti, kde je i **export CSV za měsíc** pro fakturaci. Ceny tarifů doplňte v `lib/plans.js`; fakturace sama zatím běží mimo aplikaci.
+
+**Produkty z feedu:** server feed stáhne při první návštěvě a pak každých 6 hodin (a každou noc v rámci údržby). Uloží ho zabalený (gzip) do Supabase Storage, takže nový server ho nemusí stahovat znovu, a AI doporučuje jen z něj. Feed větší než 60 MB se odmítne. Když stažení selže, jede se dál na posledním funkčním katalogu, chyba se ukáže v přehledu a přijde upozornění.
 
 **Napojení bez kódu u klienta:** widget si sám přečte, co web publikuje kvůli Googlu:
 - na jakém produktu zákazník je – ze strukturovaných dat produktu (JSON-LD / microdata) nebo z adresy stránky porovnané s URL ve feedu,
@@ -41,23 +39,36 @@ Widget funguje jen na doménách klienta (a na našem vlastním webu). Vaše hla
 
 Když AI přidává do košíku, widget stiskne tlačítko „Do košíku“ přímo na stránce obchodu. Když tam takové tlačítko není, kartička produktu místo toho otevře stránku produktu (chat se na počítači otevře znovu vedle něj). Z košíku obchodu AI odebírat neumí a zákazníkovi to řekne.
 
-Neobvyklý web opravíte v nastavení klienta, ne u klienta: sloupec `integration` jako JSON, např. `{"addToCart": "#buy-button", "cart": ".header-cart", "thankYou": "objednavka/hotovo"}` (tlačítko do košíku na stránce produktu, ikona košíku, adresa stránky po objednávce).
+Neobvyklý web opravíte v nastavení klienta (pole „Úpravy napojení“), ne u klienta, např. `{"addToCart": "#buy-button", "cart": ".header-cart", "thankYou": "objednavka/hotovo"}` (tlačítko do košíku na stránce produktu, ikona košíku, adresa stránky po objednávce).
 
 TechMarket má místo toho vlastní napojení přes JavaScript (`window.AIProdavac.getContext`, `onAddToCart` – viz začátek `public/widget/prodavac.js`), které umí i odebírat z košíku.
 
-Po aktualizaci aplikace spusťte `supabase/schema.sql` v Supabase znovu – přidá jen to, co chybí.
+## GDPR a souhlas
+
+- **Souhlas s analytikou:** chování návštěvníka (prohlížení, hledání, košík, objednávka), text jeho dotazů a „vracející se návštěvník“ (localStorage) se ukládají jen s jeho souhlasem. Widget ho čte sám z nástroje obchodu: Google Consent Mode (`analytics_storage`), Cookiebot, OneTrust. Jinak ho obchod předá sám: `data-consent="granted"` (když widget načítá až po souhlasu), `AIProdavac.setConsent(true|false)`, nebo `window.AIProdavac = { consent: true }` před načtením widgetu. Bez souhlasu widget dál zdraví, radí a chatuje, jen si nic neukládá. Ukázkové weby mají jednoduchou lištu (`public/consent-demo.js`).
+- **Maskování:** v uložených dotazech se e-maily, telefonní čísla a čísla karet nahradí `[e-mail]` / `[číslo]`.
+- **Mazání:** události a dotazy starší než `RETENTION_DAYS` (výchozí 90 dní) maže noční údržba. Přehled ukazuje stejné období.
+- **Dokumenty (návrhy, nechte zkontrolovat právníkem):** `public/soukromi.html` – informace pro návštěvníky, na které odkazuje widget (obchod může přes `data-privacy-url` odkázat na své zásady); `legal/zpracovatelska-smlouva.md` – smlouva o zpracování s každým e-shopem; `legal/obchodni-podminky.md` – podmínky služby.
+
+## Provoz a hlídání
+
+- **Upozornění:** s `ALERT_WEBHOOK_URL` (Slack nebo Discord webhook) přijde zpráva při chybě serveru nebo Claude API, při rozbitém feedu a když se klient blíží limitu. Každé upozornění nejvýš jednou za čas, i když běží víc instancí.
+- **Dostupnost:** `/api/health` vrací 503, když nejde databáze – nastavte na ni monitor (např. UptimeRobot, Better Stack).
+- **Noční údržba:** Vercel Cron (`vercel.json`) volá každý den ve 3:00 UTC `/api/cron/daily` s `CRON_SECRET`: smaže stará data a staré počítadlo požadavků a znovu stáhne feedy všech klientů.
+- **Ochrana proti zneužití:** limity požadavků na AI, hlas a přihlášení se počítají v databázi společně pro všechny instance. Hlavička Origin se dá mimo prohlížeč podvrhnout, takže doménová kontrola chrání obchody před cizími weby, ne API před skripty – útratu proti skriptům drží limity požadavků a měsíční limity tarifů.
+- **Testy:** `npm test` (spouští je i GitHub Actions při každém pushi). Mimo jiné spustí schéma v in-memory Postgresu a ověří, že souhrn přehledu v databázi dává stejná čísla jako výpočet v JavaScriptu.
 
 ## Nasazení na Vercel
 
 Projekt běží na Vercelu bez dalšího nastavení (Express se detekuje sám ze `server.js`).
 
 1. **Import repozitáře:** ve Vercelu zvolte Add New → Project, vyberte repozitář a nechte výchozí nastavení (Framework Preset: Express / Other, žádný build command).
-2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN` a volitelně `ELEVENLABS_API_KEY`. Soubor `.env.local` se na Vercel nenahrává.
-3. **Databáze:** jednou spusťte `supabase/schema.sql` v Supabase → SQL Editor.
+2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN`, `CRON_SECRET` a doporučeně `ALERT_WEBHOOK_URL`; volitelně `ELEVENLABS_API_KEY` (vše viz `.env.example`). Soubor `.env.local` se na Vercel nenahrává.
+3. **Databáze:** spusťte `supabase/schema.sql` v Supabase → SQL Editor – poprvé i po každé aktualizaci (přidá jen to, co chybí, a smaže dřívější simulovaná demo data).
 4. **Deploy.** Každý push na `main` nasadí novou verzi.
 
 **Co se na Vercelu chová jinak:**
-- Statické soubory servíruje Vercel přímo ze složky `public/` (`/` = e-shop, `/admin/`, `/demo/kavarna.html`, `/widget/prodavac.js`).
+- Statické soubory servíruje Vercel přímo ze složky `public/` (`/` = e-shop, `/admin/`, `/admin/clients.html`, `/demo/kavarna.html`, `/widget/prodavac.js`, `/soukromi.html`).
 - Konverzace přežije i přeskočení mezi instancemi, protože widget posílá s každou zprávou i dosavadní přepis.
 - **Data dashboardu se ukládají do Supabase.** Bez `SUPABASE_URL` a `SUPABASE_SECRET_KEY` jdou jen do dočasné složky, jsou pro každou instanci zvlášť a po restartu zmizí.
 
@@ -70,11 +81,11 @@ npm install
 npm start
 ```
 
-**Funguje i bez Claude API.** Pozdrav, proaktivní tipy a celý e-shop běží bez API. Chat pak odpovídá zjednodušeně (vyhledá produkty, odpoví na dotazy k dopravě apod.) a ukáže poznámku „ukázkový režim bez AI“.
+**Funguje i bez Claude API.** Pozdrav, proaktivní tipy a celý e-shop běží bez API. Chat pak odpovídá zjednodušeně (vyhledá produkty, odpoví na dotazy k dopravě apod.) a ukáže poznámku o zjednodušeném režimu.
+
+Testy: `npm test`.
 
 Pro plnou AI dejte `ANTHROPIC_API_KEY` do souboru `.env.local` (nebo `.env`, vzor je v `.env.example`) (z https://platform.claude.com/) a restartujte server.
-
-Tip na ukázku: v dashboardu klikněte na **„Naplnit demo daty“**. Vygeneruje se ~180 simulovaných návštěv.
 
 ## Jak se prodavačka chová
 
@@ -134,36 +145,49 @@ Když zákazník na nabídku klikne, jeho otázka se rovnou pošle do chatu a Kl
 
 ## Dashboard pro majitele
 
+- Přihlášení ID obchodu a heslem; čerpání tarifu v aktuálním měsíci
 - Konverze s AI a bez AI a míra přijetí nabídky pomoci
 - **Proaktivní tipy:** které typy tipů zákazníci využívají
 - **Co zákazníci hledají** a **hledání bez výsledku**, tedy poptávka, kterou obchod nepokrývá
 - Nejprohlíženější produkty a produkty „hodně prohlížené, málo kupované“
 - Na co se zákazníci ptají prodavačky
-- Tlačítko pro AI doporučení od Claude (potřebuje API klíč)
+- Tlačítko pro AI doporučení od Claude (potřebuje API klíč, počítá se do využití)
+
+Pozor při čtení konverzí: návštěvníci, kteří si sami řeknou o pomoc, nakupují častěji už z principu. Rozdíl „s AI / bez AI“ proto není čistý přínos prodavačky – ten ukáže až test s kontrolní skupinou.
 
 ## Architektura
 
 ```
-server.js            HTTP server (Express): API + statické soubory
+server.js            HTTP server (Express): API, přihlášení, správa klientů, noční údržba + statické soubory
 lib/assistant.js     AI prodavačka (Claude): prompt, nástroje, streaming, ochrany
 lib/proactive.js     Pozdrav a tipy podle chování (pravidla, bez API)
 lib/hesitation.js    Rozpoznání váhání zákazníka (tam a zpět, dlouhé čtení, filtry, košík…)
-lib/offline.js       Zjednodušené odpovědi, když není API klíč
-lib/catalog.js       Katalog, vyhledávání, ceny košíku a sety (v ostré verzi feed e-shopu)
-lib/images.js        Ilustrace produktů pro demo (v ostré verzi fotky z e-shopu)
-lib/analytics.js     Sběr událostí a výpočty pro dashboard
+lib/offline.js       Zjednodušené odpovědi bez AI (bez API klíče nebo po vyčerpání limitu)
+lib/catalog.js       Katalog, vyhledávání, ceny košíku a sety
+lib/catalogs.js      Katalog každého klienta z jeho feedu (stažení, limit velikosti, uložení do Storage)
+lib/feed.js          Čtení feedů Heureka / Zboží.cz a Google Merchant
+lib/clients.js       Klienti: nastavení, domény, validace změn
+lib/auth.js          Hesla (scrypt) a podepsané přihlašovací cookie
+lib/plans.js         Tarify a jejich limity
+lib/usage.js         Měření využití AI a hlasu (tokeny → cena) a kontrola limitů
+lib/ratelimit.js     Limity požadavků sdílené přes databázi
+lib/alerts.js        Upozornění do Slacku / Discordu
+lib/analytics.js     Sběr událostí, maskování, mazání starých dat, souhrn pro přehled
+lib/images.js        Ilustrace produktů pro demo
 catalog/store.js     Data demo obchodu
 public/widget/       prodavac.js – vložitelný widget (Shadow DOM, funguje na jakémkoli webu)
-public/              Demo e-shop (index.html, shop.js, shop.css) + vendor/ (ikony)
+public/              Demo e-shop (index.html, shop.js, shop.css), soukromi.html, consent-demo.js + vendor/ (ikony)
 public/demo/         Ukázka jiného webu (kavárna Bohème)
-lib/storage.js       Kam se smí zapisovat (lokálně data/, na Vercelu dočasná složka)
-public/admin/        Dashboard
+public/admin/        Přehled pro majitele (index.html) a správa klientů (clients.html)
+supabase/schema.sql  Databáze: tabulky a funkce pro limity, využití a souhrn přehledu
+legal/               Návrhy smlouvy o zpracování a obchodních podmínek
+test/                Testy (npm test)
 ```
 
 ## Vložení na jiný web
 
 ```html
-<script src="https://VÁŠ-SERVER/widget/prodavac.js" data-name="Klára" defer></script>
+<script src="https://VÁŠ-SERVER/widget/prodavac.js" data-client="id-obchodu" defer></script>
 ```
 
 **Maskot a jméno se vytvoří z webu samy.** Widget na každém webu najde logo a udělá z něj postavičku s očima, obočím a pusou:
@@ -202,20 +226,16 @@ AIProdavac.onAddToCart = (item) => mujKosik.pridat(item);
 AIProdavac.track("search", { query, results });
 ```
 
-## Náklady (hrubý odhad, nutno změřit)
+## Náklady
 
 **Bez API:** pozdrav a proaktivní tipy nestojí nic.
 
-**Chat přes Claude API:** jedna zpráva zákazníka jsou 2–3 volání API.
-- Opus 5 ($5 / $25 za milion tokenů): orientačně ~1–2 Kč za zprávu
-- Sonnet 5 / Haiku 4.5: 2–5× levnější
-
-Přesná čísla změříme na reálném provozu. Budou podkladem pro monetizaci.
+**Chat přes Claude API:** výchozí model je Claude Sonnet 5.5 s úsilím `low` ($2 vstup / $10 výstup za milion tokenů, čtení z cache $0,20). Jedna zpráva zákazníka jsou 2–3 volání API. Skutečné náklady každého klienta se teď měří (tabulka `usage`, stránka Klienti, export CSV) – z nich nastavte ceny tarifů. Model a úsilí jdou změnit přes `MODEL` a `EFFORT`.
 
 ## Další kroky
 
-- **Hlas:** Kvalitní streamovaný hlas místo hlasů prohlížeče (ty jsou pro „wow“ demo slabé).
-- **Reálný e-shop:** Napojení na Shoptet / WooCommerce / Heureka feed.
-- **Úložiště:** Databáze místo souborů.
-- **GDPR:** Cookie lišta a souhlas se sledováním chování.
-- **Testování kvality:** Sada testovacích dotazů pro hlídání kvality AI.
+- **Platby:** napojit fakturaci (např. Stripe nebo Fakturoid) na export využití; doplnit ceny tarifů.
+- **Právní dokumenty:** doplnit údaje a nechat zkontrolovat právníkem (`legal/`, `public/soukromi.html`).
+- **Měření přínosu:** kontrolní skupina návštěvníků bez prodavačky, aby šel přínos prokázat čistě.
+- **Velké katalogy:** vyhledávání přímo v databázi (Postgres full-text) místo načítání celého katalogu do paměti každé instance.
+- **Testování kvality AI:** sada testovacích dotazů pro hlídání kvality odpovědí.

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ochrana soukromí – AI prodavačka</title>
+  <!-- NÁVRH – před zveřejněním doplňte údaje v [HRANATÝCH ZÁVORKÁCH] a nechte text zkontrolovat právníkem. -->
+  <style>
+    :root { color-scheme: light; --bg: #f6f7f9; --card: #fff; --text: #1d2433; --text-2: #4a5365; --line: #e3e7ed; --accent: #2f6fdb; }
+    @media (prefers-color-scheme: dark) {
+      :root { color-scheme: dark; --bg: #14171d; --card: #1d2129; --text: #eef1f6; --text-2: #c0c7d3; --line: #2d333f; --accent: #5b95f0; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 40px 16px 72px; }
+    article { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px clamp(18px, 4vw, 36px); }
+    h1 { font-size: 28px; line-height: 1.25; margin: 0 0 6px; }
+    h2 { font-size: 19px; margin: 30px 0 8px; }
+    p, li { color: var(--text-2); }
+    .lead { font-size: 17px; }
+    small { color: var(--text-2); }
+    a { color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--text); }
+  </style>
+</head>
+<body>
+<main>
+<article>
+  <h1>Ochrana soukromí v AI prodavačce</h1>
+  <p><small>Platné od [DATUM]</small></p>
+  <p class="lead">Na tomto e-shopu vám může radit AI prodavačka – chatovací a hlasová asistentka, kterou pro e-shopy provozuje [NÁZEV PROVOZOVATELE, IČO, SÍDLO] („my“). Tady je, jaké údaje přitom zpracováváme a proč.</p>
+
+  <h2>Kdo za údaje odpovídá</h2>
+  <p>Správcem vašich osobních údajů je <b>provozovatel e-shopu</b>, na kterém prodavačku používáte. My údaje zpracováváme jeho jménem jako zpracovatel podle smlouvy s ním. S dotazy a žádostmi se proto obracejte hlavně na e-shop; napsat můžete i nám na [E-MAIL PROVOZOVATELE].</p>
+
+  <h2>Jde o umělou inteligenci</h2>
+  <p>Odpovědi píše umělá inteligence. Informace o produktech bere z katalogu e-shopu, přesto se může splést. Závazné jsou údaje na stránce produktu a v obchodních podmínkách e-shopu.</p>
+
+  <h2>Co zpracováváme</h2>
+  <table>
+    <tr><th>Údaje</th><th>Proč</th><th>Na jakém základě</th></tr>
+    <tr><td>Vaše zprávy a to, na jaké stránce e-shopu jste (produkt, kategorie, obsah košíku)</td><td>Abychom mohli na dotaz odpovědět a poradit s výběrem</td><td>Plnění vašeho požadavku a oprávněný zájem e-shopu na poskytování poradenství (čl. 6 odst. 1 písm. b) a f) GDPR)</td></tr>
+    <tr><td>Náhodný identifikátor návštěvy, prohlížené produkty, hledání, přidání do košíku, objednávka a její hodnota, text vašich dotazů</td><td>Statistiky pro e-shop: co zákazníci hledají, jak jim prodavačka pomáhá</td><td>Jen s vaším souhlasem s analytikou (čl. 6 odst. 1 písm. a) GDPR)</td></tr>
+  </table>
+  <p>Bez souhlasu s analytikou o vás nic neukládáme: zprávu zpracujeme jen pro odpověď a prodavačka si chování na stránce pamatuje jen do jejího opuštění. Souhlas dáváte a odvoláváte v nastavení cookies e-shopu.</p>
+  <p>E-mailové adresy, telefonní čísla a čísla karet v uložených dotazech automaticky skrýváme. Přesto prosíme: do chatu osobní údaje nepište. Prodavačka je k ničemu nepotřebuje – objednávky, platby a reklamace vyřizuje e-shop.</p>
+  <p>Nesnažíme se zjistit, kdo jste. Identifikátor návštěvy je náhodný a nespojujeme ho s vaším jménem ani účtem v e-shopu.</p>
+
+  <h2>Úložiště v prohlížeči</h2>
+  <ul>
+    <li><b>sessionStorage</b> (smaže se zavřením karty) – aby rozhovor pokračoval, když přejdete na jinou stránku. Je nezbytné pro fungování chatu.</li>
+    <li><b>localStorage</b> – pozná, že jste tu už byli, a pamatuje si prohlížené produkty. Jen se souhlasem s analytikou.</li>
+  </ul>
+
+  <h2>Hlasový režim</h2>
+  <p>Když s prodavačkou mluvíte, řeč na text převádí váš prohlížeč. Některé prohlížeče (např. Google Chrome) k tomu posílají zvuk na servery svého výrobce. Hlas odpovědí vytváří služba ElevenLabs z textu odpovědi; vaši nahrávku nedostává.</p>
+
+  <h2>Komu údaje předáváme</h2>
+  <table>
+    <tr><th>Kdo</th><th>Co dělá</th><th>Kde</th></tr>
+    <tr><td>Anthropic PBC</td><td>AI model, který píše odpovědi</td><td>USA – na základě standardních smluvních doložek EU / rámce EU–USA pro ochranu údajů</td></tr>
+    <tr><td>Supabase Inc.</td><td>Databáze (statistiky, nastavení)</td><td>[REGION DATABÁZE, např. EU – Frankfurt]</td></tr>
+    <tr><td>Vercel Inc.</td><td>Provoz serveru</td><td>[REGION, např. EU]; USA na základě standardních smluvních doložek</td></tr>
+    <tr><td>ElevenLabs Inc.</td><td>Hlas odpovědí (jen v hlasovém režimu)</td><td>USA – na základě standardních smluvních doložek</td></tr>
+  </table>
+  <p>Údaje neprodáváme a nepoužíváme je k reklamě ani k trénování AI modelů.</p>
+
+  <h2>Jak dlouho</h2>
+  <p>Statistiky a uložené dotazy mažeme automaticky po [90] dnech. Rozhovor bez souhlasu neukládáme vůbec.</p>
+
+  <h2>Vaše práva</h2>
+  <p>Máte právo na přístup ke svým údajům, jejich opravu a výmaz, omezení zpracování, přenositelnost, vznést námitku a kdykoli odvolat souhlas. Protože vás podle náhodného identifikátoru neumíme poznat, uveďte prosím při žádosti, kdy a na jakém e-shopu jste prodavačku používali. Stížnost můžete podat u Úřadu pro ochranu osobních údajů (<a href="https://uoou.gov.cz" rel="noopener">uoou.gov.cz</a>).</p>
+</article>
+</main>
+</body>
+</html>

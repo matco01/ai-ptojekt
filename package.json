@@ -1,12 +1,13 @@
 {
   "name": "ai-prodavac",
-  "version": "0.1.0",
-  "description": "AI obchodní prodavač pro e-shopy – prototyp",
+  "version": "0.2.0",
+  "description": "AI obchodní prodavač pro e-shopy",
   "type": "module",
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "node --test \"test/*.test.js\""
   },
   "engines": {
     "node": ">=22"
@@ -16,5 +17,8 @@
     "@supabase/supabase-js": "^2.117.2",
     "express": "^5.2.1",
     "fast-xml-parser": "^5.11.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
   }
 }

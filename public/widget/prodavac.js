@@ -1,8 +1,15 @@
 /*
  * AI Prodavač – embeddable widget
  *
- * Usage on any website:
+ * Usage on any website (data-client is required – it says which shop the widget belongs to):
  *   <script src="https://YOUR-SERVER/widget/prodavac.js" data-client="shop-id" defer></script>
+ *
+ * Consent (GDPR): behaviour analytics and remembering returning visitors run only with the visitor's
+ * consent to analytics. The widget reads it from the shop's consent tool (Google Consent Mode
+ * "analytics_storage", Cookiebot, OneTrust), or the shop sets it: data-consent="granted" (the shop loads
+ * the widget only after consent), AIProdavac.setConsent(true|false), or window.AIProdavac = { consent: true }
+ * before the widget loads. Without consent the widget still greets, gives tips and chats – it just
+ * doesn't store anything about the visitor. data-privacy-url = link to the shop's own privacy policy.
  *
  * The look adapts to the host site automatically (brand colour, font, roundness,
  * light/dark). Optional overrides: data-color, data-theme="light|dark", data-font, data-radius, data-name.
@@ -21,24 +28,56 @@
   if (window.AIProdavac?.__loaded) return;
 
   const script = document.currentScript;
+  if (!script?.dataset.client) {
+    console.error("AI prodavač: chybí data-client ve vložení widgetu, např. <script src=\".../prodavac.js\" data-client=\"vas-obchod\">. Widget se nespustí.");
+    return;
+  }
   const cfg = {
-    api: script?.dataset.api || new URL(script?.src || location.href).origin,
-    client: script?.dataset.client || undefined, // which shop this embed belongs to (server default: techmarket)
+    api: script.dataset.api || new URL(script.src || location.href).origin,
+    client: script.dataset.client, // which shop this embed belongs to
     name: script?.dataset.name || "Klára",
     color: script?.dataset.color || "#1a8f4c",
     greetDelay: Number(script?.dataset.greetDelay ?? 0.6) * 1000,
     lang: script?.dataset.lang || "cs-CZ",
   };
 
+  cfg.privacy = script.dataset.privacyUrl || cfg.api + "/soukromi.html";
+
+  // ----------------------------------------------------------- consent ----
+  // Analytics consent: set by the shop, or read from its consent tool. null = no answer yet (= no).
+  let consentOverride = script.dataset.consent === "granted" ? true
+    : typeof window.AIProdavac?.consent === "boolean" ? window.AIProdavac.consent : null;
+  function detectConsent() {
+    try {
+      if (window.Cookiebot?.consent) return Boolean(window.Cookiebot.consent.statistics);
+      if (typeof window.OnetrustActiveGroups === "string") return /(^|,)C0002(,|$)/.test(window.OnetrustActiveGroups);
+      let granted = null; // Google Consent Mode: the last default/update wins
+      for (const e of window.dataLayer || []) {
+        if (e && e[0] === "consent" && typeof e[2]?.analytics_storage === "string") granted = e[2].analytics_storage === "granted";
+      }
+      return granted;
+    } catch { return null; }
+  }
+  const consent = () => consentOverride ?? detectConsent() ?? false;
+
   // ------------------------------------------------------------- state ----
-  const ls = {
-    get(k) { try { return JSON.parse(localStorage.getItem("aip_" + k)); } catch { return null; } },
-    set(k, v) { try { localStorage.setItem("aip_" + k, JSON.stringify(v)); } catch {} },
-  };
-  const ss = {
-    get(k) { try { return JSON.parse(sessionStorage.getItem("aip_" + k)); } catch { return null; } },
-    set(k, v) { try { sessionStorage.setItem("aip_" + k, JSON.stringify(v)); } catch {} },
-  };
+  // localStorage (remembered across visits) and the behaviour history are used only with consent;
+  // without it they live in memory for the current page. The rest of sessionStorage only keeps the
+  // widget working while the visitor moves between pages (open chat, its messages, "just looking").
+  const mem = new Map();
+  const TRACKING = /^(searches|seq|cartRemovals)$/;
+  const box = (storage, needsConsent) => ({
+    get(k) {
+      if (needsConsent(k) && !consent()) return mem.get(k) ?? null;
+      try { return JSON.parse(storage().getItem("aip_" + k)); } catch { return null; }
+    },
+    set(k, v) {
+      if (needsConsent(k) && !consent()) { mem.set(k, v); return; }
+      try { storage().setItem("aip_" + k, JSON.stringify(v)); } catch {}
+    },
+  });
+  const ls = box(() => localStorage, () => true);
+  const ss = box(() => sessionStorage, (k) => TRACKING.test(k));
   let sessionId = ss.get("sid");
   const isNewSession = !sessionId;
   if (!sessionId) {
@@ -54,6 +93,13 @@
 
   const api = (window.AIProdavac = window.AIProdavac || {});
   api.__loaded = true;
+  api.setConsent = (granted) => {
+    consentOverride = Boolean(granted);
+    if (!consentOverride) {
+      queue = [];
+      try { for (const k of Object.keys(localStorage)) if (k.startsWith("aip_")) localStorage.removeItem(k); } catch {}
+    }
+  };
   let mode = null;          // "chat" | "voice" | null (panel closed)
   let busy = false;
   let lastChatActivity = 0;
@@ -99,13 +145,16 @@
     if (type === "tab_view" && data.tab) beh.tabs.push(data.tab);
     if (type === "hover_add") beh.hoverAdd++;
     if (type === "cart_remove") { beh.cartRemovals++; ss.set("cartRemovals", beh.cartRemovals); }
-    queue.push({ type, ...data });
-    clearTimeout(flushTimer);
-    flushTimer = setTimeout(flush, 800);
+    if (consent()) {
+      queue.push({ type, ...data });
+      clearTimeout(flushTimer);
+      flushTimer = setTimeout(flush, 800);
+    }
     // a real salesperson reacts to what just happened – re-check soon
     if (["search", "add_to_cart", "product_view", "category_view", "page_view", "cart_remove", "hover_add"].includes(type)) scheduleCheck(1200);
   };
   function flush() {
+    if (!consent()) queue = [];
     if (!queue.length) return;
     const body = JSON.stringify({ client: cfg.client, sessionId, events: queue });
     queue = [];
@@ -125,6 +174,7 @@
     try { c = (hosted ? api.getContext() : autoContext()) || {}; } catch {}
     return {
       integration: hosted ? "host" : "auto",
+      consent: consent(),
       pageType: c.pageType, category: c.category, currentProductId: c.currentProductId,
       viewedProductIds: c.viewedProductIds, cart: c.cart,
       searches: searches.slice(-5), secondsOnPage: Math.round((Date.now() - pageStart) / 1000),
@@ -625,6 +675,8 @@
     .note { align-self: center; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink); background: var(--glass); border: 1px solid var(--edge);
       padding: 6px 12px; border-radius: 999px; animation: materialize .35s both; }
     .note svg { color: var(--c2); }
+    .legal { margin-top: 6px; text-align: center; font-size: 11.5px; color: var(--soft); }
+    .legal a { color: inherit; text-decoration: underline; }
     .msgs > .chips { align-self: flex-start; }
 
     /* product cards: white so the products stand out */
@@ -890,13 +942,13 @@
   async function loadName() {
     AV ??= detectPersona();
     fetch(cfg.api + "/api/health").then((r) => r.json()).then((h) => { ttsServer = h.tts === "elevenlabs"; }).catch(() => {});
-    const key = "agent-name:" + (cfg.client || "default");
-    const cached = script?.dataset.name || ls.get(key);
+    const key = "agent-name:" + cfg.client;
+    const cached = script.dataset.name || ls.get(key);
     if (cached) cfg.name = cached;
     const fresh = post("/api/persona", { brand: AV.brand })
       .then((r) => {
         integ = r?.integration || {};
-        if (r?.name && !script?.dataset.name) { ls.set(key, r.name); cfg.name = r.name; }
+        if (r?.name && !script.dataset.name) { ls.set(key, r.name); cfg.name = r.name; }
       })
       .catch(() => {});
     if (!cached) await fresh;
@@ -1280,6 +1332,7 @@
             <textarea rows="1" placeholder="Napište, co hledáte…" maxlength="600" aria-label="Zpráva pro prodavačku"></textarea>
             <button class="send" type="submit" aria-label="Odeslat">${ICON.send}</button>
           </div>
+          <div class="legal">Odpovídá umělá inteligence a může se splést · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">Ochrana soukromí</a></div>
         </form>`;
       const form = footer.querySelector("form");
       const ta = form.querySelector("textarea");
@@ -1495,7 +1548,7 @@
             enqueueSpeech(ev.text);
           } else if (ev.type === "mode" && ev.offline && !state.offlineNoted) {
             state.offlineNoted = true; saveState();
-            addNote("Ukázkový režim bez AI – odpovědi jsou zatím zjednodušené.");
+            addNote("Teď odpovídám ve zjednodušeném režimu.");
           } else if (ev.type === "error") {
             addBubble("err", ev.message);
             if (mode === "voice") enqueueSpeech(ev.message);

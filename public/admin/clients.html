@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI prodavač – klienti</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f5f8; --card: #ffffff; --card-2: #f7f8fa; --line: #e3e7ed;
+      --text: #151922; --text-2: #465061; --text-3: #667085;
+      --blue: #2f6fdb; --orange: #e0662f; --green: #1f8a5c; --amber: #b7791f;
+      --track: #eceff4; --shadow: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.05);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:where(:not([data-theme="light"])) {
+        color-scheme: dark;
+        --bg: #14171d; --card: #1d2129; --card-2: #232833; --line: #2d333f;
+        --text: #eef1f6; --text-2: #c0c7d3; --text-3: #959eae;
+        --blue: #5b95f0; --orange: #f08352; --green: #4cc38a; --amber: #e0a943;
+        --track: #2a303b; --shadow: 0 1px 2px rgba(0,0,0,.3);
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+    header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .head-in { max-width: 1180px; margin: 0 auto; padding: 16px 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    header h1 { font-size: 20px; margin: 0; flex: 1; }
+    button, a.btn { font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--line); background: var(--card); color: var(--text); text-decoration: none; display: inline-block; }
+    button:hover, a.btn:hover { background: var(--card-2); border-color: var(--text-3); }
+    button.primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+    button.small, a.small { padding: 5px 10px; font-size: 13.5px; }
+    button:disabled { opacity: .55; cursor: default; }
+    input, select, textarea { font: inherit; font-size: 14.5px; width: 100%; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); color: var(--text); }
+    textarea { min-height: 70px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13.5px; }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 28px 72px; display: grid; gap: 22px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 22px 24px; }
+    .card h2 { font-size: 17px; margin: 0 0 4px; }
+    .hint { font-size: 14px; color: var(--text-3); margin: 0 0 16px; }
+    .table-wrap { overflow-x: auto; margin: 0 -8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+    th { text-align: left; font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 700; padding: 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    td small { display: block; color: var(--text-3); font-size: 13px; }
+    .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .bad { color: var(--orange); font-weight: 600; }
+    .warn { color: var(--amber); font-weight: 600; }
+    .ok { color: var(--green); }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px 18px; }
+    .grid .wide { grid-column: 1 / -1; }
+    label { display: block; font-size: 13.5px; font-weight: 600; color: var(--text-2); margin-bottom: 5px; }
+    label small { font-weight: 400; color: var(--text-3); }
+    .check { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+    .check input { width: auto; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
+    .err { color: var(--orange); font-size: 14px; }
+    pre { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; white-space: pre-wrap; word-break: break-all; font-size: 13.5px; margin: 0; }
+    .notice { background: color-mix(in srgb, var(--amber) 14%, var(--card)); border-radius: 12px; padding: 12px 16px; font-size: 14.5px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 600px) { .head-in, main { padding-left: 16px; padding-right: 16px; } .card { padding: 18px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="head-in">
+      <h1>AI prodavač · klienti</h1>
+      <a class="btn" href="/admin/">← Přehled</a>
+      <button class="primary" id="new">+ Nový klient</button>
+    </div>
+  </header>
+  <main>
+    <p class="notice" id="denied" hidden>Tahle stránka je jen pro provozovatele. <a href="/admin/">Přihlaste se</a> jako <b>admin</b> s heslem ADMIN_TOKEN.</p>
+    <p class="notice" id="nodb" hidden>Bez databáze (SUPABASE_URL / SUPABASE_SECRET_KEY) nejde klienty ukládat – vidíte jen vestavěné ukázky.</p>
+
+    <section class="card" id="editor" hidden>
+      <h2 id="editor-title">Nový klient</h2>
+      <p class="hint">Po uložení vytvořte majiteli přihlášení a pošlete mu ho i s kódem pro web.</p>
+      <form id="form" class="grid">
+        <div><label for="f-id">ID <small>– do vložení widgetu, nejde změnit</small></label><input id="f-id" required pattern="[a-z0-9][a-z0-9\-]{1,39}" placeholder="napr-datart"></div>
+        <div><label for="f-name">Název obchodu</label><input id="f-name" required></div>
+        <div class="wide"><label for="f-domains">Domény <small>– oddělte čárkou; subdomény (www., m.) jsou povolené samy</small></label><input id="f-domains" placeholder="datart.cz, datart.sk"></div>
+        <div class="wide"><label for="f-feed">Produktový feed <small>– Heureka / Zboží.cz nebo Google Merchant XML</small></label><input id="f-feed" type="url" placeholder="https://www.obchod.cz/feed/heureka.xml"></div>
+        <div class="wide"><label for="f-desc">Co je to za obchod <small>– AI podle toho mluví</small></label><input id="f-desc" placeholder="e-shop s elektronikou a spotřebiči"></div>
+        <div><label for="f-agent">Jméno prodavačky <small>– prázdné = odvodí se od názvu</small></label><input id="f-agent"></div>
+        <div><label for="f-ship">Doprava zdarma od (Kč)</label><input id="f-ship" type="number" min="0" step="1"></div>
+        <div><label for="f-plan">Tarif</label><select id="f-plan"></select></div>
+        <div><label for="f-limit">Vlastní limit zpráv / měsíc <small>– prázdné = podle tarifu</small></label><input id="f-limit" type="number" min="0" step="1"></div>
+        <div><label for="f-email">E-mail majitele</label><input id="f-email" type="email"></div>
+        <div><label class="check"><input id="f-active" type="checkbox" checked> Aktivní (widget běží)</label></div>
+        <div class="wide"><label for="f-info">Informace o obchodě <small>– JSON téma → text; na doprava/vrácení/platbu AI odpovídá jen odsud</small></label>
+          <textarea id="f-info" rows="5" placeholder='{"doprava": "…", "vraceni": "…", "platba": "…", "kontakt": "…"}'></textarea></div>
+        <div class="wide"><label for="f-integ">Úpravy napojení <small>– jen pro neobvyklé weby, JSON</small></label>
+          <textarea id="f-integ" rows="2" placeholder='{"addToCart": "#buy-button", "cart": ".header-cart", "thankYou": "objednavka/hotovo"}'></textarea></div>
+        <div class="wide"><label for="f-notes">Interní poznámky</label><textarea id="f-notes" rows="2" style="font-family:inherit"></textarea></div>
+      </form>
+      <div class="row">
+        <button class="primary" id="save">Uložit</button>
+        <button id="cancel">Zavřít</button>
+        <span class="err" id="form-err"></span>
+      </div>
+      <div id="onboard" hidden>
+        <h2 style="margin-top:26px">Kód pro web klienta</h2>
+        <p class="hint">Vloží se na všechny stránky obchodu – přímo, nebo přes Google Tag Manager.</p>
+        <pre id="embed"></pre>
+        <div class="row">
+          <button id="copy-embed">Kopírovat kód</button>
+          <button id="make-login">Vytvořit nové přihlášení majitele</button>
+          <span class="err" id="login-err"></span>
+        </div>
+        <div id="credentials" hidden>
+          <h2 style="margin-top:26px">Zpráva pro majitele</h2>
+          <p class="hint">Heslo se zobrazí jen teď – uloží se jen jeho otisk. Nové přihlášení zneplatní staré heslo.</p>
+          <pre id="message"></pre>
+          <div class="row">
+            <button id="copy-message">Kopírovat zprávu</button>
+            <a class="btn" id="mail" href="#">Otevřít v e-mailu</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Klienti</h2>
+      <p class="hint" id="month-hint">Využití za tento měsíc.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Obchod</th><th>Tarif</th><th>Zprávy</th><th>Náklad AI</th><th>Katalog</th><th>Přihlášení</th><th></th></tr></thead>
+          <tbody id="rows"><tr><td colspan="7">Načítám…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="row">
+        <label for="csv-month" style="margin:0">Export využití pro fakturaci</label>
+        <input id="csv-month" type="month" style="width:auto">
+        <a class="btn" id="csv" href="#">Stáhnout CSV</a>
+      </div>
+    </section>
+  </main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const nf = (n) => Number(n || 0).toLocaleString("cs-CZ");
+  const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  let data = null, editing = null;
+
+  $("csv-month").value = new Date().toISOString().slice(0, 7);
+  const csvHref = () => { $("csv").href = `/api/admin/usage.csv?month=${$("csv-month").value}`; };
+  $("csv-month").oninput = csvHref; csvHref();
+
+  async function load() {
+    const r = await fetch("/api/admin/clients");
+    if (r.status === 401 || r.status === 403) { $("denied").hidden = false; $("rows").innerHTML = ""; $("new").disabled = true; return; }
+    data = await r.json();
+    $("nodb").hidden = data.database;
+    $("new").disabled = !data.database;
+    $("f-plan").innerHTML = Object.entries(data.plans).map(([id, p]) => `<option value="${id}">${esc(p.name)} (${nf(p.messages)} zpráv)</option>`).join("");
+    const month = new Date(data.month + "-01").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
+    $("month-hint").textContent = `Využití za ${month}. Náklad = cena volání Claude API (bez hlasu ElevenLabs).`;
+    $("rows").innerHTML = data.clients.map((c) => {
+      const share = c.limits.messages ? c.usage.messages / c.limits.messages : 0;
+      const feed = c.feed?.demo ? `<span class="ok">ukázkový, ${nf(c.feed.products)}</span>`
+        : !c.feedUrl && c.builtIn ? `<span class="ok">vestavěný</span>`
+        : !c.feedUrl ? `<span class="warn">bez feedu</span>`
+        : !c.feed ? `<small>zatím nestaženo</small>`
+        : c.feed.error ? `<span class="bad" title="${esc(c.feed.error)}">chyba feedu</span><small>${nf(c.feed.products)} produktů z dřívějška</small>`
+        : `<span class="ok">${nf(c.feed.products)} produktů</span><small>${c.feed.updatedAt ? new Date(c.feed.updatedAt).toLocaleString("cs-CZ") : ""}</small>`;
+      return `<tr>
+        <td><b>${esc(c.name)}</b>${c.active ? "" : ` <span class="warn">neaktivní</span>`}<small>${esc(c.id)} · ${esc(c.domains.join(", ") || "jen naše ukázky")}</small></td>
+        <td>${esc(c.limits.planName)}</td>
+        <td class="num"><span class="${share >= 1 ? "bad" : share >= 0.8 ? "warn" : ""}">${nf(c.usage.messages)} / ${nf(c.limits.messages)}</span><small>${nf(c.usage.ttsChars)} znaků hlasem</small></td>
+        <td class="num">$${c.usage.costUsd.toFixed(2)}<small>${nf(c.usage.aiCalls)} volání</small></td>
+        <td>${feed}</td>
+        <td>${c.hasPassword ? `<span class="ok">nastaveno</span>` : `<span class="warn">chybí</span>`}</td>
+        <td><div class="actions"><button class="small" data-edit="${esc(c.id)}">Upravit</button><a class="btn small" href="/admin/?client=${encodeURIComponent(c.id)}">Přehled</a></div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  $("rows").onclick = (e) => {
+    const id = e.target.dataset?.edit;
+    if (id) openEditor(data.clients.find((c) => c.id === id));
+  };
+  $("new").onclick = () => openEditor(null);
+  $("cancel").onclick = () => { $("editor").hidden = true; };
+
+  const json = (o) => (o && Object.keys(o).length ? JSON.stringify(o, null, 2) : "");
+  function openEditor(c) {
+    editing = c;
+    $("editor-title").textContent = c ? `Upravit: ${c.name}` : "Nový klient";
+    $("f-id").value = c?.id ?? ""; $("f-id").disabled = Boolean(c);
+    $("f-name").value = c?.name ?? "";
+    $("f-domains").value = c?.domains.join(", ") ?? "";
+    $("f-feed").value = c?.feedUrl ?? "";
+    $("f-desc").value = c?.description ?? "";
+    $("f-agent").value = c?.agentName ?? "";
+    $("f-ship").value = c?.freeShippingFrom ?? "";
+    $("f-plan").value = c?.plan ?? "trial";
+    $("f-limit").value = c?.monthlyMessageLimit ?? "";
+    $("f-email").value = c?.ownerEmail ?? "";
+    $("f-active").checked = c?.active ?? true;
+    $("f-info").value = json(c?.info);
+    $("f-integ").value = json(c?.integration);
+    $("f-notes").value = c?.notes ?? "";
+    $("form-err").textContent = "";
+    $("credentials").hidden = true;
+    showOnboard(c?.id);
+    $("editor").hidden = false;
+    $("editor").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function parseJson(field, label) {
+    const v = $(field).value.trim();
+    if (!v) return null;
+    try { return JSON.parse(v); } catch { throw new Error(`${label}: neplatný JSON.`); }
+  }
+
+  $("save").onclick = async () => {
+    $("form-err").textContent = "";
+    if (!$("form").reportValidity()) return;
+    let body;
+    try {
+      body = {
+        isNew: !editing, id: $("f-id").value.trim(), name: $("f-name").value, domains: $("f-domains").value,
+        feedUrl: $("f-feed").value, description: $("f-desc").value, agentName: $("f-agent").value,
+        freeShippingFrom: $("f-ship").value, plan: $("f-plan").value, monthlyMessageLimit: $("f-limit").value,
+        ownerEmail: $("f-email").value, active: $("f-active").checked, notes: $("f-notes").value,
+        info: parseJson("f-info", "Informace o obchodě"), integration: parseJson("f-integ", "Úpravy napojení"),
+      };
+    } catch (err) { $("form-err").textContent = err.message; return; }
+    $("save").disabled = true;
+    const r = await post("/api/admin/clients", body);
+    const d = await r.json().catch(() => ({}));
+    $("save").disabled = false;
+    if (!r.ok) { $("form-err").textContent = d.error || "Uložení se nepodařilo."; return; }
+    await load();
+    const saved = data.clients.find((c) => c.id === d.id);
+    const wasNew = !editing;
+    openEditor(saved);
+    $("form-err").innerHTML = `<span class="ok">Uloženo.</span>${wasNew ? " Teď vytvořte přihlášení majitele." : ""}`;
+  };
+
+  const embedFor = (id) => `<script src="${location.origin}/widget/prodavac.js" data-client="${id}" defer><\/script>`;
+  function showOnboard(id) {
+    $("onboard").hidden = !id;
+    if (id) $("embed").textContent = embedFor(id);
+  }
+  const copy = async (text, btn) => {
+    await navigator.clipboard.writeText(text);
+    const was = btn.textContent; btn.textContent = "Zkopírováno ✓"; setTimeout(() => { btn.textContent = was; }, 1500);
+  };
+  $("copy-embed").onclick = (e) => copy($("embed").textContent, e.target);
+  $("copy-message").onclick = (e) => copy($("message").textContent, e.target);
+
+  $("make-login").onclick = async () => {
+    const c = editing;
+    if (!c) return;
+    if (c.hasPassword && !confirm(`${c.name} už přihlášení má. Vytvořit nové heslo? Staré přestane platit.`)) return;
+    $("login-err").textContent = "";
+    const r = await post(`/api/admin/clients/${encodeURIComponent(c.id)}/password`, {});
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $("login-err").textContent = d.error || "Nepodařilo se."; return; }
+    c.hasPassword = true;
+    const text = `Dobrý den,
+
+AI prodavačka pro ${c.name} je připravená.
+
+1) Na všechny stránky obchodu vložte tento kód (přímo, nebo přes Google Tag Manager):
+${embedFor(c.id)}
+
+Pokud máte nástroj na souhlas s cookies, widget si souhlas s analytikou přečte sám (Google Consent Mode, Cookiebot, OneTrust).
+
+2) Přehled chování zákazníků a výkonu prodavačky najdete tady:
+${location.origin}/admin/
+ID obchodu: ${c.id}
+Heslo: ${d.password}
+
+Heslo si prosím uložte do správce hesel a tento e-mail pak smažte.`;
+    $("message").textContent = text;
+    $("mail").href = `mailto:${encodeURIComponent(c.ownerEmail || "")}?subject=${encodeURIComponent(`AI prodavačka pro ${c.name} – přístup`)}&body=${encodeURIComponent(text)}`;
+    $("credentials").hidden = false;
+    load();
+  };
+
+  load();
+</script>
+</body>
+</html>

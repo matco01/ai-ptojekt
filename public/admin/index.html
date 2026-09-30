@@ -88,6 +88,16 @@
     .catalog-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .catalog-card .err { color: var(--orange); font-weight: 600; }
     .notice { background: var(--notice-bg); color: var(--notice-text); border-radius: 12px; padding: 12px 16px; font-size: 14.5px; }
+    a.btn { font-size: 14.5px; font-weight: 500; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--line); background: var(--card); color: var(--text); text-decoration: none; }
+    a.btn:hover { background: var(--card-2); border-color: var(--text-3); }
+    .login { max-width: 380px; margin: 12vh auto 0; padding: 28px; }
+    .login h2 { font-size: 20px; margin-bottom: 18px; }
+    .login label { display: block; font-size: 14px; font-weight: 600; color: var(--text-2); margin: 14px 0 6px; }
+    .login input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); color: var(--text); }
+    .login button { width: 100%; margin-top: 20px; }
+    .login .err { color: var(--orange); font-size: 14px; min-height: 20px; margin: 10px 0 0; }
+    .meter { height: 10px; background: var(--track); border-radius: 999px; overflow: hidden; margin-top: 10px; }
+    .meter i { display: block; height: 100%; background: var(--accent, var(--blue)); border-radius: 999px; }
 
     @media (max-width: 600px) {
       .head-in, main { padding-left: 16px; padding-right: 16px; }
@@ -104,12 +114,22 @@
       <h1>AI prodavač · přehled <small id="client-name">&nbsp;</small></h1>
       <select id="client-pick" hidden aria-label="Klient"></select>
       <button id="refresh">↻ Obnovit</button>
-      <button id="seed" title="Vygeneruje simulované návštěvy pro ukázku">Naplnit demo daty</button>
-      <button id="reset" class="danger">Smazat data</button>
+      <a class="btn" id="clients-link" href="/admin/clients.html" hidden>Klienti</a>
+      <button id="logout" hidden>Odhlásit</button>
     </div>
   </header>
-  <main>
-    <div id="demo-notice" class="notice" hidden>Data obsahují simulované (demo) návštěvy. Pro reálná čísla klikněte „Smazat data“ a projděte si obchod.</div>
+  <section class="card login" id="login" hidden>
+    <h2>Přihlášení k přehledu</h2>
+    <form id="login-form">
+      <label for="login-client">ID obchodu</label>
+      <input id="login-client" name="client" autocomplete="username" required>
+      <label for="login-password">Heslo</label>
+      <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      <button class="primary" type="submit">Přihlásit</button>
+      <p class="err" id="login-err"></p>
+    </form>
+  </section>
+  <main id="main" hidden>
 
     <h3 class="section-title">Souhrn</h3>
     <section class="tiles" id="tiles"></section>
@@ -173,9 +193,30 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const kc = (n) => Math.round(n).toLocaleString("cs-CZ") + " Kč";
   const params = new URLSearchParams(location.search);
-  const token = params.get("token") || "";
+  // passwords never belong in a URL – drop one left over from an old link
+  if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "")); }
   const clientId = params.get("client") || "";
-  const call = (url, opts = {}) => fetch(url + (clientId ? `?client=${encodeURIComponent(clientId)}` : ""), { ...opts, headers: { "X-Admin-Token": token, ...(opts.headers || {}) } });
+  const call = (url, opts = {}) => fetch(url + (clientId ? `?client=${encodeURIComponent(clientId)}` : ""), opts);
+
+  function showLogin() {
+    $("main").hidden = true;
+    $("login").hidden = false;
+    $("login-client").value ||= clientId;
+    ($("login-client").value ? $("login-password") : $("login-client")).focus();
+  }
+  $("login-form").onsubmit = async (e) => {
+    e.preventDefault();
+    $("login-err").textContent = "";
+    const r = await fetch("/api/admin/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client: $("login-client").value, password: $("login-password").value }),
+    });
+    if (!r.ok) { $("login-err").textContent = (await r.json().catch(() => ({}))).error || "Přihlášení se nepodařilo."; return; }
+    $("login-password").value = "";
+    $("login").hidden = true;
+    load();
+  };
+  $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = "/admin/"; };
 
   $("client-pick").onchange = (e) => { params.set("client", e.target.value); location.search = params; };
 
@@ -208,11 +249,16 @@
 
   async function load() {
     const r = await call("/api/analytics");
+    if (r.status === 401) return showLogin();
+    $("main").hidden = false;
     if (!r.ok) {
-      $("tiles").innerHTML = `<p class="empty">${r.status === 401 ? "Chybí nebo nesedí heslo – otevřete dashboard přes odkaz s ?token=…" : r.status === 404 ? "Tento klient neexistuje." : `Nelze načíst data (${r.status}).`}</p>`;
+      $("tiles").innerHTML = `<p class="empty">${r.status === 404 ? "Tento klient neexistuje." : `Nelze načíst data (${r.status}).`}</p>`;
       return;
     }
     const d = await r.json();
+    const me = await fetch("/api/admin/me").then((x) => x.json()).catch(() => ({}));
+    $("clients-link").hidden = !me.master;
+    $("logout").hidden = Boolean(me.dev);
     renderCatalog(d.catalog);
     $("client-name").textContent = d.client.name;
     document.title = `${d.client.name} – AI prodavač`;
@@ -227,7 +273,8 @@
       tile("Konverze s AI", t.conversionAi + " %", `bez AI ${t.conversionNonAi} %`, "var(--green)"),
       tile("Průměrná objednávka s AI", t.avgOrderAi ? kc(t.avgOrderAi) : "–", `bez AI ${t.avgOrderNonAi ? kc(t.avgOrderNonAi) : "–"}`, "var(--amber)"),
       tile("Tržby celkem", kc(t.revenue), `${t.orders} objednávek, z toho ${t.ordersAi} s AI`, "var(--orange)"),
-    ].join("");
+      usageTile(d.usage),
+    ].join("") + `<p class="hint" style="grid-column:1/-1;margin:0">Za posledních ${d.periodDays} dní. Starší data se automaticky mažou.</p>`;
 
     bars($("conv"), [
       { name: "S AI prodavačkou", value: t.conversionAi, label: t.conversionAi + " %", color: "var(--blue)", tip: `S AI: ${t.conversionAi} % z ${t.aiSessions} návštěv` },
@@ -260,7 +307,17 @@
       ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<div class="meta"><span class="chip${q.mode === "voice" ? " voice" : ""}">${q.mode === "voice" ? "hlas" : "chat"}</span>${new Date(q.ts).toLocaleString("cs-CZ")}</div></li>`).join("")
       : `<li class="empty">Zatím žádné dotazy.</li>`;
 
-    $("demo-notice").hidden = !d.hasDemoData;
+  }
+
+  function usageTile(u) {
+    if (!u) return "";
+    const share = u.messageLimit ? Math.min(u.messages / u.messageLimit, 1) : 0;
+    const accent = share >= 1 ? "var(--orange)" : share >= 0.8 ? "var(--amber)" : "var(--green)";
+    const month = new Date(u.month + "-01").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
+    return `<div class="tile" style="--accent:${accent}"><div class="label">Tarif ${esc(u.plan)} · ${esc(month)}</div>
+      <div class="value">${u.messages.toLocaleString("cs-CZ")}<small style="font-size:16px;color:var(--text-3)"> / ${u.messageLimit.toLocaleString("cs-CZ")}</small></div>
+      <div class="sub">${share >= 1 ? "Limit vyčerpán – chat odpovídá zjednodušeně bez AI." : "zpráv zodpovězených AI tento měsíc"}</div>
+      <div class="meter"><i style="width:${Math.max(share * 100, 1)}%"></i></div></div>`;
   }
 
   function renderCatalog(c) {
@@ -303,12 +360,6 @@
       : `<p class="empty">${esc(d.error || "Chyba")}</p><button class="primary" id="gen">Zkusit znovu</button>`;
   });
   $("refresh").onclick = load;
-  $("seed").onclick = async () => { await call("/api/analytics/seed", { method: "POST" }); load(); };
-  $("reset").onclick = async () => {
-    if (!confirm("Opravdu smazat všechna nasbíraná data?")) return;
-    await call("/api/analytics/reset", { method: "POST" });
-    load();
-  };
   load();
 </script>
 </body>
