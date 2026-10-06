@@ -146,18 +146,19 @@
     </section>
 
     <h3 class="section-title">AI prodavačka</h3>
+    <section class="card">
+      <h2>Na co se zákazníci ptají</h2>
+      <p class="hint">Poslední dotazy na AI prodavačku.</p>
+      <ul class="questions" id="questions"></ul>
+    </section>
+
     <section class="cols">
-      <div class="card">
-        <h2>Konverze: s AI vs. bez AI</h2>
-        <p class="hint">Podíl návštěv, které skončily objednávkou.</p>
-        <div class="legend"><span><i style="background:var(--blue)"></i>S AI prodavačkou</span><span><i style="background:var(--orange)"></i>Bez AI</span></div>
-        <div class="bars" id="conv"></div>
-      </div>
       <div class="card">
         <h2>Nabídka pomoci</h2>
         <p class="hint">Jak zákazníci reagují, když se jim prodavačka nabídne.</p>
         <div class="bars" id="offer"></div>
       </div>
+      <div class="card"><h2>Co AI nejčastěji doporučuje</h2><p class="hint">Počet zobrazení v kartičkách asistentky.</p><div class="bars" id="recs"></div></div>
     </section>
 
     <section class="card">
@@ -174,16 +175,10 @@
 
     <section class="cols">
       <div class="card"><h2>Nejprohlíženější produkty</h2><p class="hint">Počet zobrazení detailu.</p><div class="bars" id="viewed"></div></div>
-      <div class="card"><h2>Co AI nejčastěji doporučuje</h2><p class="hint">Počet zobrazení v kartičkách asistentky.</p><div class="bars" id="recs"></div></div>
-    </section>
-    <section class="cols">
       <div class="card"><h2>Přidáno do košíku díky AI</h2><p class="hint">Kusy přidané z doporučení asistentky.</p><div class="bars" id="cartai"></div></div>
-      <div class="card"><h2>Hodně prohlížené, málo kupované</h2><p class="hint">Produkty, které si do košíku přidá méně než 15 % zájemců – kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div></div>
     </section>
     <section class="card">
-      <h2>Na co se zákazníci ptají</h2>
-      <p class="hint">Poslední dotazy na AI prodavačku.</p>
-      <ul class="questions" id="questions"></ul>
+      <h2>Hodně prohlížené, málo kupované</h2><p class="hint">Produkty, které si do košíku přidá méně než 15 % zájemců – kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div>
     </section>
   </main>
   <div class="tip" id="tip"></div>
@@ -191,7 +186,6 @@
 <script>
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const kc = (n) => Math.round(n).toLocaleString("cs-CZ") + " Kč";
   const params = new URLSearchParams(location.search);
   // passwords never belong in a URL – drop one left over from an old link
   if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "")); }
@@ -266,22 +260,17 @@
       $("client-pick").innerHTML = d.clients.map((c) => `<option value="${esc(c.id)}"${c.id === d.client.id ? " selected" : ""}>${esc(c.name)}${c.active ? "" : " (neaktivní)"}</option>`).join("");
       $("client-pick").hidden = false;
     }
-    const t = d.totals;
+    const t = d.totals, o = d.offer;
+    const tipsShown = d.nudges.reduce((s, n) => s + n.shown, 0), tipsUsed = d.nudges.reduce((s, n) => s + n.clicked, 0);
     $("tiles").innerHTML = [
       tile("Návštěvy", t.sessions.toLocaleString("cs-CZ"), `${t.events.toLocaleString("cs-CZ")} zaznamenaných událostí`, "var(--blue)"),
-      tile("Využilo AI prodavačku", t.sessions ? Math.round((t.aiSessions / t.sessions) * 100) + " %" : "–", `${t.aiSessions} návštěv · ${t.userMessages} dotazů`, "var(--violet)"),
-      tile("Konverze s AI", t.conversionAi + " %", `bez AI ${t.conversionNonAi} %`, "var(--green)"),
-      tile("Průměrná objednávka s AI", t.avgOrderAi ? kc(t.avgOrderAi) : "–", `bez AI ${t.avgOrderNonAi ? kc(t.avgOrderNonAi) : "–"}`, "var(--amber)"),
-      tile("Tržby celkem", kc(t.revenue), `${t.orders} objednávek, z toho ${t.ordersAi} s AI`, "var(--orange)"),
+      tile("Využilo AI prodavačku", t.sessions ? Math.round((t.aiSessions / t.sessions) * 100) + " %" : "–", `${t.aiSessions.toLocaleString("cs-CZ")} návštěv`, "var(--violet)"),
+      tile("Dotazy na AI", t.userMessages.toLocaleString("cs-CZ"), t.aiSessions ? `průměrně ${(t.userMessages / t.aiSessions).toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} na rozhovor` : "zatím žádný rozhovor", "var(--green)"),
+      tile("Přijetí nabídky pomoci", o.shown ? o.acceptRate + " %" : "–", o.shown ? `${o.chat} chat · ${o.voice} hlas z ${o.shown} nabídek` : "nabídka se zatím nezobrazila", "var(--amber)"),
+      tile("Využité tipy", tipsShown ? Math.round((tipsUsed / tipsShown) * 1000) / 10 + " %" : "–", tipsShown ? `${tipsUsed} z ${tipsShown} proaktivních tipů` : "zatím žádný tip", "var(--orange)"),
       usageTile(d.usage),
     ].join("") + `<p class="hint" style="grid-column:1/-1;margin:0">Za posledních ${d.periodDays} dní. Starší data se automaticky mažou.</p>`;
 
-    bars($("conv"), [
-      { name: "S AI prodavačkou", value: t.conversionAi, label: t.conversionAi + " %", color: "var(--blue)", tip: `S AI: ${t.conversionAi} % z ${t.aiSessions} návštěv` },
-      { name: "Bez AI", value: t.conversionNonAi, label: t.conversionNonAi + " %", color: "var(--orange)", tip: `Bez AI: ${t.conversionNonAi} % z ${t.sessions - t.aiSessions} návštěv` },
-    ].filter(() => t.sessions));
-
-    const o = d.offer;
     bars($("offer"), o.shown ? [
       { name: "Nabídka zobrazena", value: o.shown },
       { name: "Přijato – chat", value: o.chat, color: "var(--green)" },

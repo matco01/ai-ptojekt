@@ -146,14 +146,14 @@ Když zákazník na nabídku klikne, jeho otázka se rovnou pošle do chatu a Kl
 ## Dashboard pro majitele
 
 - Přihlášení ID obchodu a heslem; čerpání tarifu v aktuálním měsíci
-- Konverze s AI a bez AI a míra přijetí nabídky pomoci
+- Kolik návštěvníků prodavačku využilo, počet dotazů, míra přijetí nabídky pomoci a využitých tipů
+- **Na co se zákazníci ptají** prodavačky (hned nahoře v sekci AI prodavačka)
 - **Proaktivní tipy:** které typy tipů zákazníci využívají
 - **Co zákazníci hledají** a **hledání bez výsledku**, tedy poptávka, kterou obchod nepokrývá
 - Nejprohlíženější produkty a produkty „hodně prohlížené, málo kupované“
-- Na co se zákazníci ptají prodavačky
 - Tlačítko pro AI doporučení od Claude (potřebuje API klíč, počítá se do využití)
 
-Pozor při čtení konverzí: návštěvníci, kteří si sami řeknou o pomoc, nakupují častěji už z principu. Rozdíl „s AI / bez AI“ proto není čistý přínos prodavačky – ten ukáže až test s kontrolní skupinou.
+Konverze a tržby s AI / bez AI server dál počítá (`/api/analytics`), ale přehled je neukazuje: bez měření objednávek v e-shopu by ukazovaly nuly a ani s ním nejsou čistým přínosem prodavačky (o pomoc si říkají hlavně ti, kdo už chtějí koupit).
 
 ## Architektura
 
