@@ -202,7 +202,8 @@ app.post("/api/proactive", rateLimit("proactive", 60, 60e3, { shared: true }), w
       ...nudge.hesitation, declined: s.declined, fallback: nudge.text, shopName: req.client.name,
       useAi: (await allowance(req.client)).chat, meter: (u) => used.push(u),
     });
-    await recordUsage(req.client, { claude: used, model: MODEL });
+    // an AI-written offer costs like an answer, so it counts towards the plan as one message
+    await recordUsage(req.client, { messages: used.length ? 1 : 0, claude: used, model: MODEL });
     delete nudge.hesitation;
   }
   res.json({ nudge });
@@ -371,6 +372,7 @@ app.post("/api/analytics/catalog", admin, rateLimit("catalog", 6, 10 * 60e3, { s
 });
 app.post("/api/analytics/insights", admin, rateLimit("insights", 10, 10 * 60e3, { shared: true }), async (req, res) => {
   if (!hasApiKey()) return res.status(503).json({ error: "Doporučení generuje Claude – nastavte ANTHROPIC_API_KEY v souboru .env." });
+  if (!(await allowance(req.client)).chat) return res.status(429).json({ error: "Limit zpráv od AI v tarifu je pro tento měsíc vyčerpaný." });
   const used = [];
   try {
     res.json({ markdown: await generateInsights(await summarize(req.client.id, req.cat), req.cat, (u) => used.push(u)) });
@@ -378,7 +380,7 @@ app.post("/api/analytics/insights", admin, rateLimit("insights", 10, 10 * 60e3, 
     console.error(err);
     res.status(500).json({ error: "Analýzu se nepodařilo vygenerovat." });
   } finally {
-    await recordUsage(req.client, { claude: used, model: MODEL });
+    await recordUsage(req.client, { messages: used.length ? 1 : 0, claude: used, model: MODEL });
   }
 });
 

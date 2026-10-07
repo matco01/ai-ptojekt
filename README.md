@@ -28,7 +28,7 @@ Kód pro web klienta (přímo, nebo přes jeho Google Tag Manager):
 
 **Přihlášení do přehledu:** majitel se přihlásí na `/admin/` svým ID a heslem a vidí jen svůj obchod. Vy se přihlásíte ID `admin` a heslem `ADMIN_TOKEN` a přepínáte mezi všemi klienty. Přihlášení drží podepsaná HttpOnly cookie 14 dní; hesla nikdy nejsou v adrese. Staré odkazy s `?token=` už nefungují – klient se přihlásí formulářem; jeho staré heslo z `admin_token` platí a při prvním přihlášení se převede na otisk. Lokálně bez `ADMIN_TOKEN` je přehled otevřený jen z vašeho počítače.
 
-**Tarify a limity** (`lib/plans.js`): každý tarif má měsíční limit zpráv, na které odpovídá AI, a znaků přirozeného hlasu; u klienta jde nastavit vlastní limit. Server počítá každé volání Claude (tokeny → cena v USD) a hlas do tabulky `usage`. Po vyčerpání limitu obchod dál funguje: chat odpovídá zjednodušeně bez AI a hlas přejde na hlas prohlížeče. Při 80 % a 100 % limitu přijde upozornění. Majitel vidí čerpání v přehledu, vy u všech klientů na stránce Klienti, kde je i **export CSV za měsíc** pro fakturaci. Ceny tarifů doplňte v `lib/plans.js`; fakturace sama zatím běží mimo aplikaci.
+**Tarify a limity** (`lib/plans.js`): každý tarif má měsíční limit zpráv, které napíše AI (odpověď v chatu, nabídka pomoci napsaná na míru váhajícímu zákazníkovi i doporučení pro majitele se počítají každá jako jedna), a znaků přirozeného hlasu; u klienta jde nastavit vlastní limit. Server počítá každé volání Claude (tokeny → cena v USD) a hlas do tabulky `usage`. Po vyčerpání limitu obchod dál funguje: chat odpovídá zjednodušeně bez AI a hlas přejde na hlas prohlížeče. Při 80 % a 100 % limitu přijde upozornění. Majitel vidí čerpání v přehledu, vy u všech klientů na stránce Klienti, kde je i **export CSV za měsíc** pro fakturaci. Ceny tarifů doplňte v `lib/plans.js`; fakturace sama zatím běží mimo aplikaci.
 
 **Produkty z feedu:** server feed stáhne při první návštěvě a pak každých 6 hodin (a každou noc v rámci údržby). Uloží ho zabalený (gzip) do Supabase Storage, takže nový server ho nemusí stahovat znovu, a AI doporučuje jen z něj. Feed větší než 60 MB se odmítne. Když stažení selže, jede se dál na posledním funkčním katalogu, chyba se ukáže v přehledu a přijde upozornění.
 
@@ -228,7 +228,7 @@ AIProdavac.track("search", { query, results });
 
 ## Náklady
 
-**Bez API:** pozdrav a proaktivní tipy nestojí nic.
+**Bez API:** pozdrav a běžné tipy (akce, sety, doprava zdarma) nestojí nic. Nabídku pomoci pro váhajícího zákazníka píše Claude, takže stojí jako jedna zpráva a počítá se do tarifu.
 
 **Chat přes Claude API:** výchozí model je Claude Haiku 5.5 s úsilím `medium` ($0,10 vstup / $0,50 výstup za milion tokenů, čtení z cache $0,01; u promptů nad 100 000 tokenů 5× víc). Haiku 5.5 nemá záložní model při odmítnutí – zákazník pak dostane připravenou odpověď. Chytřejší a 20× dražší je `MODEL=claude-sonnet-5-5`. Jedna zpráva zákazníka jsou 2–3 volání API. Skutečné náklady každého klienta se teď měří (tabulka `usage`, stránka Klienti, export CSV) – z nich nastavte ceny tarifů. Model a úsilí jdou změnit přes `MODEL` a `EFFORT`.
 

@@ -3,194 +3,415 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI prodavač – přehled</title>
+  <title>Sella – přehled</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600&display=swap">
   <style>
+    /* Sella in liquid glass: a wave wallpaper behind glass that bends light at its edges;
+       icon capsule · main window with two views and a floating switch · side window */
     :root {
       color-scheme: light;
-      --bg: #f3f5f8; --card: #ffffff; --card-2: #f7f8fa; --line: #e3e7ed;
-      --text: #151922; --text-2: #465061; --text-3: #667085;
-      --blue: #2f6fdb; --orange: #e0662f; --green: #1f8a5c; --violet: #6b4fd8; --amber: #b7791f;
-      --track: #eceff4; --shadow: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.05);
-      --notice-bg: #fff6dd; --notice-text: #6b5000;
+      --base: #cfdae5;
+      --w-sky-1: #eef3f8; --w-sky-2: #cddcec; --w-sun: rgba(255, 244, 222, .9);
+      --w-top-1: #c9dbee; --w-top-2: #a5c1e2; --w-a1: #a9c7e8; --w-a2: #6f9ccf; --w-b1: #6a9ad3; --w-b2: #3d68a6;
+      --w-warm-1: #f4d9b6; --w-warm-2: #e3a774; --w-c1: #355a90; --w-c2: #223e69; --w-line: rgba(255, 255, 255, .55);
+      --glass: rgba(255, 255, 255, .34); --platter: rgba(255, 255, 255, .5); --platter-hover: rgba(255, 255, 255, .7);
+      --edge-hi: rgba(255, 255, 255, .95); --edge-lo: rgba(255, 255, 255, .35); --platter-edge: rgba(255, 255, 255, .8);
+      --sheen: rgba(255, 255, 255, .35); --drop: rgba(30, 50, 80, .28);
+      --text: #22262b; --text-2: #4b525b; --text-3: #6f7781; --line: rgba(34, 38, 43, .08); --track: rgba(34, 38, 43, .08);
+      --blue: #3f74b5; --blue-soft: rgba(63, 116, 181, .14); --sky: #8fb4da;
+      --green: #2f8a5d; --amber: #a8721c; --rose: #c0544b; --violet: #6d58c0;
+      --pill: rgba(28, 32, 40, .78); --pill-text: #f4f6f8;
+      --serif: "Old Standard TT", "Bodoni 72", Didot, Georgia, serif;
+      --sans: "Geist", -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     }
     @media (prefers-color-scheme: dark) {
       :root:where(:not([data-theme="light"])) {
         color-scheme: dark;
-        --bg: #14171d; --card: #1d2129; --card-2: #232833; --line: #2d333f;
-        --text: #eef1f6; --text-2: #c0c7d3; --text-3: #959eae;
-        --blue: #5b95f0; --orange: #f08352; --green: #4cc38a; --violet: #9a85f5; --amber: #e0a943;
-        --track: #2a303b; --shadow: 0 1px 2px rgba(0,0,0,.3);
-        --notice-bg: #3a3218; --notice-text: #f1d98b;
+        --base: #0b111b;
+        --w-sky-1: #0b1220; --w-sky-2: #13203a; --w-sun: rgba(120, 160, 230, .35);
+        --w-top-1: #172a47; --w-top-2: #10203a; --w-a1: #2a5288; --w-a2: #1b3a66; --w-b1: #3a6db0; --w-b2: #1f4683;
+        --w-warm-1: #a8724a; --w-warm-2: #5a3a26; --w-c1: #0f1d33; --w-c2: #0a1424; --w-line: rgba(255, 255, 255, .18);
+        --glass: rgba(24, 29, 38, .48); --platter: rgba(255, 255, 255, .06); --platter-hover: rgba(255, 255, 255, .1);
+        --edge-hi: rgba(255, 255, 255, .3); --edge-lo: rgba(255, 255, 255, .06); --platter-edge: rgba(255, 255, 255, .09);
+        --sheen: rgba(255, 255, 255, .12); --drop: rgba(0, 0, 0, .5);
+        --text: #f5f7f9; --text-2: #c9d0d8; --text-3: #949eaa; --line: rgba(255, 255, 255, .08); --track: rgba(255, 255, 255, .09);
+        --blue: #7fb0ea; --blue-soft: rgba(127, 176, 234, .16); --sky: #4f7fb8;
+        --green: #6fd09d; --amber: #e8b75f; --rose: #f08d84; --violet: #ad9cf2;
+        --pill: rgba(245, 247, 249, .9); --pill-text: #1d2127;
       }
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+    [hidden] { display: none !important; }
+    html, body { min-height: 100%; }
+    body { margin: 0; font-family: var(--sans); background: var(--base); color: var(--text); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 
-    header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-    .head-in { max-width: 1180px; margin: 0 auto; padding: 16px 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    header h1 { font-size: 20px; margin: 0; flex: 1; letter-spacing: -.2px; }
-    header h1 small { display: block; font-weight: 500; color: var(--text-3); font-size: 14px; letter-spacing: 0; }
-    button { font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--line); background: var(--card); color: var(--text); transition: background .15s, border-color .15s; }
-    button:hover { background: var(--card-2); border-color: var(--text-3); }
-    button.primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+    /* the wallpaper behind the glass: crisp wave edges give the glass something to bend */
+    .scene { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--base); }
+    .scene svg { position: absolute; inset: -4%; width: 108%; height: 108%; }
+    .scene .wave { animation: sway 40s ease-in-out infinite alternate; }
+    .scene .wave:nth-of-type(2n) { animation-duration: 52s; animation-direction: alternate-reverse; }
+    .scene .wave:nth-of-type(3n) { animation-duration: 64s; }
+    .scene .grain { position: absolute; inset: 0; opacity: .12; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+    @keyframes sway { from { transform: translateX(-30px); } to { transform: translateX(40px); } }
+
+    /* liquid glass: tinted fill, a lit rim (bright top-left, faint bottom-right) and a soft inner glow.
+       In Chromium each pane also gets an edge lens (buildLens): the backdrop bends at the rim and splits
+       slightly into colours, like a thick bevelled pane. Other browsers keep the frosted glass. */
+    .glass { position: relative; isolation: isolate; background: var(--glass);
+      backdrop-filter: blur(var(--blur, 24px)) saturate(170%); -webkit-backdrop-filter: blur(var(--blur, 24px)) saturate(170%);
+      box-shadow: inset 0 0 24px -6px var(--sheen), 0 30px 70px -28px var(--drop), 0 2px 6px -2px var(--drop); }
+    .glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+      background: radial-gradient(120% 60% at 20% 0%, var(--sheen), transparent 55%); opacity: .8; }
+    .glass::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; padding: 1.2px;
+      background: linear-gradient(150deg, var(--edge-hi) 0%, rgba(255, 255, 255, .05) 28%, transparent 50%, rgba(255, 255, 255, .04) 72%, var(--edge-lo) 100%);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+    .glass.clear { --blur: 3px; background: color-mix(in srgb, var(--glass) 55%, transparent); }
+
+    /* platters: the lighter surfaces inside a window */
+    .card { background: var(--platter); border-radius: 26px; padding: 20px 22px; min-width: 0; box-shadow: inset 0 1px 0 var(--platter-edge); }
+    .card h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; line-height: 1.2; margin: 0 0 2px; }
+    .card .hint { font-size: 13.5px; color: var(--text-3); margin: 0 0 16px; }
+    .k { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); font-weight: 500; }
+
+    button, a.btn { font: 500 14px var(--sans); cursor: pointer; border-radius: 999px; padding: 9px 16px; border: 0; background: var(--platter); color: var(--text); text-decoration: none;
+      box-shadow: inset 0 1px 0 var(--platter-edge); transition: background .2s, transform .2s; display: inline-flex; align-items: center; gap: 8px; }
+    button:hover, a.btn:hover { background: var(--platter-hover); }
+    button:active { transform: scale(.97); }
+    button.primary { background: var(--blue); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 10px 24px -10px var(--blue); }
     button.primary:hover { filter: brightness(1.08); }
-    button.danger:hover { border-color: var(--orange); color: var(--orange); }
     button:disabled { opacity: .55; cursor: default; }
-    select { font: inherit; font-size: 14.5px; border-radius: 10px; padding: 9px 12px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+    button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    select { font: 500 14px var(--sans); border-radius: 999px; padding: 10px 14px; border: 0; background: var(--platter); color: var(--text); width: 100%; box-shadow: inset 0 1px 0 var(--platter-edge); }
 
-    main { max-width: 1180px; margin: 0 auto; padding: 28px 28px 72px; display: grid; gap: 22px; }
-    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); margin: 18px 0 -8px; }
-    .section-title:first-of-type { margin-top: 0; }
+    /* layout */
+    .shell { position: relative; z-index: 1; display: grid; grid-template-columns: 72px minmax(0, 1fr) 340px; gap: 22px; padding: 28px 28px 60px; min-height: 100vh; align-items: start; }
+    .rail { position: sticky; z-index: 3; top: 28px; border-radius: 36px; padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 40px; }
+    .rail .logo { font-family: var(--serif); font-size: 28px; line-height: 1; margin: 4px 0 10px; }
+    .rail nav { display: flex; flex-direction: column; gap: 8px; }
+    .rail a, .rail button { display: grid; place-items: center; width: 46px; height: 46px; padding: 0; border-radius: 50%; background: transparent; box-shadow: none; color: var(--text-2); position: relative; transition: background .2s, color .2s; }
+    .rail a:hover, .rail button:hover { background: var(--platter-hover); color: var(--text); }
+    .rail a.on { background: var(--blue); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 10px 26px -8px var(--blue); }
+    .rail svg { width: 21px; height: 21px; }
+    .rail .sep { width: 26px; height: 1px; background: var(--line); margin: 6px 0; }
+    .rail [data-label]:hover::after { content: attr(data-label); position: absolute; left: 60px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: 13px; font-weight: 500; padding: 7px 13px; border-radius: 999px; background: var(--pill); color: var(--pill-text); pointer-events: none; box-shadow: 0 12px 30px -10px var(--drop); }
 
-    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-    .tile, .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
-    .tile { padding: 18px 20px 20px; position: relative; overflow: hidden; }
-    .tile::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 4px; background: var(--accent, var(--blue)); }
-    .tile .label { font-size: 14px; color: var(--text-2); font-weight: 600; }
-    .tile .value { font-size: 34px; font-weight: 750; margin: 8px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: -.5px; color: var(--text); }
-    .tile .sub { font-size: 13.5px; color: var(--text-3); }
+    .panel { border-radius: 40px; padding: 30px 30px 54px; min-width: 0; margin-bottom: 30px; }
+    .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .hello { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -.01em; }
+    .hello em { font-style: italic; color: var(--blue); }
+    .sub { margin: 6px 0 0; color: var(--text-3); font-size: 14.5px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; align-items: start; }
-    .card { padding: 22px 24px; }
-    .card h2 { font-size: 17px; font-weight: 700; margin: 0 0 4px; letter-spacing: -.1px; }
-    .card .hint { font-size: 14px; color: var(--text-3); margin: 0 0 18px; }
+    .view { display: grid; gap: 16px; }
+    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+    .grid-wide { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 
-    .bars { display: grid; gap: 4px; }
-    .bar { display: grid; grid-template-columns: minmax(140px, 40%) 1fr 60px; align-items: center; gap: 14px; font-size: 14.5px; padding: 7px 10px; margin: 0 -10px; border-radius: 10px; }
-    .bar:hover { background: var(--card-2); }
-    .bar .name { color: var(--text); font-weight: 500; overflow-wrap: anywhere; }
-    .bar .track { height: 12px; background: var(--track); border-radius: 999px; overflow: hidden; }
-    .bar .fill { height: 100%; border-radius: 999px; background: var(--blue); }
-    .bar .num { text-align: right; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
-    .bar.zero .name, .bar.zero .num { color: var(--text-3); font-weight: 500; }
+    /* KPI platters */
+    .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .tile { background: var(--platter); box-shadow: inset 0 1px 0 var(--platter-edge); border-radius: 26px; padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; min-width: 0; transition: background .2s, transform .25s; }
+    .tile:hover { background: var(--platter-hover); transform: translateY(-2px); }
+    .tile .label { font-size: 13.5px; font-weight: 600; color: var(--text-2); }
+    .tile .value { font-family: var(--serif); font-size: clamp(28px, 2.4vw, 36px); white-space: nowrap; line-height: 1.1; font-variant-numeric: tabular-nums; grid-column: 1; }
+    .tile .sub { font-size: 12.5px; color: var(--text-3); grid-column: 1 / -1; }
+    .tile .viz { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+    .ring { width: 54px; height: 54px; transform: rotate(-90deg); }
+    .ring circle { fill: none; stroke-width: 6; }
+    .ring .bg { stroke: var(--track); }
+    .ring .fg { stroke-linecap: round; transition: stroke-dasharray .8s cubic-bezier(.2, .8, .2, 1); }
+    .ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--blue-soft); color: var(--blue); }
+    .ico svg { width: 19px; height: 19px; }
+
+    /* the one coloured platter */
+    .ai-card { background: linear-gradient(140deg, rgba(92, 142, 204, .92), rgba(52, 92, 150, .9) 75%); color: #f4f8fc; position: relative; overflow: hidden; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 24px 50px -24px rgba(40, 80, 140, .8); }
+    .ai-card::after { content: ""; position: absolute; width: 230px; height: 230px; right: -90px; top: -120px; border-radius: 50%; opacity: .65; background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .9), rgba(190, 215, 240, .45) 35%, rgba(255, 255, 255, 0) 70%); pointer-events: none; }
+    .ai-card h2 { color: #fff; }
+    .ai-card .hint { color: rgba(244, 248, 252, .82); max-width: 46ch; }
+    .ai-card button.primary { background: rgba(255, 255, 255, .95); color: #2f5687; box-shadow: inset 0 1px 0 #fff, 0 10px 24px -12px rgba(0, 0, 0, .4); }
+    .insights { position: relative; z-index: 1; line-height: 1.65; font-size: 15px; }
+    .insights h2 { font-size: 18px; margin: 18px 0 4px; } .insights h2:first-child { margin-top: 0; }
+    .insights ul { margin: 0; padding-left: 20px; } .insights li { margin: 3px 0; }
+    .insights .empty { background: rgba(255, 255, 255, .15); color: #fff; }
+
+    /* offer */
+    .stack { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--track); margin: 6px 0 14px; gap: 2px; }
+    .stack i { display: block; height: 100%; border-radius: 999px; }
+    .legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; font-size: 13.5px; color: var(--text-2); }
+    .legend div { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .legend i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+    .legend b { margin-left: auto; color: var(--text); font-variant-numeric: tabular-nums; }
+    .big { font-family: var(--serif); font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .big small { font-family: var(--sans); font-size: 14px; color: var(--text-3); margin-left: 6px; }
+
+    /* bar lists */
+    .bars { display: grid; gap: 2px; }
+    .bar { display: grid; grid-template-columns: minmax(110px, 42%) minmax(0, 1fr) 54px; align-items: center; gap: 12px; font-size: 14px; padding: 7px 10px; margin: 0 -10px; border-radius: 14px; transition: background .15s; }
+    .bar:hover { background: var(--platter-hover); }
+    .bar .name { overflow-wrap: anywhere; }
+    .bar .track { height: 8px; background: var(--track); border-radius: 999px; overflow: hidden; }
+    .bar .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--sky), var(--blue)); }
+    .bar .num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .bar.zero .name, .bar.zero .num { color: var(--text-3); font-weight: 400; }
     .bar.zero .fill { display: none; }
-    .summary { margin: 14px 0 0; padding: 12px 14px; background: var(--card-2); border-radius: 10px; font-size: 14.5px; color: var(--text-2); }
-    .summary b { color: var(--text); font-size: 16px; }
+    .empty { color: var(--text-3); font-size: 14px; padding: 16px; text-align: center; background: var(--track); border-radius: 18px; margin: 0; }
 
-    .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 14px; color: var(--text-2); margin-bottom: 12px; }
-    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 7px; vertical-align: -1px; }
-    .empty { color: var(--text-3); font-size: 14.5px; padding: 18px; text-align: center; background: var(--card-2); border-radius: 10px; margin: 0; }
+    /* floating view switch, straddling the window's bottom edge */
+    .switch { position: absolute; left: 50%; bottom: -26px; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; border-radius: 999px; white-space: nowrap; z-index: 2; }
+    .switch button { background: transparent; box-shadow: none; padding: 9px 18px; font-size: 13.5px; }
+    .switch button:hover { background: var(--platter-hover); }
+    .switch button.on { background: var(--blue); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 8px 20px -8px var(--blue); }
 
-    .questions { list-style: none; padding: 0; margin: 0; max-height: 420px; overflow-y: auto; display: grid; gap: 8px; }
-    .questions li { padding: 12px 14px; background: var(--card-2); border-radius: 10px; font-size: 15px; }
-    .questions li .meta { display: flex; gap: 10px; align-items: center; margin-top: 4px; font-size: 13px; color: var(--text-3); }
-    .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: color-mix(in srgb, var(--blue) 16%, transparent); color: var(--blue); }
-    .chip.voice { background: color-mix(in srgb, var(--violet) 16%, transparent); color: var(--violet); }
+    /* side window */
+    .side { position: sticky; top: 28px; border-radius: 40px; padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 56px); overflow: hidden; }
+    .shop { display: flex; align-items: center; gap: 12px; }
+    .shop .avatar { width: 48px; height: 48px; border-radius: 50%; flex: none; background: radial-gradient(circle at 32% 28%, #f4f8fb 0, #b8d0ea 30%, #6f9bcf 68%, #4a76ad 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 10px 24px -10px rgba(60, 110, 170, .8); }
+    .shop h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 23px; line-height: 1.15; overflow-wrap: anywhere; }
+    .shop small { color: var(--text-3); font-size: 13px; }
+    .usage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+    .usage .ring { width: 74px; height: 74px; grid-row: 1 / 4; }
+    .usage .ring circle { stroke-width: 7; }
+    .usage b { font-family: var(--serif); font-weight: 400; font-size: 27px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .usage b small { font-family: var(--sans); font-size: 13px; color: var(--text-3); }
+    .usage span { font-size: 13px; color: var(--text-3); }
+    .catalog-card p { margin: 4px 0 0; font-size: 13.5px; color: var(--text-2); }
+    .catalog-card .err { color: var(--rose); font-weight: 600; }
+    .catalog-card button { margin-top: 10px; padding: 7px 13px; font-size: 13px; }
+    .feed-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px; }
+    .feed-head h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; margin: 0; }
+    .questions { list-style: none; padding: 0 2px 0 0; margin: 0; overflow-y: auto; display: grid; gap: 8px; align-content: start; flex: 1; min-height: 120px; scrollbar-width: thin; }
+    .questions li { padding: 12px 14px; background: var(--platter); box-shadow: inset 0 1px 0 var(--platter-edge); border-radius: 20px; font-size: 14px; line-height: 1.4; }
+    .questions li .meta { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 12px; color: var(--text-3); }
+    .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--blue-soft); color: var(--blue); }
+    .chip.voice { background: color-mix(in srgb, var(--violet) 18%, transparent); color: var(--violet); }
 
-    .ai-card { border-color: color-mix(in srgb, var(--green) 40%, var(--line)); background: linear-gradient(180deg, color-mix(in srgb, var(--green) 7%, var(--card)), var(--card) 140px); }
-    .insights { line-height: 1.7; font-size: 15.5px; color: var(--text-2); }
-    .insights h2 { font-size: 16.5px; font-weight: 700; margin: 22px 0 6px; color: var(--text); } .insights h2:first-child { margin-top: 0; }
-    .insights ul { margin: 0; padding-left: 22px; }
-    .insights li { margin: 4px 0; }
-    .insights b { color: var(--text); }
+    .tip { position: fixed; pointer-events: none; background: var(--pill); color: var(--pill-text); font-size: 13px; padding: 7px 12px; border-radius: 999px; z-index: 9; display: none; max-width: 320px; box-shadow: 0 12px 30px -10px var(--drop); }
 
-    .tip { position: fixed; pointer-events: none; background: var(--text); color: var(--card); font-size: 13.5px; padding: 7px 11px; border-radius: 8px; z-index: 9; display: none; max-width: 320px; }
-    .catalog-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-    .catalog-card .err { color: var(--orange); font-weight: 600; }
-    .notice { background: var(--notice-bg); color: var(--notice-text); border-radius: 12px; padding: 12px 16px; font-size: 14.5px; }
-    a.btn { font-size: 14.5px; font-weight: 500; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--line); background: var(--card); color: var(--text); text-decoration: none; }
-    a.btn:hover { background: var(--card-2); border-color: var(--text-3); }
-    .login { max-width: 380px; margin: 12vh auto 0; padding: 28px; }
-    .login h2 { font-size: 20px; margin-bottom: 18px; }
-    .login label { display: block; font-size: 14px; font-weight: 600; color: var(--text-2); margin: 14px 0 6px; }
-    .login input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); color: var(--text); }
-    .login button { width: 100%; margin-top: 20px; }
-    .login .err { color: var(--orange); font-size: 14px; min-height: 20px; margin: 10px 0 0; }
-    .meter { height: 10px; background: var(--track); border-radius: 999px; overflow: hidden; margin-top: 10px; }
-    .meter i { display: block; height: 100%; background: var(--accent, var(--blue)); border-radius: 999px; }
+    /* login */
+    .login-wrap { position: relative; z-index: 1; padding: 0 16px; }
+    .login { max-width: 400px; margin: 14vh auto 0; padding: 32px; border-radius: 40px; }
+    .login .logo { font-family: var(--serif); font-size: 46px; line-height: 1; margin-bottom: 6px; }
+    .login h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; margin: 0 0 8px; color: var(--text-2); }
+    .login label { display: block; font-size: 13.5px; font-weight: 600; color: var(--text-2); margin: 14px 0 6px; }
+    .login input { width: 100%; font: inherit; padding: 12px 16px; border-radius: 999px; border: 0; background: var(--platter); color: var(--text); box-shadow: inset 0 1px 0 var(--platter-edge); }
+    .login button { width: 100%; justify-content: center; margin-top: 22px; padding: 12px; }
+    .login .err { color: var(--rose); font-size: 14px; min-height: 20px; margin: 10px 0 0; }
 
-    @media (max-width: 600px) {
-      .head-in, main { padding-left: 16px; padding-right: 16px; }
-      .cols { grid-template-columns: 1fr; }
-      .card { padding: 18px; }
-      .bar { grid-template-columns: minmax(110px, 42%) 1fr 48px; gap: 10px; font-size: 14px; }
-      .tile .value { font-size: 28px; }
+    @media (max-width: 1240px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 1080px) {
+      .shell { grid-template-columns: 72px minmax(0, 1fr); }
+      .side { grid-column: 2; position: static; max-height: none; }
+      .questions { max-height: 460px; }
     }
+    @media (max-width: 760px) {
+      .shell { grid-template-columns: minmax(0, 1fr); padding: 14px 14px 40px; gap: 14px; }
+      .rail { display: none; }
+      .side { grid-column: 1; border-radius: 30px; }
+      .panel { padding: 20px 16px 50px; border-radius: 30px; }
+      .grid2, .grid-wide, .tiles, .legend { grid-template-columns: minmax(0, 1fr); }
+      .bar { grid-template-columns: minmax(100px, 44%) minmax(0, 1fr) 46px; gap: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .scene .wave { animation: none; } .ring .fg, .tile, button { transition: none; } }
   </style>
 </head>
 <body>
-  <header>
-    <div class="head-in">
-      <h1>AI prodavač · přehled <small id="client-name">&nbsp;</small></h1>
-      <select id="client-pick" hidden aria-label="Klient"></select>
-      <button id="refresh">↻ Obnovit</button>
-      <a class="btn" id="clients-link" href="/admin/clients.html" hidden>Klienti</a>
-      <button id="logout" hidden>Odhlásit</button>
-    </div>
-  </header>
-  <section class="card login" id="login" hidden>
-    <h2>Přihlášení k přehledu</h2>
-    <form id="login-form">
-      <label for="login-client">ID obchodu</label>
-      <input id="login-client" name="client" autocomplete="username" required>
-      <label for="login-password">Heslo</label>
-      <input id="login-password" name="password" type="password" autocomplete="current-password" required>
-      <button class="primary" type="submit">Přihlásit</button>
-      <p class="err" id="login-err"></p>
-    </form>
-  </section>
-  <main id="main" hidden>
+  <div class="scene" aria-hidden="true">
+    <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="w-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--w-sky-1)"/><stop offset="1" style="stop-color:var(--w-sky-2)"/></linearGradient>
+        <radialGradient id="w-sun" cx="0.82" cy="0.12" r="0.5"><stop offset="0" style="stop-color:var(--w-sun)"/><stop offset="1" style="stop-color:var(--w-sun);stop-opacity:0"/></radialGradient>
+        <linearGradient id="w-top" x1="0" y1="0" x2="1" y2="0.4"><stop offset="0" style="stop-color:var(--w-top-1)"/><stop offset="1" style="stop-color:var(--w-top-2)"/></linearGradient>
+        <linearGradient id="w-a" x1="0" y1="0" x2="1" y2="0.8"><stop offset="0" style="stop-color:var(--w-a1)"/><stop offset="1" style="stop-color:var(--w-a2)"/></linearGradient>
+        <linearGradient id="w-b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--w-b1)"/><stop offset="1" style="stop-color:var(--w-b2)"/></linearGradient>
+        <linearGradient id="w-warm" x1="0" y1="0" x2="1" y2="0.6"><stop offset="0" style="stop-color:var(--w-warm-1)"/><stop offset="1" style="stop-color:var(--w-warm-2)"/></linearGradient>
+        <linearGradient id="w-c" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--w-c1)"/><stop offset="1" style="stop-color:var(--w-c2)"/></linearGradient>
+      </defs>
+      <rect width="1600" height="1000" fill="url(#w-sky)"/>
+      <rect width="1600" height="1000" fill="url(#w-sun)"/>
+      <g stroke="var(--w-line)" stroke-width="1.5">
+        <path class="wave" d="M-200 -100 L1800 -100 L1800 170 C 1420 300, 1040 70, 640 210 S 40 130, -200 240 Z" fill="url(#w-top)"/>
+        <path class="wave" d="M-200 470 C 160 330, 540 600, 880 480 S 1460 250, 1800 380 L1800 1200 L-200 1200 Z" fill="url(#w-a)"/>
+        <path class="wave" d="M-200 610 C 210 500, 580 770, 990 650 S 1500 520, 1800 610 L1800 1200 L-200 1200 Z" fill="url(#w-b)"/>
+        <path class="wave" d="M-200 740 C 260 660, 650 880, 1070 780 S 1530 690, 1800 760 L1800 1200 L-200 1200 Z" fill="url(#w-warm)"/>
+        <path class="wave" d="M-200 870 C 300 800, 720 980, 1130 900 S 1570 840, 1800 890 L1800 1200 L-200 1200 Z" fill="url(#w-c)"/>
+      </g>
+    </svg>
+    <div class="grain"></div>
+  </div>
+  <!-- edge lenses for the glass panes, built per pane size by buildLens() -->
+  <svg id="lens-defs" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
 
-    <h3 class="section-title">Souhrn</h3>
-    <section class="tiles" id="tiles"></section>
-
-    <section class="card catalog-card" id="catalog-card" hidden>
-      <div><h2>Katalog produktů</h2><p class="hint" id="catalog-text" style="margin:0"></p></div>
-      <button id="catalog-refresh" hidden>↻ Stáhnout feed znovu</button>
+  <div class="login-wrap">
+    <section class="login glass lens" data-lens="30 60 18" id="login" hidden>
+      <div class="logo">Sella</div>
+      <h2>Přihlášení k přehledu</h2>
+      <form id="login-form">
+        <label for="login-client">ID obchodu</label>
+        <input id="login-client" name="client" autocomplete="username" required>
+        <label for="login-password">Heslo</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="primary" type="submit">Přihlásit</button>
+        <p class="err" id="login-err"></p>
+      </form>
     </section>
+  </div>
 
-    <section class="card ai-card">
-      <h2>✨ Doporučení od AI pro majitele obchodu</h2>
-      <p class="hint">Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.</p>
-      <div id="insights" class="insights"><button class="primary" id="gen">Vygenerovat doporučení</button></div>
-    </section>
+  <div class="shell" id="main" hidden>
+    <aside class="rail glass clear lens" data-lens="22 80 3" aria-label="Navigace">
+      <div class="logo" aria-hidden="true">S</div>
+      <nav>
+        <a href="#ai" class="on" data-view="ai" data-label="AI prodavačka" aria-label="AI prodavačka">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></a>
+        <a href="#zakaznici" data-view="customers" data-label="Zákazníci a produkty" aria-label="Zákazníci a produkty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></a>
+        <a href="#dotazy" data-label="Na co se ptají" aria-label="Na co se zákazníci ptají" id="rail-questions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg></a>
+        <a href="/admin/clients.html" id="clients-link" data-label="Klienti" aria-label="Klienti" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg></a>
+      </nav>
+      <span class="sep"></span>
+      <button id="logout" data-label="Odhlásit" aria-label="Odhlásit" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H4"/></svg></button>
+    </aside>
 
-    <h3 class="section-title">AI prodavačka</h3>
-    <section class="card">
-      <h2>Na co se zákazníci ptají</h2>
-      <p class="hint">Poslední dotazy na AI prodavačku.</p>
-      <ul class="questions" id="questions"></ul>
-    </section>
-
-    <section class="cols">
-      <div class="card">
-        <h2>Nabídka pomoci</h2>
-        <p class="hint">Jak zákazníci reagují, když se jim prodavačka nabídne.</p>
-        <div class="bars" id="offer"></div>
+    <main class="panel glass lens" data-lens="40 60 20">
+      <div class="top">
+        <div>
+          <h1 class="hello"><span id="greeting">Dobrý den</span>, <em id="client-name">&nbsp;</em></h1>
+          <p class="sub" id="period">Přehled AI prodavačky</p>
+        </div>
+        <div class="actions"><button id="refresh">↻ Obnovit</button></div>
       </div>
-      <div class="card"><h2>Co AI nejčastěji doporučuje</h2><p class="hint">Počet zobrazení v kartičkách asistentky.</p><div class="bars" id="recs"></div></div>
-    </section>
 
-    <section class="card">
-      <h2>Proaktivní tipy prodavačky</h2>
-      <p class="hint">Kdy se prodavačka sama ozvala podle chování zákazníka a jak často zákazník tip využil.</p>
-      <div class="bars" id="nudges"></div>
-    </section>
+      <section class="view" id="view-ai">
+        <div class="tiles" id="tiles"></div>
 
-    <h3 class="section-title">Zákazníci a produkty</h3>
-    <section class="cols">
-      <div class="card"><h2>Co zákazníci hledají</h2><p class="hint">Nejčastější dotazy ve vyhledávání na webu.</p><div class="bars" id="searches"></div></div>
-      <div class="card"><h2>Hledání bez výsledku</h2><p class="hint">Poptávka, kterou obchod nepokryl – kandidáti na rozšíření sortimentu nebo synonyma ve vyhledávání.</p><div class="bars" id="misses"></div></div>
-    </section>
+        <div class="grid-wide">
+          <section class="card ai-card">
+            <h2>Doporučení od AI pro majitele</h2>
+            <p class="hint">Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.</p>
+            <div id="insights" class="insights"><button class="primary" id="gen">Vygenerovat doporučení</button></div>
+          </section>
+          <section class="card">
+            <h2>Nabídka pomoci</h2>
+            <p class="hint">Jak zákazníci reagují, když se jim prodavačka nabídne.</p>
+            <div id="offer"></div>
+          </section>
+        </div>
 
-    <section class="cols">
-      <div class="card"><h2>Nejprohlíženější produkty</h2><p class="hint">Počet zobrazení detailu.</p><div class="bars" id="viewed"></div></div>
-      <div class="card"><h2>Přidáno do košíku díky AI</h2><p class="hint">Kusy přidané z doporučení asistentky.</p><div class="bars" id="cartai"></div></div>
-    </section>
-    <section class="card">
-      <h2>Hodně prohlížené, málo kupované</h2><p class="hint">Produkty, které si do košíku přidá méně než 15 % zájemců – kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div>
-    </section>
-  </main>
+        <div class="grid2">
+          <section class="card">
+            <h2>Proaktivní tipy</h2>
+            <p class="hint">Kdy se prodavačka sama ozvala a jak často zákazník tip využil.</p>
+            <div class="bars" id="nudges"></div>
+          </section>
+          <section class="card">
+            <h2>Co AI nejčastěji doporučuje</h2>
+            <p class="hint">Počet zobrazení v kartičkách prodavačky.</p>
+            <div class="bars" id="recs"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-customers" hidden>
+        <div class="grid2">
+          <section class="card"><h2>Co zákazníci hledají</h2><p class="hint">Nejčastější hledání na webu.</p><div class="bars" id="searches"></div></section>
+          <section class="card"><h2>Hledání bez výsledku</h2><p class="hint">Poptávka, kterou obchod nepokryl: kandidáti na rozšíření sortimentu nebo synonyma.</p><div class="bars" id="misses"></div></section>
+          <section class="card"><h2>Nejprohlíženější produkty</h2><p class="hint">Počet zobrazení detailu.</p><div class="bars" id="viewed"></div></section>
+          <section class="card"><h2>Přidáno do košíku díky AI</h2><p class="hint">Kusy přidané z doporučení prodavačky.</p><div class="bars" id="cartai"></div></section>
+        </div>
+        <section class="card"><h2>Hodně prohlížené, málo kupované</h2><p class="hint">Do košíku si je přidá méně než 15 % zájemců. Kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div></section>
+      </section>
+
+      <div class="switch glass clear lens" data-lens="16 70 3" role="tablist" aria-label="Pohled">
+        <button role="tab" class="on" data-view="ai" aria-selected="true">AI prodavačka</button>
+        <button role="tab" data-view="customers" aria-selected="false">Zákazníci a produkty</button>
+      </div>
+    </main>
+
+    <aside class="side glass lens" data-lens="34 60 20" aria-label="Obchod">
+      <div class="shop">
+        <div class="avatar" aria-hidden="true"></div>
+        <div style="min-width:0"><h3 id="shop-name">&nbsp;</h3><small id="shop-sub">Sella · přehled obchodu</small></div>
+      </div>
+      <select id="client-pick" hidden aria-label="Klient"></select>
+      <div class="card" id="usage-card" hidden></div>
+      <div class="card catalog-card" id="catalog-card" hidden>
+        <span class="k">Katalog produktů</span>
+        <p id="catalog-text"></p>
+        <button id="catalog-refresh" hidden>↻ Stáhnout feed znovu</button>
+      </div>
+      <div class="feed-head" id="dotazy"><h2>Na co se ptají</h2><span class="k" id="q-count"></span></div>
+      <ul class="questions" id="questions"></ul>
+    </aside>
+  </div>
   <div class="tip" id="tip"></div>
 
 <script>
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const cz = (n) => Number(n).toLocaleString("cs-CZ");
   const params = new URLSearchParams(location.search);
   // passwords never belong in a URL – drop one left over from an old link
   if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "")); }
   const clientId = params.get("client") || "";
   const call = (url, opts = {}) => fetch(url + (clientId ? `?client=${encodeURIComponent(clientId)}` : ""), opts);
+
+  // ---- liquid glass edge lenses (Chromium renders SVG filters in backdrop-filter; others keep frosted glass)
+  // Per pane: a displacement map that is neutral in the middle and, within `bevel` px of the rounded edge,
+  // pulls the backdrop inwards along the edge normal – it bends like a bevelled pane. The map is applied once
+  // per colour channel with slightly different strengths, which gives the faint prism fringe at the rim.
+  const LENS = navigator.userAgentData?.brands?.some((b) => /Chromium/.test(b.brand));
+  function lensMap(w, h, r, bevel) {
+    const k = 0.5, W = Math.max(2, Math.round(w * k)), H = Math.max(2, Math.round(h * k));
+    const rr = Math.min(r, w / 2, h / 2) * k, B = bevel * k, hw = W / 2, hh = H / 2;
+    const sdf = (x, y) => {
+      const qx = Math.abs(x - hw) - (hw - rr), qy = Math.abs(y - hh) - (hh - rr);
+      return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - rr;
+    };
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const ctx = c.getContext("2d"), img = ctx.createImageData(W, H), d = img.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const px = x + 0.5, py = y + 0.5, inside = -sdf(px, py);
+      let dx = 0, dy = 0;
+      if (inside < B) {
+        const t = 1 - Math.max(inside, 0) / B, m = t * t * (3 - 2 * t);
+        const gx = sdf(px + 1, py) - sdf(px - 1, py), gy = sdf(px, py + 1) - sdf(px, py - 1), L = Math.hypot(gx, gy) || 1;
+        dx = (-gx / L) * m; dy = (-gy / L) * m;
+      }
+      const i = (y * W + x) * 4;
+      d[i] = 128 + dx * 127; d[i + 1] = 128 + dy * 127; d[i + 2] = 128; d[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    return c.toDataURL();
+  }
+  function buildLens(el, i) {
+    const w = el.offsetWidth, h = el.offsetHeight;
+    if (!w || !h) return;
+    const [bevel, scale, blur] = (el.dataset.lens || "30 60 20").split(" ").map(Number);
+    const r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+    const id = `lens-${i}`;
+    const keep = (c) => `${c === "r" ? 1 : 0} 0 0 0 0  0 ${c === "g" ? 1 : 0} 0 0 0  0 0 ${c === "b" ? 1 : 0} 0 0  0 0 0 1 0`;
+    const chan = (s, c) => `<feDisplacementMap in="SourceGraphic" in2="map" scale="${s}" xChannelSelector="R" yChannelSelector="G" result="d${c}"/>` +
+      `<feColorMatrix in="d${c}" type="matrix" values="${keep(c)}" result="c${c}"/>`;
+    const svg = `<filter id="${id}" x="0" y="0" width="${w}" height="${h}" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">` +
+      `<feImage href="${lensMap(w, h, r, bevel)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>` +
+      chan(scale, "r") + chan(scale * 0.94, "g") + chan(scale * 0.88, "b") +
+      `<feBlend in="cr" in2="cg" mode="screen" result="rg"/><feBlend in="rg" in2="cb" mode="screen"/></filter>`;
+    document.getElementById(id)?.remove();
+    $("lens-defs").insertAdjacentHTML("beforeend", svg);
+    el.style.backdropFilter = `blur(${blur}px) url(#${id}) saturate(170%)`;
+  }
+  if (LENS) {
+    let pending = null;
+    const panes = [...document.querySelectorAll(".glass.lens")];
+    const ro = new ResizeObserver(() => { clearTimeout(pending); pending = setTimeout(() => panes.forEach(buildLens), 150); });
+    panes.forEach((el) => ro.observe(el));
+  }
+  const h = new Date().getHours();
+  $("greeting").textContent = h < 10 ? "Dobré ráno" : h < 18 ? "Dobrý den" : "Dobrý večer";
 
   function showLogin() {
     $("main").hidden = true;
@@ -211,11 +432,41 @@
     load();
   };
   $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = "/admin/"; };
-
   $("client-pick").onchange = (e) => { params.set("client", e.target.value); location.search = params; };
 
-  function tile(label, value, sub = "", accent = "var(--blue)") {
-    return `<div class="tile" style="--accent:${accent}"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+  // ---- views: the bottom switch and the rail show the same two views
+  function showView(v) {
+    $("view-ai").hidden = v !== "ai";
+    $("view-customers").hidden = v !== "customers";
+    document.querySelectorAll("[data-view]").forEach((el) => {
+      const on = el.dataset.view === v;
+      el.classList.toggle("on", on);
+      if (el.getAttribute("role") === "tab") el.setAttribute("aria-selected", on);
+    });
+  }
+  document.querySelectorAll("[data-view]").forEach((el) => el.addEventListener("click", (e) => { e.preventDefault(); showView(el.dataset.view); }));
+  $("rail-questions").onclick = (e) => { e.preventDefault(); $("dotazy").scrollIntoView({ behavior: "smooth", block: "start" }); $("questions").focus?.(); };
+  if (location.hash === "#zakaznici") showView("customers");
+
+  // ---- small pieces
+  const ICONS = {
+    visits: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    chat: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>',
+  };
+  const icon = (k) => `<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg></span>`;
+  function ring(share, color = "var(--blue)", size = 54) {
+    const r = size / 2 - 5, c = 2 * Math.PI * r, v = Math.max(0, Math.min(share, 1));
+    return `<svg class="ring" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle class="bg" cx="${size / 2}" cy="${size / 2}" r="${r}"/><circle class="fg" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke="${color}" stroke-dasharray="${(v * c).toFixed(1)} ${c.toFixed(1)}"/></svg>`;
+  }
+  function tile(label, value, sub, viz = "") {
+    return `<div class="tile"><div class="label">${label}</div><div class="viz">${viz}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+  }
+  function ago(ts) {
+    const m = Math.round((Date.now() - ts) / 60000);
+    if (m < 1) return "právě teď";
+    if (m < 60) return `před ${m} min`;
+    if (m < 24 * 60) return `před ${Math.round(m / 60)} h`;
+    return new Date(ts).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" });
   }
 
   // single-series horizontal bar list; rows: {name, value, tip, color?, label?}
@@ -241,12 +492,41 @@
     tip.style.top = e.clientY + 14 + "px";
   });
 
+  function renderOffer(o) {
+    if (!o.shown) { $("offer").innerHTML = `<p class="empty">Nabídka se zatím nezobrazila.</p>`; return; }
+    const ignored = Math.max(0, o.shown - o.chat - o.voice - o.declined);
+    const parts = [
+      { name: "Chat", value: o.chat, color: "var(--blue)" },
+      { name: "Hlas", value: o.voice, color: "var(--violet)" },
+      { name: "Jen se dívá", value: o.declined, color: "var(--sky)" },
+      { name: "Bez odpovědi", value: ignored, color: "var(--track)" },
+    ];
+    $("offer").innerHTML = `
+      <div class="big">${cz(o.acceptRate)} %<small>přijalo pomoc z ${cz(o.shown)} nabídek</small></div>
+      <div class="stack" data-tip="${esc(parts.map((p) => `${p.name}: ${p.value}`).join(" · "))}">${parts.map((p) => `<i style="width:${(p.value / o.shown) * 100}%;background:${p.color}"></i>`).join("")}</div>
+      <div class="legend">${parts.map((p) => `<div><i style="background:${p.color}"></i>${p.name}<b>${cz(p.value)}</b></div>`).join("")}
+        <div><i style="background:transparent;border:1px solid var(--text-3)"></i>Otevřeno později<b>${cz(o.reopened)}</b></div></div>`;
+  }
+
+  function renderUsage(u) {
+    $("usage-card").hidden = !u;
+    if (!u) return;
+    const share = u.messageLimit ? Math.min(u.messages / u.messageLimit, 1) : 0;
+    const color = share >= 1 ? "var(--rose)" : share >= 0.8 ? "var(--amber)" : "var(--green)";
+    const month = new Date(u.month + "-01").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
+    $("usage-card").innerHTML = `<span class="k" title="Odpovědi v chatu, nabídky pomoci napsané na míru a doporučení pro majitele">Tarif ${esc(u.plan)} · ${esc(month)}</span>
+      <div class="usage" style="margin-top:10px">${ring(share, color, 72)}
+        <b>${cz(u.messages)} <small>/ ${cz(u.messageLimit)}</small></b>
+        <span>${share >= 1 ? "Limit vyčerpán, prodavačka odpovídá zjednodušeně bez AI." : "zpráv od AI tento měsíc"}</span>
+        <span>${Math.round(share * 100)} % tarifu</span></div>`;
+  }
+
   async function load() {
     const r = await call("/api/analytics");
     if (r.status === 401) return showLogin();
     $("main").hidden = false;
     if (!r.ok) {
-      $("tiles").innerHTML = `<p class="empty">${r.status === 404 ? "Tento klient neexistuje." : `Nelze načíst data (${r.status}).`}</p>`;
+      $("tiles").innerHTML = `<p class="empty" style="grid-column:1/-1">${r.status === 404 ? "Tento klient neexistuje." : `Nelze načíst data (${r.status}).`}</p>`;
       return;
     }
     const d = await r.json();
@@ -255,58 +535,42 @@
     $("logout").hidden = Boolean(me.dev);
     renderCatalog(d.catalog);
     $("client-name").textContent = d.client.name;
-    document.title = `${d.client.name} – AI prodavač`;
+    $("shop-name").textContent = d.client.name;
+    document.title = `${d.client.name} – Sella`;
+    $("period").textContent = `Přehled AI prodavačky za posledních ${d.periodDays} dní. Starší data se automaticky mažou.`;
     if (d.clients?.length > 1) {
       $("client-pick").innerHTML = d.clients.map((c) => `<option value="${esc(c.id)}"${c.id === d.client.id ? " selected" : ""}>${esc(c.name)}${c.active ? "" : " (neaktivní)"}</option>`).join("");
       $("client-pick").hidden = false;
     }
     const t = d.totals, o = d.offer;
     const tipsShown = d.nudges.reduce((s, n) => s + n.shown, 0), tipsUsed = d.nudges.reduce((s, n) => s + n.clicked, 0);
+    const aiShare = t.sessions ? t.aiSessions / t.sessions : 0;
+    const tipShare = tipsShown ? tipsUsed / tipsShown : 0;
     $("tiles").innerHTML = [
-      tile("Návštěvy", t.sessions.toLocaleString("cs-CZ"), `${t.events.toLocaleString("cs-CZ")} zaznamenaných událostí`, "var(--blue)"),
-      tile("Využilo AI prodavačku", t.sessions ? Math.round((t.aiSessions / t.sessions) * 100) + " %" : "–", `${t.aiSessions.toLocaleString("cs-CZ")} návštěv`, "var(--violet)"),
-      tile("Dotazy na AI", t.userMessages.toLocaleString("cs-CZ"), t.aiSessions ? `průměrně ${(t.userMessages / t.aiSessions).toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} na rozhovor` : "zatím žádný rozhovor", "var(--green)"),
-      tile("Přijetí nabídky pomoci", o.shown ? o.acceptRate + " %" : "–", o.shown ? `${o.chat} chat · ${o.voice} hlas z ${o.shown} nabídek` : "nabídka se zatím nezobrazila", "var(--amber)"),
-      tile("Využité tipy", tipsShown ? Math.round((tipsUsed / tipsShown) * 1000) / 10 + " %" : "–", tipsShown ? `${tipsUsed} z ${tipsShown} proaktivních tipů` : "zatím žádný tip", "var(--orange)"),
-      usageTile(d.usage),
-    ].join("") + `<p class="hint" style="grid-column:1/-1;margin:0">Za posledních ${d.periodDays} dní. Starší data se automaticky mažou.</p>`;
+      tile("Návštěvy", cz(t.sessions), `${cz(t.events)} zaznamenaných událostí`, icon("visits")),
+      tile("Využilo prodavačku", t.sessions ? Math.round(aiShare * 100) + " %" : "–", `${cz(t.aiSessions)} návštěv`, ring(aiShare)),
+      tile("Dotazy na AI", cz(t.userMessages), t.aiSessions ? `průměrně ${(t.userMessages / t.aiSessions).toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} na rozhovor` : "zatím žádný rozhovor", icon("chat")),
+      tile("Využité tipy", tipsShown ? cz(Math.round(tipShare * 1000) / 10) + " %" : "–", tipsShown ? `${tipsUsed} z ${tipsShown} proaktivních tipů` : "zatím žádný tip", ring(tipShare, "var(--violet)")),
+    ].join("");
 
-    bars($("offer"), o.shown ? [
-      { name: "Nabídka zobrazena", value: o.shown },
-      { name: "Přijato – chat", value: o.chat, color: "var(--green)" },
-      { name: "Přijato – hlas", value: o.voice, color: "var(--violet)" },
-      { name: "Odmítnuto", value: o.declined, color: "var(--orange)" },
-      { name: "Otevřeno později ručně", value: o.reopened },
-    ].map((r) => ({ ...r, tip: `${r.name}: ${r.value}` })) : []);
-    if (o.shown) $("offer").insertAdjacentHTML("beforeend", `<p class="summary">Míra přijetí nabídky: <b>${o.acceptRate} %</b></p>`);
-
+    renderOffer(o);
+    renderUsage(d.usage);
     bars($("nudges"), d.nudges.map((n) => ({
-      name: n.name, value: n.clickRate, label: n.clickRate + " %",
+      name: n.name, value: n.clickRate, label: cz(n.clickRate) + " %",
       tip: `${n.name}: zobrazeno ${n.shown}×, využito ${n.clicked}× (${n.clickRate} %), zavřeno ${n.dismissed}×`,
     })), "Zatím se žádný tip nezobrazil.");
     const list = (rows) => rows.map((r) => ({ name: r.name, value: r.count }));
     bars($("searches"), list(d.topSearches));
-    bars($("misses"), list(d.searchMisses).map((r) => ({ ...r, color: "var(--orange)" })), "Všechna hledání něco našla.");
+    bars($("misses"), list(d.searchMisses).map((r) => ({ ...r, color: "var(--rose)" })), "Všechna hledání něco našla.");
     bars($("viewed"), list(d.topViewed));
     bars($("recs"), list(d.topRecommended).map((r) => ({ ...r, color: "var(--violet)" })));
     bars($("cartai"), list(d.addToCartAi).map((r) => ({ ...r, color: "var(--green)" })));
     bars($("vnb"), d.viewedNotBought.map((r) => ({ name: r.name, value: r.views, label: `${r.views}×`, color: "var(--amber)", tip: `${r.name}: ${r.views} zobrazení, ${r.carts} přidání do košíku` })));
 
+    $("q-count").textContent = d.recentQuestions.length ? `${d.recentQuestions.length} posledních` : "";
     $("questions").innerHTML = d.recentQuestions.length
-      ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<div class="meta"><span class="chip${q.mode === "voice" ? " voice" : ""}">${q.mode === "voice" ? "hlas" : "chat"}</span>${new Date(q.ts).toLocaleString("cs-CZ")}</div></li>`).join("")
+      ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<div class="meta"><span class="chip${q.mode === "voice" ? " voice" : ""}">${q.mode === "voice" ? "hlas" : "chat"}</span><span title="${esc(new Date(q.ts).toLocaleString("cs-CZ"))}">${ago(q.ts)}</span></div></li>`).join("")
       : `<li class="empty">Zatím žádné dotazy.</li>`;
-
-  }
-
-  function usageTile(u) {
-    if (!u) return "";
-    const share = u.messageLimit ? Math.min(u.messages / u.messageLimit, 1) : 0;
-    const accent = share >= 1 ? "var(--orange)" : share >= 0.8 ? "var(--amber)" : "var(--green)";
-    const month = new Date(u.month + "-01").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
-    return `<div class="tile" style="--accent:${accent}"><div class="label">Tarif ${esc(u.plan)} · ${esc(month)}</div>
-      <div class="value">${u.messages.toLocaleString("cs-CZ")}<small style="font-size:16px;color:var(--text-3)"> / ${u.messageLimit.toLocaleString("cs-CZ")}</small></div>
-      <div class="sub">${share >= 1 ? "Limit vyčerpán – chat odpovídá zjednodušeně bez AI." : "zpráv zodpovězených AI tento měsíc"}</div>
-      <div class="meter"><i style="width:${Math.max(share * 100, 1)}%"></i></div></div>`;
   }
 
   function renderCatalog(c) {
@@ -316,17 +580,18 @@
     $("catalog-text").innerHTML =
       c.source === "demo" ? `Ukázkový katalog, ${c.products} produktů.`
       : c.source === "none" ? `Klient zatím nemá nastavený feed (<code>feed_url</code>), AI prodavačka tak nezná žádné produkty.`
-      : `${c.products.toLocaleString("cs-CZ")} produktů z feedu${when ? `, staženo ${when}` : ""}. Obnovuje se samo každých 6 hodin.`
-        + (c.error ? `<br><span class="err">Poslední stažení selhalo: ${esc(c.error)}${c.products ? " – používá se předchozí katalog." : ""}</span>` : "");
+      : `${cz(c.products)} produktů z feedu${when ? `, staženo ${when}` : ""}. Obnovuje se samo každých 6 hodin.`
+        + (c.error ? `<br><span class="err">Poslední stažení selhalo: ${esc(c.error)}${c.products ? " Používá se předchozí katalog." : ""}</span>` : "");
     $("catalog-refresh").hidden = c.source !== "feed";
   }
   $("catalog-refresh").onclick = async (e) => {
-    e.target.disabled = true;
-    e.target.textContent = "Stahuji feed…";
+    const b = e.currentTarget;
+    b.disabled = true;
+    b.textContent = "Stahuji feed…";
     const r = await call("/api/analytics/catalog", { method: "POST" });
     if (r.ok) renderCatalog(await r.json());
-    e.target.disabled = false;
-    e.target.textContent = "↻ Stáhnout feed znovu";
+    b.disabled = false;
+    b.textContent = "↻ Stáhnout feed znovu";
   };
 
   // tiny markdown → HTML for the insights (headings, bullets, bold)
