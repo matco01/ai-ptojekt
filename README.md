@@ -230,7 +230,7 @@ AIProdavac.track("search", { query, results });
 
 **Bez API:** pozdrav a proaktivní tipy nestojí nic.
 
-**Chat přes Claude API:** výchozí model je Claude Sonnet 5.5 s úsilím `low` ($2 vstup / $10 výstup za milion tokenů, čtení z cache $0,20). Jedna zpráva zákazníka jsou 2–3 volání API. Skutečné náklady každého klienta se teď měří (tabulka `usage`, stránka Klienti, export CSV) – z nich nastavte ceny tarifů. Model a úsilí jdou změnit přes `MODEL` a `EFFORT`.
+**Chat přes Claude API:** výchozí model je Claude Haiku 5.5 s úsilím `medium` ($0,10 vstup / $0,50 výstup za milion tokenů, čtení z cache $0,01; u promptů nad 100 000 tokenů 5× víc). Haiku 5.5 nemá záložní model při odmítnutí – zákazník pak dostane připravenou odpověď. Chytřejší a 20× dražší je `MODEL=claude-sonnet-5-5`. Jedna zpráva zákazníka jsou 2–3 volání API. Skutečné náklady každého klienta se teď měří (tabulka `usage`, stránka Klienti, export CSV) – z nich nastavte ceny tarifů. Model a úsilí jdou změnit přes `MODEL` a `EFFORT`.
 
 ## Další kroky
 

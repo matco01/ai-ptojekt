@@ -675,7 +675,7 @@
     .note { align-self: center; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink); background: var(--glass); border: 1px solid var(--edge);
       padding: 6px 12px; border-radius: 999px; animation: materialize .35s both; }
     .note svg { color: var(--c2); }
-    .legal { margin-top: 6px; text-align: center; font-size: 11.5px; color: var(--soft); }
+    .legal { margin: -8px 14px 12px; text-align: center; font-size: 11.5px; color: var(--soft); }
     .legal a { color: inherit; text-decoration: underline; }
     .msgs > .chips { align-self: flex-start; }
 
@@ -1332,8 +1332,8 @@
             <textarea rows="1" placeholder="Napište, co hledáte…" maxlength="600" aria-label="Zpráva pro prodavačku"></textarea>
             <button class="send" type="submit" aria-label="Odeslat">${ICON.send}</button>
           </div>
-          <div class="legal">Odpovídá umělá inteligence a může se splést · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">Ochrana soukromí</a></div>
-        </form>`;
+        </form>
+        <div class="legal">Odpovídá umělá inteligence a může se splést · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">Ochrana soukromí</a></div>`;
       const form = footer.querySelector("form");
       const ta = form.querySelector("textarea");
       ta.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } };
