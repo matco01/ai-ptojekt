@@ -352,9 +352,15 @@ app.get("/api/admin/me", (req, res) => {
   res.json({ master: s.clientId === MASTER, clientId: s.clientId === MASTER ? null : s.clientId, dev: Boolean(s.dev) });
 });
 
-const usageView = (client, a) => ({
+// What the shop owner sees about their plan: price, what's included and how much is used. Our own
+// cost (Claude API) is shown only to us – owners see their price, never our margin.
+const usageView = (client, a, { master = false } = {}) => ({
   month: monthKey(), plan: a.limits.planName, messages: a.usage.messages, messageLimit: a.limits.messages,
   ttsChars: a.usage.tts_chars, ttsLimit: a.limits.ttsChars,
+  priceCzk: a.limits.priceCzk, // null = by agreement
+  pricePerMessageCzk: a.limits.priceCzk != null && a.limits.messages ? Math.round((a.limits.priceCzk / a.limits.messages) * 100) / 100 : null,
+  aiActive: a.chat,
+  ...(master ? { costUsd: Math.round(a.usage.cost_usd * 100) / 100, aiCalls: a.usage.ai_calls } : {}),
 });
 
 app.use("/api/analytics", sameOrigin);
@@ -365,7 +371,7 @@ app.get("/api/analytics", admin, async (req, res) => {
       ...stats,
       client: { id: req.client.id, name: req.client.name },
       catalog: catalogStatus(req.client),
-      usage: usageView(req.client, await allowance(req.client)),
+      usage: usageView(req.client, await allowance(req.client), { master: req.isMaster }),
       clients: req.isMaster ? (await listClients()).map(({ id, name, active }) => ({ id, name, active })) : null,
     });
   } catch (err) { fail(res, err); }

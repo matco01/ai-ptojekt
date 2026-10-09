@@ -4,667 +4,507 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sella – přehled</title>
+  <meta name="robots" content="noindex">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/sella/sella.css">
+  <!-- The shop owner's overview of their AI salesperson (we see every shop and can switch).
+       Same look as the Sella site: one calm page, the important things first. -->
   <style>
-    /* Sella in liquid glass: a wave wallpaper behind glass that bends light at its edges;
-       icon capsule · main window with two views and a floating switch · side window */
-    :root {
-      color-scheme: light;
-      --base: #cfdae5;
-      --w-sky-1: #eef3f8; --w-sky-2: #cddcec; --w-sun: rgba(255, 244, 222, .9);
-      --w-top-1: #c9dbee; --w-top-2: #a5c1e2; --w-a1: #a9c7e8; --w-a2: #6f9ccf; --w-b1: #6a9ad3; --w-b2: #3d68a6;
-      --w-warm-1: #f4d9b6; --w-warm-2: #e3a774; --w-c1: #355a90; --w-c2: #223e69; --w-line: rgba(255, 255, 255, .55);
-      --glass: rgba(255, 255, 255, .34); --platter: rgba(255, 255, 255, .5); --platter-hover: rgba(255, 255, 255, .7);
-      --edge-hi: rgba(255, 255, 255, .95); --edge-lo: rgba(255, 255, 255, .35); --platter-edge: rgba(255, 255, 255, .8);
-      --sheen: rgba(255, 255, 255, .35); --drop: rgba(30, 50, 80, .28);
-      --text: #22262b; --text-2: #4b525b; --text-3: #6f7781; --line: rgba(34, 38, 43, .08); --track: rgba(34, 38, 43, .08);
-      --blue: #3f74b5; --blue-soft: rgba(63, 116, 181, .14); --sky: #8fb4da;
-      --green: #2f8a5d; --amber: #a8721c; --rose: #c0544b; --violet: #6d58c0;
-      --pill: rgba(28, 32, 40, .78); --pill-text: #f4f6f8;
-      --serif: "Old Standard TT", "Bodoni 72", Didot, Georgia, serif;
-      --sans: "Geist", -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root:where(:not([data-theme="light"])) {
-        color-scheme: dark;
-        --base: #0b111b;
-        --w-sky-1: #0b1220; --w-sky-2: #13203a; --w-sun: rgba(120, 160, 230, .35);
-        --w-top-1: #172a47; --w-top-2: #10203a; --w-a1: #2a5288; --w-a2: #1b3a66; --w-b1: #3a6db0; --w-b2: #1f4683;
-        --w-warm-1: #a8724a; --w-warm-2: #5a3a26; --w-c1: #0f1d33; --w-c2: #0a1424; --w-line: rgba(255, 255, 255, .18);
-        --glass: rgba(24, 29, 38, .48); --platter: rgba(255, 255, 255, .06); --platter-hover: rgba(255, 255, 255, .1);
-        --edge-hi: rgba(255, 255, 255, .3); --edge-lo: rgba(255, 255, 255, .06); --platter-edge: rgba(255, 255, 255, .09);
-        --sheen: rgba(255, 255, 255, .12); --drop: rgba(0, 0, 0, .5);
-        --text: #f5f7f9; --text-2: #c9d0d8; --text-3: #949eaa; --line: rgba(255, 255, 255, .08); --track: rgba(255, 255, 255, .09);
-        --blue: #7fb0ea; --blue-soft: rgba(127, 176, 234, .16); --sky: #4f7fb8;
-        --green: #6fd09d; --amber: #e8b75f; --rose: #f08d84; --violet: #ad9cf2;
-        --pill: rgba(245, 247, 249, .9); --pill-text: #1d2127;
-      }
-    }
-    * { box-sizing: border-box; }
+    .wrap { width: min(1240px, 100% - 48px); margin: 0 auto; }
     [hidden] { display: none !important; }
-    html, body { min-height: 100%; }
-    body { margin: 0; font-family: var(--sans); background: var(--base); color: var(--text); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 
-    /* the wallpaper behind the glass: crisp wave edges give the glass something to bend */
-    .scene { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--base); }
-    .scene svg { position: absolute; inset: -4%; width: 108%; height: 108%; }
-    /* the waves stand still: anything moving behind the glass panes would make every pane re-render each frame */
-    .scene .grain { position: absolute; inset: 0; opacity: .12; mix-blend-mode: overlay;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
-    @keyframes sway { from { transform: translateX(-30px); } to { transform: translateX(40px); } }
+    /* top bar */
+    .bar { display: flex; align-items: center; gap: 14px; padding: 20px 0 6px; flex-wrap: wrap; }
+    .bar .wordmark { font-size: 32px; text-decoration: none; }
+    .bar .sep { width: 1px; height: 26px; background: var(--line); }
+    .bar .shopname { font-weight: 600; font-size: 15px; }
+    .bar select { font: 500 14.5px var(--sans); color: var(--ink); background: rgba(255,255,255,.6); border: 0; border-radius: 99px; padding: 9px 34px 9px 16px; box-shadow: inset 0 0 0 1px var(--glass-edge);
+      appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%232f3133' stroke-width='1.6'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; cursor: pointer; }
+    .bar .tools { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .bar .btn { height: 40px; padding: 0 16px; font-size: 14px; }
 
-    /* liquid glass: tinted fill, a lit rim (bright top-left, faint bottom-right) and a soft inner glow.
-       In Chromium each pane also gets an edge lens (buildLens): the backdrop bends at the rim and splits
-       slightly into colours, like a thick bevelled pane. Other browsers keep the frosted glass. */
-    .glass { position: relative; isolation: isolate; background: var(--glass);
-      backdrop-filter: blur(var(--blur, 24px)) saturate(170%); -webkit-backdrop-filter: blur(var(--blur, 24px)) saturate(170%);
-      box-shadow: inset 0 0 24px -6px var(--sheen), 0 30px 70px -28px var(--drop), 0 2px 6px -2px var(--drop); }
-    .glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
-      background: radial-gradient(120% 60% at 20% 0%, var(--sheen), transparent 55%); opacity: .8; }
-    .glass::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; padding: 1.2px;
-      background: linear-gradient(150deg, var(--edge-hi) 0%, rgba(255, 255, 255, .05) 28%, transparent 50%, rgba(255, 255, 255, .04) 72%, var(--edge-lo) 100%);
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-      mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
-    .glass.clear { --blur: 3px; background: color-mix(in srgb, var(--glass) 55%, transparent); }
+    /* greeting */
+    .hello { display: flex; align-items: end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin: 40px auto 26px; }
+    .hello h1 { font: 400 clamp(40px, 5.4vw, 66px)/1.04 var(--serif); margin: 0; letter-spacing: -.015em; }
+    .hello h1 em { color: var(--accent); }
+    .hello .side { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .status { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 99px; font-size: 14px; font-weight: 500; background: rgba(255,255,255,.6); box-shadow: inset 0 0 0 1px var(--glass-edge); }
+    .status i { width: 8px; height: 8px; border-radius: 50%; background: #2f8a5d; box-shadow: 0 0 0 4px rgba(47,138,93,.15); }
+    .status.limited i { background: #b77a1d; box-shadow: 0 0 0 4px rgba(183,122,29,.18); }
 
-    /* platters: the lighter surfaces inside a window */
-    .card { background: var(--platter); border-radius: 26px; padding: 20px 22px; min-width: 0; box-shadow: inset 0 1px 0 var(--platter-edge); }
-    .card h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; line-height: 1.2; margin: 0 0 2px; }
-    .card .hint { font-size: 13.5px; color: var(--text-3); margin: 0 0 16px; }
-    .k { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); font-weight: 500; }
+    h2.sec { font: 400 30px/1.15 var(--serif); margin: 46px 0 16px; letter-spacing: -.01em; }
+    h2.sec small { display: block; font: 400 14.5px/1.5 var(--sans); color: var(--ink-3); margin-top: 4px; letter-spacing: 0; }
 
-    button, a.btn { font: 500 14px var(--sans); cursor: pointer; border-radius: 999px; padding: 9px 16px; border: 0; background: var(--platter); color: var(--text); text-decoration: none;
-      box-shadow: inset 0 1px 0 var(--platter-edge); transition: background .2s, transform .2s; display: inline-flex; align-items: center; gap: 8px; }
-    button:hover, a.btn:hover { background: var(--platter-hover); }
-    button:active { transform: scale(.97); }
-    button.primary { background: var(--blue); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 10px 24px -10px var(--blue); }
-    button.primary:hover { filter: brightness(1.08); }
-    button:disabled { opacity: .55; cursor: default; }
-    button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-    select { font: 500 14px var(--sans); border-radius: 999px; padding: 10px 14px; border: 0; background: var(--platter); color: var(--text); width: 100%; box-shadow: inset 0 1px 0 var(--platter-edge); }
+    /* the four main numbers */
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .kpi { padding: 20px 22px; position: relative; min-width: 0; }
+    .kpi .k { font-size: 12px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; }
+    .kpi .v { font: 400 46px/1.08 var(--serif); margin: 10px 0 4px; letter-spacing: -.01em; }
+    .kpi .s { font-size: 13.5px; color: var(--ink-3); }
+    .kpi .ring { position: absolute; top: 18px; right: 18px; }
+    .ring .bg { fill: none; stroke: rgba(47,49,51,.08); stroke-width: 5; }
+    .ring .fg { fill: none; stroke-width: 5; stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; transition: stroke-dasharray 1s cubic-bezier(.2,.8,.2,1); }
 
-    /* layout */
-    .shell { position: relative; z-index: 1; display: grid; grid-template-columns: 72px minmax(0, 1fr) 340px; gap: 22px; padding: 28px 28px 60px; min-height: 100vh; align-items: start; }
-    .rail { position: sticky; z-index: 3; top: 28px; border-radius: 36px; padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 40px; }
-    .rail .logo { font-family: var(--serif); font-size: 28px; line-height: 1; margin: 4px 0 10px; }
-    .rail nav { display: flex; flex-direction: column; gap: 8px; }
-    .rail a, .rail button { display: grid; place-items: center; width: 46px; height: 46px; padding: 0; border-radius: 50%; background: transparent; box-shadow: none; color: var(--text-2); position: relative; transition: background .2s, color .2s; }
-    .rail a:hover, .rail button:hover { background: var(--platter-hover); color: var(--text); }
-    .rail a.on { background: var(--blue); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 10px 26px -8px var(--blue); }
-    .rail svg { width: 21px; height: 21px; }
-    .rail .sep { width: 26px; height: 1px; background: var(--line); margin: 6px 0; }
-    .rail [data-label]:hover::after { content: attr(data-label); position: absolute; left: 60px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: 13px; font-weight: 500; padding: 7px 13px; border-radius: 999px; background: var(--pill); color: var(--pill-text); pointer-events: none; box-shadow: 0 12px 30px -10px var(--drop); }
+    /* how the assistant performs + the price */
+    .perf { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; align-items: start; }
+    .card { padding: 22px 24px; min-width: 0; }
+    .card h3 { font: 400 23px/1.2 var(--serif); margin: 0 0 4px; }
+    .card .hint { font-size: 13.5px; color: var(--ink-3); margin: 0 0 16px; }
+    .perf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .inner { background: rgba(255,255,255,.55); border-radius: 18px; padding: 16px 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.8); min-width: 0; }
+    .inner .k { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; margin-bottom: 10px; }
+    .big { font: 400 38px/1.05 var(--serif); }
+    .big small { display: block; font: 400 13.5px/1.4 var(--sans); color: var(--ink-3); margin-top: 6px; }
+    .cmp { display: grid; gap: 10px; }
+    .cmp .row { display: grid; grid-template-columns: 110px 1fr 54px; gap: 10px; align-items: center; font-size: 14px; }
+    .cmp .tr { height: 12px; border-radius: 12px; background: rgba(47,49,51,.07); overflow: hidden; }
+    .cmp .fi { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8fb3d8, #4e7fb4); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+    .cmp .fi.plain { background: rgba(47,49,51,.25); }
+    .cmp b { text-align: right; font-weight: 600; }
+    .lift { margin-top: 12px; font-size: 14px; color: var(--ink-2); }
+    .lift b { color: var(--accent); font-weight: 600; }
+    .stack { display: flex; height: 12px; border-radius: 12px; overflow: hidden; background: rgba(47,49,51,.07); margin: 12px 0 10px; }
+    .stack i { display: block; height: 100%; }
+    .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; font-size: 13px; color: var(--ink-2); }
+    .legend span { display: flex; align-items: center; gap: 7px; }
+    .legend i { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+    .legend b { margin-left: auto; font-weight: 600; color: var(--ink); }
 
-    .panel { border-radius: 40px; padding: 30px 30px 54px; min-width: 0; margin-bottom: 30px; }
-    .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-    .hello { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -.01em; }
-    .hello em { font-style: italic; color: var(--blue); }
-    .sub { margin: 6px 0 0; color: var(--text-3); font-size: 14.5px; }
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .price .plan { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .price .plan .name { font: 400 26px/1.1 var(--serif); }
+    .price .plan .chip { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: rgba(78,127,180,.14); color: #3d6797; }
+    .price .amount { font: 400 44px/1.05 var(--serif); margin: 14px 0 2px; }
+    .price .amount small { font: 400 15px var(--sans); color: var(--ink-3); }
+    .price .per { font-size: 14px; color: var(--ink-2); }
+    .meter { margin-top: 16px; }
+    .meter .top { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--ink-2); margin-bottom: 7px; }
+    .meter .top b { color: var(--ink); font-weight: 600; }
+    .meter .tr { height: 10px; border-radius: 10px; background: rgba(47,49,51,.08); overflow: hidden; }
+    .meter .fi { height: 100%; border-radius: inherit; background: #4e7fb4; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+    .meter .note { font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
+    .ours { margin-top: 18px; padding-top: 14px; border-top: 1px dashed rgba(47,49,51,.18); font-size: 13.5px; color: var(--ink-2); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .ours b { font-weight: 600; color: var(--ink); }
+    .ours a { color: var(--accent); text-decoration: none; }
 
-    .view { display: grid; gap: 16px; }
-    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
-    .grid-wide { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+    /* AI advice */
+    .advice { margin-top: 14px; padding: 26px 28px; border-radius: 28px; color: #eef3f9; background: linear-gradient(150deg, #5a88bf, #2f4f80); box-shadow: 0 30px 70px -36px rgba(30,50,90,.7); }
+    .advice .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .advice h3 { font: 400 26px/1.2 var(--serif); margin: 0; }
+    .advice p.hint { color: rgba(238,243,249,.75); margin: 4px 0 0; font-size: 14px; }
+    .advice .btn { background: #f3f5f7; color: #22324d; height: 44px; }
+    .advice .btn:disabled { opacity: .7; cursor: default; transform: none; }
+    .advice .out { margin-top: 16px; font-size: 15px; line-height: 1.6; }
+    .advice .out:empty { display: none; }
+    .advice .out h2 { font: 400 20px/1.3 var(--serif); margin: 18px 0 6px; color: #fff; }
+    .advice .out ul { margin: 0; padding-left: 20px; }
+    .advice .out li { margin: 4px 0; }
 
-    /* KPI platters */
-    .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-    .tile { background: var(--platter); box-shadow: inset 0 1px 0 var(--platter-edge); border-radius: 26px; padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; min-width: 0; transition: background .2s, transform .25s; }
-    .tile:hover { background: var(--platter-hover); transform: translateY(-2px); }
-    .tile .label { font-size: 13.5px; font-weight: 600; color: var(--text-2); }
-    .tile .value { font-family: var(--serif); font-size: clamp(28px, 2.4vw, 36px); white-space: nowrap; line-height: 1.1; font-variant-numeric: tabular-nums; grid-column: 1; }
-    .tile .sub { font-size: 12.5px; color: var(--text-3); grid-column: 1 / -1; }
-    .tile .viz { grid-column: 2; grid-row: 1 / 3; align-self: center; }
-    .ring { width: 54px; height: 54px; transform: rotate(-90deg); }
-    .ring circle { fill: none; stroke-width: 6; }
-    .ring .bg { stroke: var(--track); }
-    .ring .fg { stroke-linecap: round; transition: stroke-dasharray .8s cubic-bezier(.2, .8, .2, 1); }
-    .ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--blue-soft); color: var(--blue); }
-    .ico svg { width: 19px; height: 19px; }
+    /* lists */
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .bars { display: grid; gap: 11px; }
+    .brow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 10px; font-size: 14px; }
+    .brow .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .brow .num { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .brow .tr { grid-column: 1 / -1; height: 7px; border-radius: 7px; background: rgba(47,49,51,.07); overflow: hidden; }
+    .brow .fi { height: 100%; border-radius: inherit; background: var(--c, linear-gradient(90deg, #8fb3d8, #4e7fb4)); }
+    .empty { color: var(--ink-3); font-size: 14px; padding: 6px 0 2px; margin: 0; }
 
-    /* the one coloured platter */
-    .ai-card { background: linear-gradient(140deg, rgba(92, 142, 204, .92), rgba(52, 92, 150, .9) 75%); color: #f4f8fc; position: relative; overflow: hidden; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 24px 50px -24px rgba(40, 80, 140, .8); }
-    .ai-card::after { content: ""; position: absolute; width: 230px; height: 230px; right: -90px; top: -120px; border-radius: 50%; opacity: .65; background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .9), rgba(190, 215, 240, .45) 35%, rgba(255, 255, 255, 0) 70%); pointer-events: none; }
-    .ai-card h2 { color: #fff; }
-    .ai-card .hint { color: rgba(244, 248, 252, .82); max-width: 46ch; }
-    .ai-card button.primary { background: rgba(255, 255, 255, .95); color: #2f5687; box-shadow: inset 0 1px 0 #fff, 0 10px 24px -12px rgba(0, 0, 0, .4); }
-    .insights { position: relative; z-index: 1; line-height: 1.65; font-size: 15px; }
-    .insights h2 { font-size: 18px; margin: 18px 0 4px; } .insights h2:first-child { margin-top: 0; }
-    .insights ul { margin: 0; padding-left: 20px; } .insights li { margin: 3px 0; }
-    .insights .empty { background: rgba(255, 255, 255, .15); color: #fff; }
+    .bottom { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; align-items: start; }
+    .questions { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 520px; overflow-y: auto; scrollbar-width: thin; }
+    .questions li { background: rgba(255,255,255,.6); border-radius: 16px; padding: 12px 14px; font-size: 14.5px; line-height: 1.45; }
+    .questions .meta { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 12px; color: var(--ink-3); }
+    .chip2 { padding: 1px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 600; background: rgba(78,127,180,.14); color: #3d6797; }
+    .chip2.voice { background: rgba(109,88,192,.14); color: #5b48a8; }
+    .catalog p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+    .catalog .err { color: #a3433a; }
+    .catalog .btn { margin-top: 14px; height: 40px; font-size: 14px; }
 
-    /* offer */
-    .stack { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--track); margin: 6px 0 14px; gap: 2px; }
-    .stack i { display: block; height: 100%; border-radius: 999px; }
-    .legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; font-size: 13.5px; color: var(--text-2); }
-    .legend div { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .legend i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-    .legend b { margin-left: auto; color: var(--text); font-variant-numeric: tabular-nums; }
-    .big { font-family: var(--serif); font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; }
-    .big small { font-family: var(--sans); font-size: 14px; color: var(--text-3); margin-left: 6px; }
+    .tip { position: fixed; pointer-events: none; background: rgba(28,32,40,.86); color: #f4f6f8; font-size: 13px; padding: 7px 12px; border-radius: 99px; z-index: 9; display: none; max-width: 340px; }
+    footer { padding: 46px 0 40px; color: var(--ink-3); font-size: 13px; text-align: center; }
 
-    /* bar lists */
-    .bars { display: grid; gap: 2px; }
-    .bar { display: grid; grid-template-columns: minmax(110px, 42%) minmax(0, 1fr) 54px; align-items: center; gap: 12px; font-size: 14px; padding: 7px 10px; margin: 0 -10px; border-radius: 14px; transition: background .15s; }
-    .bar:hover { background: var(--platter-hover); }
-    .bar .name { overflow-wrap: anywhere; }
-    .bar .track { height: 8px; background: var(--track); border-radius: 999px; overflow: hidden; }
-    .bar .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--sky), var(--blue)); }
-    .bar .num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .bar.zero .name, .bar.zero .num { color: var(--text-3); font-weight: 400; }
-    .bar.zero .fill { display: none; }
-    .empty { color: var(--text-3); font-size: 14px; padding: 16px; text-align: center; background: var(--track); border-radius: 18px; margin: 0; }
-
-    /* floating view switch, straddling the window's bottom edge */
-    .switch { position: absolute; left: 50%; bottom: -26px; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; border-radius: 999px; white-space: nowrap; z-index: 2; }
-    .switch button { background: transparent; box-shadow: none; padding: 9px 18px; font-size: 13.5px; }
-    .switch button:hover { background: var(--platter-hover); }
-    .switch button.on { background: var(--blue); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 8px 20px -8px var(--blue); }
-
-    /* side window */
-    .side { position: sticky; top: 28px; border-radius: 40px; padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 56px); overflow: hidden; }
-    .shop { display: flex; align-items: center; gap: 12px; }
-    .shop .avatar { width: 48px; height: 48px; border-radius: 50%; flex: none; background: radial-gradient(circle at 32% 28%, #f4f8fb 0, #b8d0ea 30%, #6f9bcf 68%, #4a76ad 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 10px 24px -10px rgba(60, 110, 170, .8); }
-    .shop h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 23px; line-height: 1.15; overflow-wrap: anywhere; }
-    .shop small { color: var(--text-3); font-size: 13px; }
-    .usage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: center; }
-    .usage .ring { width: 74px; height: 74px; grid-row: 1 / 4; }
-    .usage .ring circle { stroke-width: 7; }
-    .usage b { font-family: var(--serif); font-weight: 400; font-size: 27px; line-height: 1; font-variant-numeric: tabular-nums; }
-    .usage b small { font-family: var(--sans); font-size: 13px; color: var(--text-3); }
-    .usage span { font-size: 13px; color: var(--text-3); }
-    .catalog-card p { margin: 4px 0 0; font-size: 13.5px; color: var(--text-2); }
-    .catalog-card .err { color: var(--rose); font-weight: 600; }
-    .catalog-card button { margin-top: 10px; padding: 7px 13px; font-size: 13px; }
-    .feed-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px; }
-    .feed-head h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; margin: 0; }
-    .questions { list-style: none; padding: 0 2px 0 0; margin: 0; overflow-y: auto; display: grid; gap: 8px; align-content: start; flex: 1; min-height: 120px; scrollbar-width: thin; }
-    .questions li { padding: 12px 14px; background: var(--platter); box-shadow: inset 0 1px 0 var(--platter-edge); border-radius: 20px; font-size: 14px; line-height: 1.4; }
-    .questions li .meta { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 12px; color: var(--text-3); }
-    .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--blue-soft); color: var(--blue); }
-    .chip.voice { background: color-mix(in srgb, var(--violet) 18%, transparent); color: var(--violet); }
-
-    .tip { position: fixed; pointer-events: none; background: var(--pill); color: var(--pill-text); font-size: 13px; padding: 7px 12px; border-radius: 999px; z-index: 9; display: none; max-width: 320px; box-shadow: 0 12px 30px -10px var(--drop); }
-
-    @media (max-width: 1240px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 1080px) {
-      .shell { grid-template-columns: 72px minmax(0, 1fr); }
-      .side { grid-column: 2; position: static; max-height: none; }
-      .questions { max-height: 460px; }
+    @media (max-width: 1080px) { .kpis { grid-template-columns: repeat(2, 1fr); } .perf, .bottom { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 640px) {
+      .wrap { width: calc(100% - 28px); }
+      .bar .sep { display: none; }
+      .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .kpi { padding: 16px; } .kpi .v { font-size: 34px; } .kpi .ring { display: none; }
+      .perf-grid, .grid3 { grid-template-columns: 1fr; }
+      .card { padding: 18px; }
+      .cmp .row { grid-template-columns: 92px 1fr 46px; }
     }
-    @media (max-width: 760px) {
-      .shell { grid-template-columns: minmax(0, 1fr); padding: 14px 14px 40px; gap: 14px; }
-      .rail { display: none; }
-      .side { grid-column: 1; border-radius: 30px; }
-      .panel { padding: 20px 16px 50px; border-radius: 30px; }
-      .grid2, .grid-wide, .tiles, .legend { grid-template-columns: minmax(0, 1fr); }
-      .bar { grid-template-columns: minmax(100px, 44%) minmax(0, 1fr) 46px; gap: 8px; }
-    }
-    @media (prefers-reduced-motion: reduce) { .scene .wave { animation: none; } .ring .fg, .tile, button { transition: none; } }
   </style>
 </head>
 <body>
-  <div class="scene" aria-hidden="true">
-    <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="w-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--w-sky-1)"/><stop offset="1" style="stop-color:var(--w-sky-2)"/></linearGradient>
-        <radialGradient id="w-sun" cx="0.82" cy="0.12" r="0.5"><stop offset="0" style="stop-color:var(--w-sun)"/><stop offset="1" style="stop-color:var(--w-sun);stop-opacity:0"/></radialGradient>
-        <linearGradient id="w-top" x1="0" y1="0" x2="1" y2="0.4"><stop offset="0" style="stop-color:var(--w-top-1)"/><stop offset="1" style="stop-color:var(--w-top-2)"/></linearGradient>
-        <linearGradient id="w-a" x1="0" y1="0" x2="1" y2="0.8"><stop offset="0" style="stop-color:var(--w-a1)"/><stop offset="1" style="stop-color:var(--w-a2)"/></linearGradient>
-        <linearGradient id="w-b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--w-b1)"/><stop offset="1" style="stop-color:var(--w-b2)"/></linearGradient>
-        <linearGradient id="w-warm" x1="0" y1="0" x2="1" y2="0.6"><stop offset="0" style="stop-color:var(--w-warm-1)"/><stop offset="1" style="stop-color:var(--w-warm-2)"/></linearGradient>
-        <linearGradient id="w-c" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--w-c1)"/><stop offset="1" style="stop-color:var(--w-c2)"/></linearGradient>
-      </defs>
-      <rect width="1600" height="1000" fill="url(#w-sky)"/>
-      <rect width="1600" height="1000" fill="url(#w-sun)"/>
-      <g stroke="var(--w-line)" stroke-width="1.5">
-        <path class="wave" d="M-200 -100 L1800 -100 L1800 170 C 1420 300, 1040 70, 640 210 S 40 130, -200 240 Z" fill="url(#w-top)"/>
-        <path class="wave" d="M-200 470 C 160 330, 540 600, 880 480 S 1460 250, 1800 380 L1800 1200 L-200 1200 Z" fill="url(#w-a)"/>
-        <path class="wave" d="M-200 610 C 210 500, 580 770, 990 650 S 1500 520, 1800 610 L1800 1200 L-200 1200 Z" fill="url(#w-b)"/>
-        <path class="wave" d="M-200 740 C 260 660, 650 880, 1070 780 S 1530 690, 1800 760 L1800 1200 L-200 1200 Z" fill="url(#w-warm)"/>
-        <path class="wave" d="M-200 870 C 300 800, 720 980, 1130 900 S 1570 840, 1800 890 L1800 1200 L-200 1200 Z" fill="url(#w-c)"/>
-      </g>
-    </svg>
-    <div class="grain"></div>
-  </div>
-  <!-- edge lenses for the glass panes, built per pane size by buildLens() -->
-  <svg id="lens-defs" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
-
-  <div class="shell" id="main" hidden>
-    <aside class="rail glass clear lens" data-lens="22 80 3" aria-label="Navigace">
-      <div class="logo" aria-hidden="true">S</div>
-      <nav>
-        <a href="#ai" class="on" data-view="ai" data-label="AI prodavačka" aria-label="AI prodavačka" data-i18n-attr="data-label=v.ai;aria-label=v.ai">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></a>
-        <a href="#zakaznici" data-view="customers" data-label="Zákazníci a produkty" aria-label="Zákazníci a produkty" data-i18n-attr="data-label=v.cust;aria-label=v.cust">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></a>
-        <a href="#dotazy" data-label="Na co se ptají" aria-label="Na co se zákazníci ptají" id="rail-questions" data-i18n-attr="data-label=q.h;aria-label=q.h">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg></a>
-        <a href="/admin/klienti.html" id="clients-link" data-label="Všichni klienti" aria-label="Všichni klienti" data-i18n-attr="data-label=all;aria-label=all" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg></a>
-      </nav>
+  <div class="wrap" id="main" hidden>
+    <header class="bar">
+      <a class="wordmark" href="/">Sella</a>
       <span class="sep"></span>
-      <button id="logout" data-label="Odhlásit" aria-label="Odhlásit" data-i18n-attr="data-label=logout;aria-label=logout" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H4"/></svg></button>
-    </aside>
-
-    <main class="panel glass lens" data-lens="40 60 20">
-      <div class="top">
-        <div>
-          <h1 class="hello"><span id="greeting">Dobrý den</span>, <em id="client-name">&nbsp;</em></h1>
-          <p class="sub" id="period">Přehled AI prodavačky</p>
-        </div>
-        <div class="actions"><span id="lang"></span><button id="refresh" data-i18n="refresh">↻ Obnovit</button></div>
+      <span class="shopname" id="shop-name"></span>
+      <select id="client-pick" hidden data-i18n-attr="aria-label=pick"></select>
+      <div class="tools">
+        <span id="lang"></span>
+        <a class="btn light" href="/admin/klienti.html" id="clients-link" hidden data-i18n="all">Všichni klienti</a>
+        <button class="btn light" id="logout" hidden data-i18n="logout">Odhlásit</button>
       </div>
+    </header>
 
-      <section class="view" id="view-ai">
-        <div class="tiles" id="tiles"></div>
+    <section class="hello">
+      <div>
+        <p class="eyebrow" id="period"></p>
+        <h1><span id="greeting"></span>, <em id="client-name"></em></h1>
+      </div>
+      <div class="side">
+        <span class="status" id="status"><i></i><span></span></span>
+        <button class="btn light" id="refresh" data-i18n="refresh">↻ Obnovit</button>
+      </div>
+    </section>
 
-        <div class="grid-wide">
-          <section class="card ai-card">
-            <h2 data-i18n="ins.h">Doporučení od AI pro majitele</h2>
-            <p class="hint" data-i18n="ins.p">Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.</p>
-            <div id="insights" class="insights"><button class="primary" id="gen" data-i18n="ins.gen">Vygenerovat doporučení</button></div>
-          </section>
-          <section class="card">
-            <h2 data-i18n="offer.h">Nabídka pomoci</h2>
-            <p class="hint" data-i18n="offer.p">Jak zákazníci reagují, když se jim prodavačka nabídne.</p>
-            <div id="offer"></div>
-          </section>
-        </div>
+    <div class="kpis" id="kpis"></div>
 
-        <div class="grid2">
-          <section class="card">
-            <h2 data-i18n="tips.h">Proaktivní tipy</h2>
-            <p class="hint" data-i18n="tips.p">Kdy se prodavačka sama ozvala a jak často zákazník tip využil.</p>
-            <div class="bars" id="nudges"></div>
-          </section>
-          <section class="card">
-            <h2 data-i18n="recs.h">Co AI nejčastěji doporučuje</h2>
-            <p class="hint" data-i18n="recs.p">Počet zobrazení v kartičkách prodavačky.</p>
-            <div class="bars" id="recs"></div>
-          </section>
+    <h2 class="sec"><span data-i18n="perf.h">Jak prodavačka funguje</span><small data-i18n="perf.p">Co se změní, když zákazníkovi poradí – a co vás to stojí.</small></h2>
+    <div class="perf">
+      <section class="pane card">
+        <div class="perf-grid">
+          <div class="inner"><div class="k" data-i18n="conv.k">Nakoupilo</div><div class="cmp" id="conv"></div><div class="lift" id="lift"></div></div>
+          <div class="inner"><div class="k" data-i18n="aov.k">Průměrná objednávka</div><div class="cmp" id="aov"></div><div class="lift" id="revenue"></div></div>
+          <div class="inner"><div class="k" data-i18n="offer.k">Nabídka pomoci</div><div id="offer"></div></div>
+          <div class="inner"><div class="k" data-i18n="tips.k">Proaktivní tipy</div><div id="tipsum"></div></div>
         </div>
       </section>
+      <section class="pane card price" id="price"></section>
+    </div>
 
-      <section class="view" id="view-customers" hidden>
-        <div class="grid2">
-          <section class="card"><h2 data-i18n="srch.h">Co zákazníci hledají</h2><p class="hint" data-i18n="srch.p">Nejčastější hledání na webu.</p><div class="bars" id="searches"></div></section>
-          <section class="card"><h2 data-i18n="miss.h">Hledání bez výsledku</h2><p class="hint" data-i18n="miss.p">Poptávka, kterou obchod nepokryl: kandidáti na rozšíření sortimentu nebo synonyma.</p><div class="bars" id="misses"></div></section>
-          <section class="card"><h2 data-i18n="view.h">Nejprohlíženější produkty</h2><p class="hint" data-i18n="view.p">Počet zobrazení detailu.</p><div class="bars" id="viewed"></div></section>
-          <section class="card"><h2 data-i18n="cart.h">Přidáno do košíku díky AI</h2><p class="hint" data-i18n="cart.p">Kusy přidané z doporučení prodavačky.</p><div class="bars" id="cartai"></div></section>
-        </div>
-        <section class="card"><h2 data-i18n="vnb.h">Hodně prohlížené, málo kupované</h2><p class="hint" data-i18n="vnb.p">Do košíku si je přidá méně než 15 % zájemců. Kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div></section>
-      </section>
+    <section class="advice">
+      <div class="head">
+        <div><h3 data-i18n="ins.h">Doporučení od AI pro majitele</h3><p class="hint" data-i18n="ins.p">Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.</p></div>
+        <button class="btn" id="gen" data-i18n="ins.gen">Vygenerovat doporučení</button>
+      </div>
+      <div class="out" id="insights"></div>
+    </section>
 
-      <div class="switch glass clear lens" data-lens="16 70 3" role="tablist" aria-label="Pohled" data-i18n-attr="aria-label=v.label">
-        <button role="tab" class="on" data-view="ai" aria-selected="true" data-i18n="v.ai">AI prodavačka</button>
-        <button role="tab" data-view="customers" aria-selected="false" data-i18n="v.cust">Zákazníci a produkty</button>
-      </div>
-    </main>
+    <h2 class="sec"><span data-i18n="want.h">Co zákazníci chtějí</span><small data-i18n="want.p">Hledání, zájem o produkty a co jim prodavačka doporučila.</small></h2>
+    <div class="grid3">
+      <section class="pane card"><h3 data-i18n="srch.h">Co hledají</h3><p class="hint" data-i18n="srch.p">Nejčastější hledání na webu.</p><div class="bars" id="searches"></div></section>
+      <section class="pane card"><h3 data-i18n="miss.h">Hledání bez výsledku</h3><p class="hint" data-i18n="miss.p">Poptávka, kterou obchod nepokryl.</p><div class="bars" id="misses"></div></section>
+      <section class="pane card"><h3 data-i18n="view.h">Nejprohlíženější produkty</h3><p class="hint" data-i18n="view.p">Počet zobrazení detailu.</p><div class="bars" id="viewed"></div></section>
+      <section class="pane card"><h3 data-i18n="recs.h">Co AI nejčastěji doporučuje</h3><p class="hint" data-i18n="recs.p">Zobrazení v kartičkách prodavačky.</p><div class="bars" id="recs"></div></section>
+      <section class="pane card"><h3 data-i18n="cart.h">Do košíku díky AI</h3><p class="hint" data-i18n="cart.p">Kusy přidané z doporučení.</p><div class="bars" id="cartai"></div></section>
+      <section class="pane card"><h3 data-i18n="vnb.h">Hodně prohlížené, málo kupované</h3><p class="hint" data-i18n="vnb.p">Do košíku si je přidá méně než 15 % zájemců.</p><div class="bars" id="vnb"></div></section>
+    </div>
 
-    <aside class="side glass lens" data-lens="34 60 20" aria-label="Obchod">
-      <div class="shop">
-        <div class="avatar" aria-hidden="true"></div>
-        <div style="min-width:0"><h3 id="shop-name">&nbsp;</h3><small id="shop-sub" data-i18n="shop.sub">Sella · přehled obchodu</small></div>
+    <div class="bottom">
+      <div>
+        <h2 class="sec"><span data-i18n="q.h">Na co se ptají</span><small id="q-count"></small></h2>
+        <section class="pane card"><ul class="questions" id="questions"></ul></section>
       </div>
-      <select id="client-pick" hidden aria-label="Klient" data-i18n-attr="aria-label=pick"></select>
-      <div class="card" id="usage-card" hidden></div>
-      <div class="card catalog-card" id="catalog-card" hidden>
-        <span class="k" data-i18n="cat.k">Katalog produktů</span>
-        <p id="catalog-text"></p>
-        <button id="catalog-refresh" hidden data-i18n="cat.refresh">↻ Stáhnout feed znovu</button>
+      <div>
+        <h2 class="sec"><span data-i18n="tipsList.h">Které tipy fungují</span><small data-i18n="tipsList.p">Kdy se prodavačka sama ozvala a jak často zákazník tip využil.</small></h2>
+        <section class="pane card"><div class="bars" id="nudges"></div></section>
+        <section class="pane card catalog" style="margin-top:14px">
+          <h3 data-i18n="cat.k">Katalog produktů</h3>
+          <p id="catalog-text"></p>
+          <button class="btn light" id="catalog-refresh" hidden data-i18n="cat.refresh">↻ Stáhnout feed znovu</button>
+        </section>
       </div>
-      <div class="feed-head" id="dotazy"><h2 data-i18n="q.h">Na co se ptají</h2><span class="k" id="q-count"></span></div>
-      <ul class="questions" id="questions"></ul>
-    </aside>
+    </div>
+
+    <footer data-i18n="foot">Sella · data za posledních 90 dní, starší se automaticky mažou</footer>
   </div>
   <div class="tip" id="tip"></div>
 
-<script src="/sella/i18n.js"></script>
-<script>
-  const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const params = new URLSearchParams(location.search);
-  // passwords never belong in a URL – drop one left over from an old link
-  if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "")); }
-  const clientId = params.get("client") || "";
-  const call = (url, opts = {}) => fetch(url + (clientId ? `?client=${encodeURIComponent(clientId)}` : ""), opts);
+  <script src="/sella/i18n.js"></script>
+  <script src="/sella/sella.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const params = new URLSearchParams(location.search);
+    // passwords never belong in a URL – drop one left over from an old link
+    if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "")); }
+    const clientId = params.get("client") || "";
+    const call = (url, opts = {}) => fetch(url + (clientId ? `?client=${encodeURIComponent(clientId)}` : ""), opts);
 
-  // ---- liquid glass edge lenses (Chromium renders SVG filters in backdrop-filter; others keep frosted glass)
-  // Per pane: a displacement map that is neutral in the middle and, within `bevel` px of the rounded edge,
-  // pulls the backdrop inwards along the edge normal – it bends like a bevelled pane. The map is applied once
-  // per colour channel with slightly different strengths, which gives the faint prism fringe at the rim.
-  const LENS = navigator.userAgentData?.brands?.some((b) => /Chromium/.test(b.brand));
-  function lensMap(w, h, r, bevel) {
-    const k = 0.5, W = Math.max(2, Math.round(w * k)), H = Math.max(2, Math.round(h * k));
-    const rr = Math.min(r, w / 2, h / 2) * k, B = bevel * k, hw = W / 2, hh = H / 2;
-    const sdf = (x, y) => {
-      const qx = Math.abs(x - hw) - (hw - rr), qy = Math.abs(y - hh) - (hh - rr);
-      return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - rr;
+    // ---- the two languages (chosen on the Sella site, or here with the switch)
+    const I = SellaI18n;
+    const NUDGES = {
+      cs: {},
+      en: {
+        bundle: "Bundle discount", freeship: "Free shipping", "search-miss": "Search with no results", "hes-compare": "Torn between products",
+        "hes-product": "Long look at a product", "hes-filters": "Lost in filters", "hes-search": "Repeated searches", "hes-cart": "Hesitating in the cart",
+        service: "Service (trade-in, warranty…)", deal: "Category discount", accessory: "Accessory for the cart", idle: "Idle on arrival",
+      },
     };
-    const c = document.createElement("canvas"); c.width = W; c.height = H;
-    const ctx = c.getContext("2d"), img = ctx.createImageData(W, H), d = img.data;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const px = x + 0.5, py = y + 0.5, inside = -sdf(px, py);
-      let dx = 0, dy = 0;
-      if (inside < B) {
-        const t = 1 - Math.max(inside, 0) / B, m = t * t * (3 - 2 * t);
-        const gx = sdf(px + 1, py) - sdf(px - 1, py), gy = sdf(px, py + 1) - sdf(px, py - 1), L = Math.hypot(gx, gy) || 1;
-        dx = (-gx / L) * m; dy = (-gy / L) * m;
-      }
-      const i = (y * W + x) * 4;
-      d[i] = 128 + dx * 127; d[i + 1] = 128 + dy * 127; d[i + 2] = 128; d[i + 3] = 255;
-    }
-    ctx.putImageData(img, 0, 0);
-    return c.toDataURL();
-  }
-  function buildLens(el, i) {
-    const w = el.offsetWidth, h = el.offsetHeight;
-    if (!w || !h) return;
-    const [bevel, scale, blur] = (el.dataset.lens || "30 60 20").split(" ").map(Number);
-    const r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
-    const id = `lens-${i}`;
-    const keep = (c) => `${c === "r" ? 1 : 0} 0 0 0 0  0 ${c === "g" ? 1 : 0} 0 0 0  0 0 ${c === "b" ? 1 : 0} 0 0  0 0 0 1 0`;
-    const chan = (s, c) => `<feDisplacementMap in="SourceGraphic" in2="map" scale="${s}" xChannelSelector="R" yChannelSelector="G" result="d${c}"/>` +
-      `<feColorMatrix in="d${c}" type="matrix" values="${keep(c)}" result="c${c}"/>`;
-    const svg = `<filter id="${id}" x="0" y="0" width="${w}" height="${h}" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">` +
-      `<feImage href="${lensMap(w, h, r, bevel)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>` +
-      chan(scale, "r") + chan(scale * 0.94, "g") + chan(scale * 0.88, "b") +
-      `<feBlend in="cr" in2="cg" mode="screen" result="rg"/><feBlend in="rg" in2="cb" mode="screen"/></filter>`;
-    document.getElementById(id)?.remove();
-    $("lens-defs").insertAdjacentHTML("beforeend", svg);
-    el.style.backdropFilter = `blur(${blur}px) url(#${id}) saturate(170%)`;
-  }
-  if (LENS) {
-    let pending = null;
-    // only the small panes (rail, view switch) bend light – on the big ones it made scrolling stutter
-    const panes = [...document.querySelectorAll(".glass.lens")].filter((el) => !el.matches(".panel, .side"));
-    const ro = new ResizeObserver(() => { clearTimeout(pending); pending = setTimeout(() => panes.forEach(buildLens), 150); });
-    panes.forEach((el) => ro.observe(el));
-  }
-  // ---- the two languages (chosen on the Sella site, or here with the switch)
-  const I = SellaI18n;
-  const NUDGES = {
-    cs: {},
-    en: {
-      bundle: "Bundle discount", freeship: "Free shipping", "search-miss": "Search with no results", "hes-compare": "Torn between products",
-      "hes-product": "Long look at a product", "hes-filters": "Lost in filters", "hes-search": "Repeated searches", "hes-cart": "Hesitating in the cart",
-      service: "Service (trade-in, warranty…)", deal: "Category discount", accessory: "Accessory for the cart", idle: "Idle on arrival",
-    },
-  };
-  const t = I.use({
-    cs: {
-      "v.ai": "AI prodavačka", "v.cust": "Zákazníci a produkty", "v.label": "Pohled", "q.h": "Na co se ptají", all: "Všichni klienti", logout: "Odhlásit", refresh: "↻ Obnovit",
-      "ins.h": "Doporučení od AI pro majitele", "ins.p": "Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.", "ins.gen": "Vygenerovat doporučení",
-      "ins.busy": "Analyzuji… (může trvat i minutu)", "ins.again": "Vygenerovat znovu", "ins.retry": "Zkusit znovu", "ins.err": "Chyba",
-      "offer.h": "Nabídka pomoci", "offer.p": "Jak zákazníci reagují, když se jim prodavačka nabídne.",
-      "tips.h": "Proaktivní tipy", "tips.p": "Kdy se prodavačka sama ozvala a jak často zákazník tip využil.",
-      "recs.h": "Co AI nejčastěji doporučuje", "recs.p": "Počet zobrazení v kartičkách prodavačky.",
-      "srch.h": "Co zákazníci hledají", "srch.p": "Nejčastější hledání na webu.",
-      "miss.h": "Hledání bez výsledku", "miss.p": "Poptávka, kterou obchod nepokryl: kandidáti na rozšíření sortimentu nebo synonyma.",
-      "view.h": "Nejprohlíženější produkty", "view.p": "Počet zobrazení detailu.",
-      "cart.h": "Přidáno do košíku díky AI", "cart.p": "Kusy přidané z doporučení prodavačky.",
-      "vnb.h": "Hodně prohlížené, málo kupované", "vnb.p": "Do košíku si je přidá méně než 15 % zájemců. Kandidáti na lepší fotky, popis nebo cenu.",
-      "shop.sub": "Sella · přehled obchodu", pick: "Klient", "cat.k": "Katalog produktů", "cat.refresh": "↻ Stáhnout feed znovu", "cat.busy": "Stahuji feed…",
-      morning: "Dobré ráno", day: "Dobrý den", evening: "Dobrý večer",
-      period: (d) => `Přehled AI prodavačky za posledních ${d} dní. Starší data se automaticky mažou.`,
-      notFound: "Tento klient neexistuje.", loadErr: (s) => `Nelze načíst data (${s}).`, inactive: "neaktivní",
-      visits: "Návštěvy", events: (n) => `${n} zaznamenaných událostí`, used: "Využilo prodavačku", visitsN: (n) => `${n} návštěv`,
-      asks: "Dotazy na AI", perChat: (n) => `průměrně ${n} na rozhovor`, noChat: "zatím žádný rozhovor",
-      tipsUsed: "Využité tipy", tipsOf: (a, b) => `${a} z ${b} proaktivních tipů`, noTip: "zatím žádný tip",
-      noData: "Zatím žádná data.", noTipShown: "Zatím se žádný tip nezobrazil.", allFound: "Všechna hledání něco našla.",
-      tipRow: (n, s, c, r, d) => `${n}: zobrazeno ${s}×, využito ${c}× (${r} %), zavřeno ${d}×`,
-      vnbRow: (n, v, c) => `${n}: ${v} zobrazení, ${c} přidání do košíku`,
-      offerNone: "Nabídka se zatím nezobrazila.", chat: "Chat", voice: "Hlas", browse: "Jen se dívá", noAnswer: "Bez odpovědi", later: "Otevřeno později",
-      accepted: (n) => `přijalo pomoc z ${n} nabídek`,
-      planTitle: "Odpovědi v chatu, nabídky pomoci napsané na míru a doporučení pro majitele", plan: (p, m) => `Tarif ${p} · ${m}`,
-      overLimit: "Limit vyčerpán, prodavačka odpovídá zjednodušeně bez AI.", msgsMonth: "zpráv od AI tento měsíc", ofPlan: (n) => `${n} % tarifu`,
-      qCount: (n) => `${n} posledních`, noQuestions: "Zatím žádné dotazy.", qVoice: "hlas", qChat: "chat",
-      now: "právě teď", minAgo: (m) => `před ${m} min`, hAgo: (h) => `před ${h} h`,
-      catDemo: (n) => `Ukázkový katalog, ${n} produktů.`, catNone: "Klient zatím nemá nastavený feed (<code>feed_url</code>), AI prodavačka tak nezná žádné produkty.",
-      catFeed: (n, w) => `${n} produktů z feedu${w ? `, staženo ${w}` : ""}. Obnovuje se samo každých 6 hodin.`,
-      catErr: (e, keep) => `Poslední stažení selhalo: ${e}${keep ? " Používá se předchozí katalog." : ""}`,
-    },
-    en: {
-      "v.ai": "AI assistant", "v.cust": "Customers & products", "v.label": "View", "q.h": "What they ask", all: "All clients", logout: "Sign out", refresh: "↻ Refresh",
-      "ins.h": "AI advice for the owner", "ins.p": "Claude reviews customer behaviour and questions and suggests what to focus on.", "ins.gen": "Generate advice",
-      "ins.busy": "Analysing… (can take up to a minute)", "ins.again": "Generate again", "ins.retry": "Try again", "ins.err": "Error",
-      "offer.h": "Offer of help", "offer.p": "How customers react when the assistant offers to help.",
-      "tips.h": "Proactive tips", "tips.p": "When the assistant spoke up by itself and how often the customer used the tip.",
-      "recs.h": "What the AI recommends most", "recs.p": "Times shown in the assistant's product cards.",
-      "srch.h": "What customers search for", "srch.p": "The most common searches on the site.",
-      "miss.h": "Searches with no results", "miss.p": "Demand the shop didn't cover: candidates for new products or synonyms.",
-      "view.h": "Most viewed products", "view.p": "Product detail views.",
-      "cart.h": "Added to cart thanks to AI", "cart.p": "Items added from the assistant's recommendations.",
-      "vnb.h": "Often viewed, rarely bought", "vnb.p": "Fewer than 15 % of viewers add them to the cart. Candidates for better photos, copy or price.",
-      "shop.sub": "Sella · shop insights", pick: "Client", "cat.k": "Product catalogue", "cat.refresh": "↻ Fetch the feed again", "cat.busy": "Fetching the feed…",
-      morning: "Good morning", day: "Hello", evening: "Good evening",
-      period: (d) => `The AI assistant over the last ${d} days. Older data is deleted automatically.`,
-      notFound: "This client doesn't exist.", loadErr: (s) => `Couldn't load the data (${s}).`, inactive: "inactive",
-      visits: "Visits", events: (n) => `${n} recorded events`, used: "Used the assistant", visitsN: (n) => `${n} visits`,
-      asks: "Questions to AI", perChat: (n) => `${n} per conversation on average`, noChat: "no conversation yet",
-      tipsUsed: "Tips used", tipsOf: (a, b) => `${a} of ${b} proactive tips`, noTip: "no tip yet",
-      noData: "No data yet.", noTipShown: "No tip has been shown yet.", allFound: "Every search found something.",
-      tipRow: (n, s, c, r, d) => `${n}: shown ${s}×, used ${c}× (${r} %), closed ${d}×`,
-      vnbRow: (n, v, c) => `${n}: ${v} views, ${c} added to cart`,
-      offerNone: "The offer hasn't been shown yet.", chat: "Chat", voice: "Voice", browse: "Just looking", noAnswer: "No answer", later: "Opened later",
-      accepted: (n) => `accepted help out of ${n} offers`,
-      planTitle: "Chat answers, tailored offers of help and owner advice", plan: (p, m) => `Plan ${p} · ${m}`,
-      overLimit: "Limit reached – the assistant answers in a simple mode without AI.", msgsMonth: "AI messages this month", ofPlan: (n) => `${n} % of the plan`,
-      qCount: (n) => `latest ${n}`, noQuestions: "No questions yet.", qVoice: "voice", qChat: "chat",
-      now: "just now", minAgo: (m) => `${m} min ago`, hAgo: (h) => `${h} h ago`,
-      catDemo: (n) => `Demo catalogue, ${n} products.`, catNone: "This client has no feed set yet (<code>feed_url</code>), so the assistant knows no products.",
-      catFeed: (n, w) => `${n} products from the feed${w ? `, fetched ${w}` : ""}. It refreshes itself every 6 hours.`,
-      catErr: (e, keep) => `The last fetch failed: ${e}${keep ? " The previous catalogue is in use." : ""}`,
-    },
-  });
-  const cz = (n) => Number(n).toLocaleString(I.locale());
-  const greet = () => { const h = new Date().getHours(); $("greeting").textContent = t(h < 10 ? "morning" : h < 18 ? "day" : "evening"); };
-  greet();
-  I.switcher($("lang"));
-  let last = null; // the last loaded data, re-rendered when the language changes
-  I.onChange(() => { greet(); if (last) render(last.d, last.me); const g = $("gen"); if (g && !g.disabled) g.textContent = t("ins.gen"); });
-
-  // signing in happens on the Sella site; it sends the owner back here afterwards
-  const LOGIN = "/sella/prihlaseni.html";
-  function showLogin() {
-    const q = new URLSearchParams({ next: location.pathname + location.search + location.hash });
-    if (clientId) q.set("client", clientId);
-    location.replace(`${LOGIN}?${q}`);
-  }
-  $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = LOGIN; };
-  $("client-pick").onchange = (e) => { params.set("client", e.target.value); location.search = params; };
-
-  // ---- views: the bottom switch and the rail show the same two views
-  function showView(v) {
-    $("view-ai").hidden = v !== "ai";
-    $("view-customers").hidden = v !== "customers";
-    document.querySelectorAll("[data-view]").forEach((el) => {
-      const on = el.dataset.view === v;
-      el.classList.toggle("on", on);
-      if (el.getAttribute("role") === "tab") el.setAttribute("aria-selected", on);
+    const t = I.use({
+      cs: {
+        pick: "Obchod", all: "Všichni klienti", logout: "Odhlásit", refresh: "↻ Obnovit",
+        morning: "Dobré ráno", day: "Dobrý den", evening: "Dobrý večer", period: (d) => `Přehled AI prodavačky · posledních ${d} dní`,
+        running: "Prodavačka běží s AI", limited: "Limit vyčerpán – odpovídá zjednodušeně",
+        visits: "Návštěvy", visitsS: (n) => `${n} zaznamenaných událostí`, used: "Využilo prodavačku", usedS: (a, b) => `${a} z ${b} návštěv`,
+        asks: "Dotazy na AI", asksS: (n) => `průměrně ${n} na rozhovor`, noChat: "zatím žádný rozhovor",
+        bought: "Nákupy s pomocí AI", boughtS: (a, b) => `z ${b} objednávek celkem`, noOrders: "zatím žádná objednávka",
+        "perf.h": "Jak prodavačka funguje", "perf.p": "Co se změní, když zákazníkovi poradí – a co vás to stojí.",
+        "conv.k": "Nakoupilo", "aov.k": "Průměrná objednávka", "offer.k": "Nabídka pomoci", "tips.k": "Proaktivní tipy",
+        withAi: "S prodavačkou", withoutAi: "Bez ní", lift: (x) => `Se Sellou nakupuje <b>${x}× víc</b> lidí.`, liftNone: "Zatím málo dat pro srovnání.",
+        revenue: (r) => `Tržby po radě prodavačky: <b>${r}</b>`,
+        accepted: (n) => `přijalo pomoc z ${n} nabídek`, offerNone: "Nabídka se zatím nezobrazila.",
+        chat: "Chat", voice: "Hlas", browse: "Jen se dívá", noAnswer: "Bez odpovědi",
+        tipsUsed: (a, b) => `využito ${a} z ${b} tipů`, noTip: "Zatím se žádný tip nezobrazil.",
+        "price.h": "Vaše cena", plan: "Tarif", perMonth: "/ měsíc", free: "Zdarma", byDeal: "Podle smlouvy",
+        perMsg: (p) => `1 zpráva od AI vychází na <b>${p}</b>`, included: (n) => `${n} zpráv od AI v ceně`,
+        msgs: "Zprávy od AI", voiceUse: "Přirozený hlas (znaky)", over: "Limit je vyčerpaný, prodavačka do konce měsíce odpovídá zjednodušeně bez AI.",
+        msgNote: "Zpráva = odpověď v chatu, nabídka pomoci napsaná na míru nebo doporučení pro vás.",
+        ours: (c, n) => `Jen pro nás · náklad AI <b>$${c}</b> · ${n} volání`, oursLink: "Všechny náklady →",
+        "ins.h": "Doporučení od AI pro majitele", "ins.p": "Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.", "ins.gen": "Vygenerovat doporučení",
+        "ins.busy": "Analyzuji… (může trvat i minutu)", "ins.again": "Vygenerovat znovu", "ins.err": "Doporučení se nepodařilo vytvořit.",
+        "want.h": "Co zákazníci chtějí", "want.p": "Hledání, zájem o produkty a co jim prodavačka doporučila.",
+        "srch.h": "Co hledají", "srch.p": "Nejčastější hledání na webu.", "miss.h": "Hledání bez výsledku", "miss.p": "Poptávka, kterou obchod nepokryl.",
+        "view.h": "Nejprohlíženější produkty", "view.p": "Počet zobrazení detailu.", "recs.h": "Co AI nejčastěji doporučuje", "recs.p": "Zobrazení v kartičkách prodavačky.",
+        "cart.h": "Do košíku díky AI", "cart.p": "Kusy přidané z doporučení.", "vnb.h": "Hodně prohlížené, málo kupované", "vnb.p": "Do košíku si je přidá méně než 15 % zájemců.",
+        "q.h": "Na co se ptají", qCount: (n) => `${n} posledních dotazů`, noQuestions: "Zatím žádné dotazy.", qVoice: "hlas", qChat: "chat",
+        "tipsList.h": "Které tipy fungují", "tipsList.p": "Kdy se prodavačka sama ozvala a jak často zákazník tip využil.",
+        "cat.k": "Katalog produktů", "cat.refresh": "↻ Stáhnout feed znovu", "cat.busy": "Stahuji feed…",
+        catDemo: (n) => `Ukázkový katalog, ${n} produktů.`, catNone: "Zatím není nastavený produktový feed, prodavačka tak nezná žádné produkty.",
+        catFeed: (n, w) => `${n} produktů z feedu${w ? `, staženo ${w}` : ""}. Obnovuje se samo každých 6 hodin.`,
+        catErr: (e, keep) => `Poslední stažení selhalo: ${e}${keep ? " Používá se předchozí katalog." : ""}`,
+        noData: "Zatím žádná data.", allFound: "Všechna hledání něco našla.",
+        tipRow: (n, s, c, r, d) => `${n}: zobrazeno ${s}×, využito ${c}× (${r} %), zavřeno ${d}×`, vnbRow: (n, v, c) => `${n}: ${v} zobrazení, ${c} do košíku`,
+        now: "právě teď", minAgo: (m) => `před ${m} min`, hAgo: (h) => `před ${h} h`,
+        notFound: "Tento obchod neexistuje.", loadErr: (s) => `Data se nepodařilo načíst (${s}).`, inactive: "neaktivní",
+        foot: "Sella · data za posledních 90 dní, starší se automaticky mažou",
+      },
+      en: {
+        pick: "Shop", all: "All clients", logout: "Sign out", refresh: "↻ Refresh",
+        morning: "Good morning", day: "Hello", evening: "Good evening", period: (d) => `AI assistant insights · last ${d} days`,
+        running: "The assistant runs with AI", limited: "Limit reached – simple answers only",
+        visits: "Visits", visitsS: (n) => `${n} recorded events`, used: "Used the assistant", usedS: (a, b) => `${a} of ${b} visits`,
+        asks: "Questions to AI", asksS: (n) => `${n} per conversation on average`, noChat: "no conversation yet",
+        bought: "Purchases with AI", boughtS: (a, b) => `of ${b} orders in total`, noOrders: "no order yet",
+        "perf.h": "How the assistant performs", "perf.p": "What changes when it helps a customer – and what it costs you.",
+        "conv.k": "Bought something", "aov.k": "Average order", "offer.k": "Offer of help", "tips.k": "Proactive tips",
+        withAi: "With assistant", withoutAi: "Without", lift: (x) => `With Sella, <b>${x}× more</b> people buy.`, liftNone: "Not enough data to compare yet.",
+        revenue: (r) => `Revenue after the assistant's advice: <b>${r}</b>`,
+        accepted: (n) => `accepted help out of ${n} offers`, offerNone: "The offer hasn't been shown yet.",
+        chat: "Chat", voice: "Voice", browse: "Just looking", noAnswer: "No answer",
+        tipsUsed: (a, b) => `${a} of ${b} tips used`, noTip: "No tip has been shown yet.",
+        "price.h": "Your price", plan: "Plan", perMonth: "/ month", free: "Free", byDeal: "By agreement",
+        perMsg: (p) => `One AI message comes to <b>${p}</b>`, included: (n) => `${n} AI messages included`,
+        msgs: "AI messages", voiceUse: "Natural voice (characters)", over: "The limit is used up – until the month ends the assistant answers simply, without AI.",
+        msgNote: "A message = a chat answer, a tailored offer of help or advice for you.",
+        ours: (c, n) => `Only for us · AI cost <b>$${c}</b> · ${n} calls`, oursLink: "All costs →",
+        "ins.h": "AI advice for the owner", "ins.p": "Claude reviews customer behaviour and questions and suggests what to focus on.", "ins.gen": "Generate advice",
+        "ins.busy": "Analysing… (can take up to a minute)", "ins.again": "Generate again", "ins.err": "The advice couldn't be generated.",
+        "want.h": "What customers want", "want.p": "Searches, interest in products and what the assistant recommended.",
+        "srch.h": "What they search for", "srch.p": "The most common searches on the site.", "miss.h": "Searches with no results", "miss.p": "Demand the shop didn't cover.",
+        "view.h": "Most viewed products", "view.p": "Product detail views.", "recs.h": "What the AI recommends most", "recs.p": "Shown in the assistant's product cards.",
+        "cart.h": "Added to cart thanks to AI", "cart.p": "Items added from recommendations.", "vnb.h": "Often viewed, rarely bought", "vnb.p": "Fewer than 15 % of viewers add them to the cart.",
+        "q.h": "What they ask", qCount: (n) => `latest ${n} questions`, noQuestions: "No questions yet.", qVoice: "voice", qChat: "chat",
+        "tipsList.h": "Which tips work", "tipsList.p": "When the assistant spoke up by itself and how often the customer used the tip.",
+        "cat.k": "Product catalogue", "cat.refresh": "↻ Fetch the feed again", "cat.busy": "Fetching the feed…",
+        catDemo: (n) => `Demo catalogue, ${n} products.`, catNone: "No product feed is set yet, so the assistant knows no products.",
+        catFeed: (n, w) => `${n} products from the feed${w ? `, fetched ${w}` : ""}. It refreshes itself every 6 hours.`,
+        catErr: (e, keep) => `The last fetch failed: ${e}${keep ? " The previous catalogue is in use." : ""}`,
+        noData: "No data yet.", allFound: "Every search found something.",
+        tipRow: (n, s, c, r, d) => `${n}: shown ${s}×, used ${c}× (${r} %), closed ${d}×`, vnbRow: (n, v, c) => `${n}: ${v} views, ${c} to cart`,
+        now: "just now", minAgo: (m) => `${m} min ago`, hAgo: (h) => `${h} h ago`,
+        notFound: "This shop doesn't exist.", loadErr: (s) => `Couldn't load the data (${s}).`, inactive: "inactive",
+        foot: "Sella · data for the last 90 days, older data is deleted automatically",
+      },
     });
-  }
-  document.querySelectorAll("[data-view]").forEach((el) => el.addEventListener("click", (e) => { e.preventDefault(); showView(el.dataset.view); }));
-  $("rail-questions").onclick = (e) => { e.preventDefault(); $("dotazy").scrollIntoView({ behavior: "smooth", block: "start" }); $("questions").focus?.(); };
-  if (location.hash === "#zakaznici") showView("customers");
+    I.switcher($("lang"));
+    const nf = (n, o) => Number(n || 0).toLocaleString(I.locale(), o);
+    const money = (n, o) => (I.lang === "cs" ? nf(n, o) + " Kč" : "CZK " + nf(n, o));
+    const kc = (n) => money(Math.round(n));
+    const kc2 = (n) => money(n, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // ---- small pieces
-  const ICONS = {
-    visits: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
-    chat: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>',
-  };
-  const icon = (k) => `<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg></span>`;
-  function ring(share, color = "var(--blue)", size = 54) {
-    const r = size / 2 - 5, c = 2 * Math.PI * r, v = Math.max(0, Math.min(share, 1));
-    return `<svg class="ring" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle class="bg" cx="${size / 2}" cy="${size / 2}" r="${r}"/><circle class="fg" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke="${color}" stroke-dasharray="${(v * c).toFixed(1)} ${c.toFixed(1)}"/></svg>`;
-  }
-  function tile(label, value, sub, viz = "") {
-    return `<div class="tile"><div class="label">${label}</div><div class="viz">${viz}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
-  }
-  function ago(ts) {
-    const m = Math.round((Date.now() - ts) / 60000);
-    if (m < 1) return t("now");
-    if (m < 60) return t("minAgo", m);
-    if (m < 24 * 60) return t("hAgo", Math.round(m / 60));
-    return new Date(ts).toLocaleDateString(I.locale(), { day: "numeric", month: "numeric" });
-  }
+    let last = null;
+    I.onChange(() => { if (last) render(last.d, last.me); });
 
-  // single-series horizontal bar list; rows: {name, value, tip, color?, label?}
-  function bars(el, rows, emptyText = t("noData")) {
-    if (!rows.length) { el.innerHTML = `<p class="empty">${emptyText}</p>`; return; }
-    const max = Math.max(...rows.map((r) => r.value), 1);
-    el.innerHTML = rows.map((r) => `
-      <div class="bar${r.value ? "" : " zero"}" data-tip="${esc(r.tip ?? `${r.name}: ${r.value}`)}">
-        <span class="name">${esc(r.name)}</span>
-        <div class="track"><div class="fill" style="width:${Math.max((r.value / max) * 100, 2)}%;${r.color ? `background:${r.color}` : ""}"></div></div>
-        <span class="num">${r.label ?? r.value}</span>
-      </div>`).join("");
-  }
-
-  // hover tooltip for every bar row
-  const tip = $("tip");
-  document.addEventListener("mousemove", (e) => {
-    const row = e.target.closest?.("[data-tip]");
-    if (!row) { tip.style.display = "none"; return; }
-    tip.textContent = row.dataset.tip;
-    tip.style.display = "block";
-    tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + "px";
-    tip.style.top = e.clientY + 14 + "px";
-  });
-
-  function renderOffer(o) {
-    if (!o.shown) { $("offer").innerHTML = `<p class="empty">${t("offerNone")}</p>`; return; }
-    const ignored = Math.max(0, o.shown - o.chat - o.voice - o.declined);
-    const parts = [
-      { name: t("chat"), value: o.chat, color: "var(--blue)" },
-      { name: t("voice"), value: o.voice, color: "var(--violet)" },
-      { name: t("browse"), value: o.declined, color: "var(--sky)" },
-      { name: t("noAnswer"), value: ignored, color: "var(--track)" },
-    ];
-    $("offer").innerHTML = `
-      <div class="big">${cz(o.acceptRate)} %<small>${t("accepted", cz(o.shown))}</small></div>
-      <div class="stack" data-tip="${esc(parts.map((p) => `${p.name}: ${p.value}`).join(" · "))}">${parts.map((p) => `<i style="width:${(p.value / o.shown) * 100}%;background:${p.color}"></i>`).join("")}</div>
-      <div class="legend">${parts.map((p) => `<div><i style="background:${p.color}"></i>${p.name}<b>${cz(p.value)}</b></div>`).join("")}
-        <div><i style="background:transparent;border:1px solid var(--text-3)"></i>${t("later")}<b>${cz(o.reopened)}</b></div></div>`;
-  }
-
-  function renderUsage(u) {
-    $("usage-card").hidden = !u;
-    if (!u) return;
-    const share = u.messageLimit ? Math.min(u.messages / u.messageLimit, 1) : 0;
-    const color = share >= 1 ? "var(--rose)" : share >= 0.8 ? "var(--amber)" : "var(--green)";
-    const month = new Date(u.month + "-01").toLocaleDateString(I.locale(), { month: "long", year: "numeric" });
-    $("usage-card").innerHTML = `<span class="k" title="${esc(t("planTitle"))}">${esc(t("plan", I.plan(u.plan), month))}</span>
-      <div class="usage" style="margin-top:10px">${ring(share, color, 72)}
-        <b>${cz(u.messages)} <small>/ ${cz(u.messageLimit)}</small></b>
-        <span>${share >= 1 ? t("overLimit") : t("msgsMonth")}</span>
-        <span>${t("ofPlan", Math.round(share * 100))}</span></div>`;
-  }
-
-  async function load() {
-    const r = await call("/api/analytics");
-    if (r.status === 401) return showLogin();
-    $("main").hidden = false;
-    if (!r.ok) {
-      $("tiles").innerHTML = `<p class="empty" style="grid-column:1/-1">${r.status === 404 ? t("notFound") : t("loadErr", r.status)}</p>`;
-      return;
+    // ---- sign-in lives on the Sella site; it sends the owner back here afterwards
+    const LOGIN = "/sella/prihlaseni.html";
+    function showLogin() {
+      const q = new URLSearchParams({ next: location.pathname + location.search + location.hash });
+      if (clientId) q.set("client", clientId);
+      location.replace(`${LOGIN}?${q}`);
     }
-    const d = await r.json();
-    const me = await fetch("/api/admin/me").then((x) => x.json()).catch(() => ({}));
-    last = { d, me };
-    render(d, me);
-  }
+    $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = LOGIN; };
+    $("client-pick").onchange = (e) => { params.set("client", e.target.value); location.search = params; };
 
-  function render(d, me) {
-    $("clients-link").hidden = !me.master;
-    $("logout").hidden = Boolean(me.dev);
-    renderCatalog(d.catalog);
-    $("client-name").textContent = d.client.name;
-    $("shop-name").textContent = d.client.name;
-    document.title = `${d.client.name} – Sella`;
-    $("period").textContent = t("period", d.periodDays);
-    if (d.clients?.length > 1) {
-      $("client-pick").innerHTML = d.clients.map((c) => `<option value="${esc(c.id)}"${c.id === d.client.id ? " selected" : ""}>${esc(c.name)}${c.active ? "" : ` (${t("inactive")})`}</option>`).join("");
-      $("client-pick").hidden = false;
+    // ---- small pieces
+    function ring(share, color = "#4e7fb4", size = 52) {
+      const r = size / 2 - 5, c = 2 * Math.PI * r, v = Math.max(0, Math.min(share, 1));
+      return `<svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle class="bg" cx="${size / 2}" cy="${size / 2}" r="${r}"/><circle class="fg" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke="${color}" stroke-dasharray="${(v * c).toFixed(1)} ${c.toFixed(1)}"/></svg>`;
     }
-    const tt = d.totals, o = d.offer;
-    const tipsShown = d.nudges.reduce((s, n) => s + n.shown, 0), tipsUsed = d.nudges.reduce((s, n) => s + n.clicked, 0);
-    const aiShare = tt.sessions ? tt.aiSessions / tt.sessions : 0;
-    const tipShare = tipsShown ? tipsUsed / tipsShown : 0;
-    $("tiles").innerHTML = [
-      tile(t("visits"), cz(tt.sessions), t("events", cz(tt.events)), icon("visits")),
-      tile(t("used"), tt.sessions ? Math.round(aiShare * 100) + " %" : "–", t("visitsN", cz(tt.aiSessions)), ring(aiShare)),
-      tile(t("asks"), cz(tt.userMessages), tt.aiSessions ? t("perChat", (tt.userMessages / tt.aiSessions).toLocaleString(I.locale(), { maximumFractionDigits: 1 })) : t("noChat"), icon("chat")),
-      tile(t("tipsUsed"), tipsShown ? cz(Math.round(tipShare * 1000) / 10) + " %" : "–", tipsShown ? t("tipsOf", tipsUsed, tipsShown) : t("noTip"), ring(tipShare, "var(--violet)")),
-    ].join("");
+    const kpi = (k, v, s, viz = "") => `<div class="pane kpi">${viz}<div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+    function ago(ts) {
+      const m = Math.round((Date.now() - ts) / 60000);
+      if (m < 1) return t("now");
+      if (m < 60) return t("minAgo", m);
+      if (m < 24 * 60) return t("hAgo", Math.round(m / 60));
+      return new Date(ts).toLocaleDateString(I.locale(), { day: "numeric", month: "numeric" });
+    }
+    // horizontal bar list; rows: {name, value, label?, tip?}
+    function bars(el, rows, empty = t("noData"), color) {
+      if (!rows.length) { el.innerHTML = `<p class="empty">${empty}</p>`; return; }
+      const max = Math.max(...rows.map((r) => r.value), 1);
+      el.innerHTML = rows.map((r) => `<div class="brow" data-tip="${esc(r.tip ?? `${r.name}: ${r.value}`)}"${color ? ` style="--c:${color}"` : ""}>
+        <span class="n">${esc(r.name)}</span><span class="num">${r.label ?? nf(r.value)}</span>
+        <div class="tr"><div class="fi" style="width:${Math.max((r.value / max) * 100, 2)}%"></div></div></div>`).join("");
+    }
+    const cmp = (rows) => {
+      const max = Math.max(...rows.map((r) => r.value), 0.0001);
+      return rows.map((r) => `<div class="row"><span>${r.name}</span><div class="tr"><div class="fi${r.plain ? " plain" : ""}" style="width:${(r.value / max) * 100}%"></div></div><b>${r.label}</b></div>`).join("");
+    };
+    const tip = $("tip");
+    document.addEventListener("mousemove", (e) => {
+      const row = e.target.closest?.("[data-tip]");
+      if (!row) { tip.style.display = "none"; return; }
+      tip.textContent = row.dataset.tip;
+      tip.style.display = "block";
+      tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + "px";
+      tip.style.top = e.clientY + 14 + "px";
+    });
 
-    renderOffer(o);
-    renderUsage(d.usage);
-    const nudgeName = (n) => NUDGES[I.lang][n.kind] ?? n.name;
-    bars($("nudges"), d.nudges.map((n) => ({
-      name: nudgeName(n), value: n.clickRate, label: cz(n.clickRate) + " %",
-      tip: t("tipRow", nudgeName(n), n.shown, n.clicked, n.clickRate, n.dismissed),
-    })), t("noTipShown"));
-    const list = (rows) => rows.map((r) => ({ name: r.name, value: r.count }));
-    bars($("searches"), list(d.topSearches));
-    bars($("misses"), list(d.searchMisses).map((r) => ({ ...r, color: "var(--rose)" })), t("allFound"));
-    bars($("viewed"), list(d.topViewed));
-    bars($("recs"), list(d.topRecommended).map((r) => ({ ...r, color: "var(--violet)" })));
-    bars($("cartai"), list(d.addToCartAi).map((r) => ({ ...r, color: "var(--green)" })));
-    bars($("vnb"), d.viewedNotBought.map((r) => ({ name: r.name, value: r.views, label: `${r.views}×`, color: "var(--amber)", tip: t("vnbRow", r.name, r.views, r.carts) })));
+    async function load() {
+      const r = await call("/api/analytics");
+      if (r.status === 401) return showLogin();
+      $("main").hidden = false;
+      if (!r.ok) { $("kpis").innerHTML = `<p class="pane card empty" style="grid-column:1/-1">${r.status === 404 ? t("notFound") : t("loadErr", r.status)}</p>`; return; }
+      const d = await r.json();
+      const me = await fetch("/api/admin/me").then((x) => x.json()).catch(() => ({}));
+      last = { d, me };
+      render(d, me);
+    }
 
-    $("q-count").textContent = d.recentQuestions.length ? t("qCount", d.recentQuestions.length) : "";
-    $("questions").innerHTML = d.recentQuestions.length
-      ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<div class="meta"><span class="chip${q.mode === "voice" ? " voice" : ""}">${q.mode === "voice" ? t("qVoice") : t("qChat")}</span><span title="${esc(new Date(q.ts).toLocaleString(I.locale()))}">${ago(q.ts)}</span></div></li>`).join("")
-      : `<li class="empty">${t("noQuestions")}</li>`;
-  }
+    function render(d, me) {
+      const tt = d.totals, u = d.usage;
+      document.title = `${d.client.name} – Sella`;
+      $("clients-link").hidden = !me.master;
+      $("logout").hidden = Boolean(me.dev);
+      const h = new Date().getHours();
+      $("greeting").textContent = t(h < 10 ? "morning" : h < 18 ? "day" : "evening");
+      $("client-name").textContent = d.client.name;
+      $("period").textContent = t("period", d.periodDays);
+      if (d.clients?.length > 1) {
+        $("client-pick").innerHTML = d.clients.map((c) => `<option value="${esc(c.id)}"${c.id === d.client.id ? " selected" : ""}>${esc(c.name)}${c.active ? "" : ` (${t("inactive")})`}</option>`).join("");
+        $("client-pick").hidden = false; $("shop-name").hidden = true;
+      } else { $("shop-name").textContent = d.client.name; $("shop-name").hidden = false; }
+      const limited = u && !u.aiActive;
+      $("status").classList.toggle("limited", Boolean(limited));
+      $("status").querySelector("span").textContent = limited ? t("limited") : t("running");
 
-  function renderCatalog(c) {
-    $("catalog-card").hidden = !c;
-    if (!c) return;
-    const when = c.updatedAt ? new Date(c.updatedAt).toLocaleString(I.locale()) : null;
-    $("catalog-text").innerHTML =
-      c.source === "demo" ? t("catDemo", c.products)
-      : c.source === "none" ? t("catNone")
-      : t("catFeed", cz(c.products), when)
-        + (c.error ? `<br><span class="err">${esc(t("catErr", c.error, c.products))}</span>` : "");
-    $("catalog-refresh").hidden = c.source !== "feed";
-  }
-  $("catalog-refresh").onclick = async (e) => {
-    const b = e.currentTarget;
-    b.disabled = true;
-    b.textContent = t("cat.busy");
-    const r = await call("/api/analytics/catalog", { method: "POST" });
-    if (r.ok) renderCatalog(await r.json());
-    b.disabled = false;
-    b.textContent = t("cat.refresh");
-  };
+      // the four main numbers
+      const aiShare = tt.sessions ? tt.aiSessions / tt.sessions : 0;
+      $("kpis").innerHTML = [
+        kpi(t("visits"), nf(tt.sessions), t("visitsS", nf(tt.events))),
+        kpi(t("used"), tt.sessions ? Math.round(aiShare * 100) + " %" : "–", t("usedS", nf(tt.aiSessions), nf(tt.sessions)), ring(aiShare)),
+        kpi(t("asks"), nf(tt.userMessages), tt.aiSessions ? t("asksS", nf(tt.userMessages / tt.aiSessions, { maximumFractionDigits: 1 })) : t("noChat")),
+        kpi(t("bought"), nf(tt.ordersAi), tt.orders ? t("boughtS", nf(tt.ordersAi), nf(tt.orders)) : t("noOrders"), ring(tt.orders ? tt.ordersAi / tt.orders : 0, "#2f8a5d")),
+      ].join("");
 
-  // tiny markdown → HTML for the insights (headings, bullets, bold)
-  function md(text) {
-    return esc(text)
-      .replace(/^### (.*)$/gm, "<h2>$1</h2>").replace(/^## (.*)$/gm, "<h2>$1</h2>").replace(/^# (.*)$/gm, "<h2>$1</h2>")
-      .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
-      .replace(/(?:^[-*] .*(?:\n|$))+/gm, (m) => "<ul>" + m.trim().split("\n").map((l) => `<li>${l.replace(/^[-*] /, "")}</li>`).join("") + "</ul>")
-      .replace(/\n{2,}/g, "<br>");
-  }
+      // how the assistant performs
+      $("conv").innerHTML = cmp([
+        { name: t("withAi"), value: tt.conversionAi, label: nf(tt.conversionAi, { maximumFractionDigits: 1 }) + " %" },
+        { name: t("withoutAi"), value: tt.conversionNonAi, label: nf(tt.conversionNonAi, { maximumFractionDigits: 1 }) + " %", plain: true },
+      ]);
+      $("lift").innerHTML = tt.conversionAi && tt.conversionNonAi ? t("lift", nf(tt.conversionAi / tt.conversionNonAi, { maximumFractionDigits: 1 })) : t("liftNone");
+      $("aov").innerHTML = cmp([
+        { name: t("withAi"), value: tt.avgOrderAi, label: tt.avgOrderAi ? kc(tt.avgOrderAi) : "–" },
+        { name: t("withoutAi"), value: tt.avgOrderNonAi, label: tt.avgOrderNonAi ? kc(tt.avgOrderNonAi) : "–", plain: true },
+      ]);
+      $("revenue").innerHTML = t("revenue", kc(tt.revenueAi));
+      const o = d.offer;
+      if (!o.shown) $("offer").innerHTML = `<p class="empty">${t("offerNone")}</p>`;
+      else {
+        const ignored = Math.max(0, o.shown - o.chat - o.voice - o.declined);
+        const parts = [[t("chat"), o.chat, "#4e7fb4"], [t("voice"), o.voice, "#8b74d6"], [t("browse"), o.declined, "#9fbbd9"], [t("noAnswer"), ignored, "rgba(47,49,51,.15)"]];
+        $("offer").innerHTML = `<div class="big">${nf(o.acceptRate)} %<small>${t("accepted", nf(o.shown))}</small></div>
+          <div class="stack">${parts.map(([, v, c]) => `<i style="width:${(v / o.shown) * 100}%;background:${c}"></i>`).join("")}</div>
+          <div class="legend">${parts.map(([n, v, c]) => `<span><i style="background:${c}"></i>${n}<b>${nf(v)}</b></span>`).join("")}</div>`;
+      }
+      const shown = d.nudges.reduce((s, n) => s + n.shown, 0), used = d.nudges.reduce((s, n) => s + n.clicked, 0);
+      $("tipsum").innerHTML = shown
+        ? `<div class="big">${nf(Math.round((used / shown) * 1000) / 10)} %<small>${t("tipsUsed", nf(used), nf(shown))}</small></div>`
+        : `<p class="empty">${t("noTip")}</p>`;
 
-  $("insights").addEventListener("click", async (e) => {
-    if (!e.target.matches("#gen")) return;
-    e.target.disabled = true;
-    e.target.textContent = t("ins.busy");
-    // the advice is written in the dashboard's language
-    const r = await call("/api/analytics/insights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lang: I.lang }) });
-    const d = await r.json().catch(() => ({}));
-    $("insights").innerHTML = r.ok
-      ? md(d.markdown) + `<p><button class="primary" id="gen">${t("ins.again")}</button></p>`
-      : `<p class="empty">${esc(d.error || t("ins.err"))}</p><button class="primary" id="gen">${t("ins.retry")}</button>`;
-  });
-  $("refresh").onclick = load;
-  load();
-</script>
+      renderPrice(u);
+
+      // what customers want
+      const nudgeName = (n) => NUDGES[I.lang][n.kind] ?? n.name;
+      const list = (rows) => rows.map((r) => ({ name: r.name, value: r.count }));
+      bars($("searches"), list(d.topSearches));
+      bars($("misses"), list(d.searchMisses), t("allFound"), "linear-gradient(90deg,#e3a39b,#c0544b)");
+      bars($("viewed"), list(d.topViewed));
+      bars($("recs"), list(d.topRecommended), undefined, "linear-gradient(90deg,#b7a8ea,#6d58c0)");
+      bars($("cartai"), list(d.addToCartAi), undefined, "linear-gradient(90deg,#9fd3b6,#2f8a5d)");
+      bars($("vnb"), d.viewedNotBought.map((r) => ({ name: r.name, value: r.views, label: `${nf(r.views)}×`, tip: t("vnbRow", r.name, r.views, r.carts) })), undefined, "linear-gradient(90deg,#ecc994,#a8721c)");
+      bars($("nudges"), d.nudges.map((n) => ({ name: nudgeName(n), value: n.clickRate, label: nf(n.clickRate) + " %", tip: t("tipRow", nudgeName(n), n.shown, n.clicked, n.clickRate, n.dismissed) })), t("noTip"));
+
+      $("q-count").textContent = d.recentQuestions.length ? t("qCount", d.recentQuestions.length) : "";
+      $("questions").innerHTML = d.recentQuestions.length
+        ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<div class="meta"><span class="chip2${q.mode === "voice" ? " voice" : ""}">${q.mode === "voice" ? t("qVoice") : t("qChat")}</span><span title="${esc(new Date(q.ts).toLocaleString(I.locale()))}">${ago(q.ts)}</span></div></li>`).join("")
+        : `<li class="empty" style="background:none">${t("noQuestions")}</li>`;
+      renderCatalog(d.catalog);
+      const g = $("gen"); if (!g.disabled) g.textContent = $("insights").innerHTML ? t("ins.again") : t("ins.gen");
+    }
+
+    // the owner's plan: price, what's included, how much is used (our own AI cost only for us)
+    function renderPrice(u) {
+      if (!u) { $("price").hidden = true; return; }
+      const share = u.messageLimit ? Math.min(u.messages / u.messageLimit, 1) : 0;
+      const tts = u.ttsLimit ? Math.min(u.ttsChars / u.ttsLimit, 1) : 0;
+      const color = (s) => (s >= 1 ? "#c0544b" : s >= 0.8 ? "#b77a1d" : "#4e7fb4");
+      const month = new Date(u.month + "-01").toLocaleDateString(I.locale(), { month: "long", year: "numeric" });
+      const amount = u.priceCzk == null ? `<div class="amount" style="font-size:30px">${t("byDeal")}</div>`
+        : u.priceCzk === 0 ? `<div class="amount">${t("free")}</div>`
+        : `<div class="amount">${kc(u.priceCzk)} <small>${t("perMonth")}</small></div>`;
+      $("price").innerHTML = `
+        <div class="plan"><span class="name">${t("price.h")}</span><span class="chip">${esc(t("plan"))} ${esc(I.plan(u.plan))}</span></div>
+        ${amount}
+        <div class="per">${u.pricePerMessageCzk ? t("perMsg", kc2(u.pricePerMessageCzk)) : t("included", nf(u.messageLimit))}</div>
+        <div class="meter"><div class="top"><span>${t("msgs")} · ${esc(month)}</span><b>${nf(u.messages)} / ${nf(u.messageLimit)}</b></div>
+          <div class="tr"><div class="fi" style="width:${share * 100}%;background:${color(share)}"></div></div>
+          <div class="note">${share >= 1 ? t("over") : t("msgNote")}</div></div>
+        <div class="meter"><div class="top"><span>${t("voiceUse")}</span><b>${nf(u.ttsChars)} / ${nf(u.ttsLimit)}</b></div>
+          <div class="tr"><div class="fi" style="width:${tts * 100}%;background:${color(tts)}"></div></div></div>
+        ${u.costUsd != null ? `<div class="ours"><span>${t("ours", u.costUsd.toFixed(2), nf(u.aiCalls))}</span><a href="/admin/klienti.html">${t("oursLink")}</a></div>` : ""}`;
+    }
+
+    function renderCatalog(c) {
+      if (!c) { $("catalog-text").textContent = ""; return; }
+      const when = c.updatedAt ? new Date(c.updatedAt).toLocaleString(I.locale()) : null;
+      $("catalog-text").innerHTML = c.source === "demo" ? t("catDemo", c.products)
+        : c.source === "none" ? t("catNone")
+        : t("catFeed", nf(c.products), when) + (c.error ? `<br><span class="err">${esc(t("catErr", c.error, c.products))}</span>` : "");
+      $("catalog-refresh").hidden = c.source !== "feed";
+    }
+    $("catalog-refresh").onclick = async (e) => {
+      const b = e.currentTarget;
+      b.disabled = true; b.textContent = t("cat.busy");
+      const r = await call("/api/analytics/catalog", { method: "POST" });
+      if (r.ok) renderCatalog(await r.json());
+      b.disabled = false; b.textContent = t("cat.refresh");
+    };
+
+    // tiny markdown → HTML for the advice (headings, bullets, bold)
+    function md(text) {
+      return esc(text)
+        .replace(/^#{1,3} (.*)$/gm, "<h2>$1</h2>")
+        .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+        .replace(/(?:^[-*] .*(?:\n|$))+/gm, (m) => "<ul>" + m.trim().split("\n").map((l) => `<li>${l.replace(/^[-*] /, "")}</li>`).join("") + "</ul>")
+        .replace(/\n{2,}/g, "<br>");
+    }
+    $("gen").onclick = async () => {
+      const b = $("gen");
+      b.disabled = true; b.textContent = t("ins.busy");
+      // the advice is written in the dashboard's language
+      const r = await call("/api/analytics/insights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lang: I.lang }) });
+      const d = await r.json().catch(() => ({}));
+      $("insights").innerHTML = r.ok ? md(d.markdown) : `<p>${esc(d.error || t("ins.err"))}</p>`;
+      b.disabled = false; b.textContent = t("ins.again");
+    };
+    $("refresh").onclick = load;
+    load();
+  </script>
 </body>
 </html>
