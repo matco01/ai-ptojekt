@@ -485,6 +485,9 @@ app.get("/api/cron/daily", async (req, res) => {
 });
 
 // short link to the second demo site, so it's not just the raw file path
+// the Sella site is the home page; the demo shops live at /techmarket/ and /kavarna
+app.get(["/sella", "/sella/"], (req, res) => res.redirect(301, "/"));
+app.get("/techmarket", (req, res, next) => (req.originalUrl.split("?")[0].endsWith("/") ? next() : res.redirect(301, "/techmarket/")));
 app.get("/kavarna", (req, res) => res.sendFile(path.join(here, "public", "demo", "kavarna.html")));
 // the café's product feed (what a real client hands over) and its product pictures
 app.get("/demo/kavarna-feed.xml", (req, res) => res.type("application/xml").send(kavarnaFeed));
@@ -509,7 +512,9 @@ process.on("unhandledRejection", (err) => alert("unhandled", `Neošetřená chyb
 
 app.listen(PORT, () => {
   console.log(`AI prodavač běží:`);
-  console.log(`  Demo e-shop:  http://localhost:${PORT}/`);
+  console.log(`  Sella:        http://localhost:${PORT}/`);
+  console.log(`  TechMarket:   http://localhost:${PORT}/techmarket/`);
+  console.log(`  Kavárna:      http://localhost:${PORT}/kavarna`);
   console.log(`  Dashboard:    http://localhost:${PORT}/admin/`);
   console.log(`  Klienti:      http://localhost:${PORT}/admin/clients.html`);
   console.log(hasApiKey() ? `  Model:        ${MODEL}` : `  Režim:        bez AI (ANTHROPIC_API_KEY není nastaven) – chat odpovídá zjednodušeně`);

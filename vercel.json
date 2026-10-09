@@ -1,5 +1,25 @@
 {
   "crons": [
-    { "path": "/api/cron/daily", "schedule": "0 3 * * *" }
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 3 * * *"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/sella",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/sella/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/techmarket",
+      "destination": "/techmarket/",
+      "permanent": true
+    }
   ]
 }
