@@ -502,6 +502,8 @@
     chat: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10.5H9.5L5 20v-4H4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></svg>`,
     eye: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>`,
     spark: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>`,
+    clip: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5 12.3 19.7a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.4 8.4a1.7 1.7 0 0 1-2.4-2.4l7.6-7.6"/></svg>`,
+    file: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>`,
   };
 
   const mix = (v, pct) => `color-mix(in srgb, var(${v}) ${pct}%, transparent)`;
@@ -710,7 +712,7 @@
     .input::before { content: ""; position: absolute; left: 50%; top: 50%; width: 700px; height: 700px; margin: -350px 0 0 -350px;
       background: conic-gradient(var(--c), var(--c2), var(--c3), var(--c)); animation: spin 5s linear infinite; opacity: .4; transition: opacity .3s; }
     .input:focus-within::before { opacity: 1; }
-    .field { position: relative; display: flex; align-items: flex-end; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 999px; background: var(--bg2); }
+    .field { position: relative; display: flex; align-items: flex-end; gap: 6px; padding: 6px; border-radius: 999px; background: var(--bg2); }
     .field textarea { flex: 1; resize: none; border: none; background: none; color: var(--strong); font-size: 15px; line-height: 20px; padding: 9px 0; height: 38px; max-height: 110px; outline: none; }
     .field textarea::placeholder { color: var(--ph); }
     .send { width: 38px; height: 38px; border-radius: 50%; border: none; color: #fff; display: grid; place-items: center; font-size: 18px; flex: none;
@@ -718,6 +720,24 @@
     .send:hover { transform: scale(1.1) rotate(-8deg); }
     .send:disabled { opacity: .45; cursor: default; transform: none; }
     .send.fly svg { animation: launch .5s cubic-bezier(.5,0,.3,1); }
+
+    /* attachments */
+    .attach { width: 38px; height: 38px; flex: none; border: 0; border-radius: 50%; background: none; color: var(--soft); display: grid; place-items: center; font-size: 19px; transition: background .15s, color .15s; }
+    .attach:hover { background: var(--glass); color: var(--strong); }
+    .tray { display: flex; gap: 8px; padding: 6px 18px 2px; overflow-x: auto; scrollbar-width: none; }
+    .tray[hidden] { display: none; }
+    .att { position: relative; flex: none; height: 56px; border-radius: 12px; border: 1px solid var(--edge); background: var(--glass); animation: popin .3s cubic-bezier(.34,1.56,.64,1) both; }
+    .att.image { width: 56px; } .att img { width: 100%; height: 100%; object-fit: cover; border-radius: 11px; display: block; }
+    .att.pdf { display: flex; align-items: center; gap: 7px; max-width: 190px; padding: 0 28px 0 12px; font-size: 13px; color: var(--strong); }
+    .att.pdf svg { flex: none; font-size: 18px; color: var(--c); } .att.pdf span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .att.loading { width: 56px; background: linear-gradient(90deg, var(--glass) 30%, ${mix("--c", 18)} 50%, var(--glass) 70%); background-size: 200% 100%; animation: shimmer 1.1s linear infinite; }
+    .att .rm { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--bg2); background: var(--strong); color: var(--bg2); display: grid; place-items: center; font-size: 11px; padding: 0; }
+    .m .files { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px -6px 8px; }
+    .m.only-files .files { margin-bottom: -2px; }
+    .m .files img { width: 132px; height: 132px; object-fit: cover; border-radius: 12px; display: block; }
+    .m .fchip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 10px; background: rgba(255,255,255,.2); font-size: 13.5px; font-weight: 600; }
+    .panel.dropping::after { content: "Pusťte soubor sem"; position: absolute; inset: 8px; border-radius: inherit; border: 2px dashed var(--c); background: ${mix("--c", 10)};
+      display: grid; place-items: center; font-weight: 700; color: var(--c); pointer-events: none; z-index: 5; }
 
     /* voice stage */
     .stage { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 16px 18px; border-top: 1px solid var(--edge); }
@@ -769,16 +789,15 @@
     /* phones: the chat takes the whole screen like a messaging app */
     @media (max-width: 480px) {
       .wrap { right: calc(12px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); left: 12px; }
-      .panel { position: fixed; inset: 0; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; box-shadow: none; transform-origin: bottom center;
-        animation: sheet .38s cubic-bezier(.2,.9,.3,1) both; }
-      .head { padding: calc(10px + env(safe-area-inset-top)) 12px 10px 14px; }
+      .panel { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); width: auto; height: min(560px, 70vh); height: min(560px, 70dvh);
+        border-radius: 22px; transform-origin: bottom center; animation: sheet .38s cubic-bezier(.2,.9,.3,1) both; }
+      .head { padding: 12px 10px 10px 14px; }
       .msgs { padding: 14px 14px 12px; overscroll-behavior: contain; }
       .m { max-width: 92%; }
       .cards { margin: 0 -14px; padding: 4px 14px 10px; scroll-snap-type: x mandatory; scroll-padding: 14px; }
       .pc { flex-basis: 158px; scroll-snap-align: start; }
-      .input { margin: 4px 10px calc(10px + env(safe-area-inset-bottom)); }
+      .input { margin: 4px 10px 10px; }
       .field textarea { font-size: 16px; } /* under 16px iOS zooms the page in when typing */
-      .stage { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
       .tip { width: 100%; }
       .quip { max-width: min(290px, 100%); }
       .launch-label { display: none; }
@@ -1243,7 +1262,6 @@
     hideFloat();
     launcher.style.display = "none";
     if (!panel) buildPanel();
-    lockPage(true);
     renderFooter();
     if (note) addNote(note);
     if (!history.length && !fromTip) { // from a tip the customer's question goes straight in
@@ -1262,17 +1280,10 @@
     else footer.querySelector("textarea")?.focus();
   }
 
-  // on a phone the chat covers the screen – the shop behind it shouldn't scroll along
+  // on a phone the chat is a sheet over most of the screen
   const phone = matchMedia("(max-width: 480px)");
-  let pageOverflow = null;
-  function lockPage(on) {
-    const h = document.documentElement;
-    if (on && phone.matches && pageOverflow === null) { pageOverflow = h.style.overflow; h.style.overflow = "hidden"; }
-    else if (!on && pageOverflow !== null) { h.style.overflow = pageOverflow; pageOverflow = null; }
-  }
 
   function closePanel() {
-    lockPage(false);
     stopVoice();
     mode = null;
     panel?.remove();
@@ -1301,12 +1312,81 @@
     for (const h of history) {
       if (h.kind === "cards") msgs.append(renderCards(h.items));
       else if (h.kind === "note") msgs.append(noteEl(h.text));
-      else if (h.role) msgs.append(bubbleEl(h.role, h.text));
+      else if (h.role) msgs.append(bubbleEl(h.role, h.text, h.files));
     }
+    // drop a photo or PDF anywhere on the chat window
+    panel.addEventListener("dragover", (e) => { if (mode === "chat" && e.dataTransfer?.types.includes("Files")) { e.preventDefault(); panel.classList.add("dropping"); } });
+    panel.addEventListener("dragleave", (e) => { if (!panel.contains(e.relatedTarget)) panel.classList.remove("dropping"); });
+    panel.addEventListener("drop", (e) => {
+      panel.classList.remove("dropping");
+      if (mode !== "chat" || !e.dataTransfer?.files.length) return;
+      e.preventDefault();
+      addFiles(e.dataTransfer.files);
+    });
     wrap.insertBefore(panel, launcher);
     updateEyes();
     scrollDown();
   }
+
+  // ---- attachments: photos (shrunk in the browser before sending) and PDFs ----
+  const MAX_FILES = 3, MAX_PDF = 2.5e6, MAX_SIDE = 1568; // 1568 px = the most the AI looks at anyway
+  let pendingFiles = [], preparing = 0;
+  const blobToB64 = (blob) => new Promise((ok, fail) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(",")[1]);
+    r.onerror = fail;
+    r.readAsDataURL(blob);
+  });
+  async function shrinkImage(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = url; });
+      const k = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      const g = c.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); // transparent PNGs get a white background
+      g.drawImage(img, 0, 0, c.width, c.height);
+      return await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.85));
+    } finally { URL.revokeObjectURL(url); }
+  }
+  async function addFiles(list) {
+    for (const file of [...list]) {
+      if (pendingFiles.length + preparing >= MAX_FILES) { addNote(`Najednou můžete poslat nejvýš ${MAX_FILES} přílohy.`); break; }
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+      if (!isPdf && !file.type.startsWith("image/")) { addNote("Umím otevřít fotky a PDF – tenhle soubor bohužel ne."); continue; }
+      if (isPdf && file.size > MAX_PDF) { addNote("PDF je moc velké (max. 2,5 MB)."); continue; }
+      preparing++; renderTray();
+      try {
+        if (isPdf) pendingFiles.push({ kind: "pdf", media_type: "application/pdf", name: file.name, data: await blobToB64(file) });
+        else {
+          const blob = await shrinkImage(file);
+          pendingFiles.push({ kind: "image", media_type: "image/jpeg", name: file.name || "foto.jpg", data: await blobToB64(blob), thumb: URL.createObjectURL(blob) });
+        }
+      } catch { addNote(`Soubor ${file.name} se nepodařilo načíst.`); }
+      finally { preparing--; renderTray(); }
+    }
+    footer?.querySelector("textarea")?.focus();
+  }
+  function renderTray() {
+    const tray = footer?.querySelector(".tray");
+    if (!tray) return;
+    tray.hidden = !pendingFiles.length && !preparing;
+    tray.innerHTML = pendingFiles.map((f, i) => `
+      <div class="att ${f.kind}">${f.kind === "image" ? `<img src="${f.thumb}" alt="">` : `${ICON.file}<span>${esc(f.name)}</span>`}
+        <button type="button" class="rm" data-i="${i}" aria-label="Odebrat přílohu">${ICON.close}</button></div>`).join("")
+      + (preparing ? `<div class="att loading" aria-label="Načítám přílohu"></div>` : "");
+    tray.querySelectorAll(".rm").forEach((b) => b.onclick = () => {
+      const [f] = pendingFiles.splice(+b.dataset.i, 1);
+      if (f?.thumb) URL.revokeObjectURL(f.thumb);
+      renderTray();
+    });
+    const sb = footer.querySelector(".send");
+    if (sb && !busy) sb.disabled = preparing > 0;
+  }
+  // files the customer sent, shown in their message bubble
+  const filesHtml = (files = []) => files.length ? `<div class="files">${files.map((f) => f.kind === "image" && f.thumb
+    ? `<img src="${f.thumb}" alt="${esc(f.name)}" onerror="this.remove()">` : `<span class="fchip">${ICON.file}${esc(f.name)}</span>`).join("")}</div>` : "";
 
   function renderFooter() {
     panel.querySelector('[data-a="switch"]').innerHTML = mode === "voice" ? ICON.keys : ICON.mic;
@@ -1327,8 +1407,11 @@
       updateEyes();
     } else {
       footer.innerHTML = `
+        <div class="tray" hidden></div>
         <form class="input">
           <div class="field">
+            <button class="attach" type="button" aria-label="Přiložit fotku nebo soubor" title="Přiložit fotku nebo PDF">${ICON.clip}</button>
+            <input type="file" accept="image/*,application/pdf" multiple hidden>
             <textarea rows="1" placeholder="Napište, co hledáte…" maxlength="600" aria-label="Zpráva pro prodavačku"></textarea>
             <button class="send" type="submit" aria-label="Odeslat">${ICON.send}</button>
           </div>
@@ -1336,31 +1419,40 @@
         <div class="legal">Odpovídá umělá inteligence a může se splést · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">Ochrana soukromí</a></div>`;
       const form = footer.querySelector("form");
       const ta = form.querySelector("textarea");
+      const picker = form.querySelector("input[type=file]");
+      form.querySelector(".attach").onclick = () => picker.click();
+      picker.onchange = () => { addFiles(picker.files); picker.value = ""; };
+      // a screenshot pasted straight into the message box works too
+      ta.onpaste = (e) => { const files = [...(e.clipboardData?.files || [])]; if (files.length) { e.preventDefault(); addFiles(files); } };
       ta.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } };
       ta.oninput = () => { ta.style.height = "38px"; ta.style.height = Math.min(ta.scrollHeight, 110) + "px"; lastChatActivity = Date.now(); };
       form.onsubmit = (e) => {
         e.preventDefault();
         const text = ta.value.trim();
-        if (!text || busy) return;
+        if ((!text && !pendingFiles.length) || busy || preparing) return;
         ta.value = ""; ta.style.height = "38px";
         const sb = form.querySelector(".send");
         sb.classList.remove("fly"); void sb.offsetWidth; sb.classList.add("fly"); // restart the little launch animation
-        send(text);
+        const files = pendingFiles.splice(0);
+        renderTray();
+        send(text, { files });
       };
+      renderTray();
     }
   }
 
   const scrollDown = () => { if (msgs) msgs.scrollTo({ top: msgs.scrollHeight, behavior: reduced ? "auto" : "smooth" }); };
-  function bubbleEl(role, text) {
+  function bubbleEl(role, text, files) {
     const b = el(`<div class="m ${role === "me" ? "me" : role === "err" ? "err" : "bot"}"></div>`);
     if (role === "bot") b.innerHTML = md(text); else b.textContent = text;
+    if (files?.length) { b.insertAdjacentHTML("afterbegin", filesHtml(files)); b.classList.toggle("only-files", !text); }
     return b;
   }
-  function addBubble(role, text) {
-    const entry = { role, text };
+  function addBubble(role, text, files) {
+    const entry = { role, text, ...(files?.length ? { files: files.map(({ kind, name, thumb }) => ({ kind, name, thumb })) } : {}) };
     history.push(entry);
     saveHistory();
-    const b = bubbleEl(role, text);
+    const b = bubbleEl(role, text, entry.files);
     msgs?.append(b);
     scrollDown();
     return { entry, b };
@@ -1464,15 +1556,16 @@
 
   // -------------------------------------------------------------- chat ----
   let chatAbort = null; // lets a spoken interruption stop an answer that is still arriving
-  async function send(text, { via } = {}) {
+  async function send(text, { via, files = [] } = {}) {
     busy = true;
+    let closeAfter = false; // the customer asked her to switch off – close once she has said goodbye
     const ctrl = new AbortController();
     chatAbort = ctrl;
     lastChatActivity = Date.now();
     const sendBtn = footer?.querySelector(".send");
     if (sendBtn) sendBtn.disabled = true;
     msgs?.querySelectorAll(":scope > .chips").forEach((c) => c.remove());
-    addBubble("me", text);
+    addBubble("me", text, files);
     const typing = el(`<div class="thinking">${avatar(26, { mood: "think" })}<span class="shimmer">${esc(cfg.name)} přemýšlí…</span></div>`);
     msgs.append(typing);
     setMood("think");
@@ -1493,7 +1586,8 @@
         method: "POST", headers: { "Content-Type": "application/json" },
         // the transcript so far (without this message) travels along, so the conversation survives
         // even if the server is a fresh serverless instance that never saw it
-        body: JSON.stringify({ client: cfg.client, sessionId, text, context: signals({ via, history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: h.text.slice(0, 2000) })) }) }),
+        body: JSON.stringify({ client: cfg.client, sessionId, text, context: signals({ via, history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: (h.text + (h.files?.length ? ` [přiloženo: ${h.files.map((x) => x.name).join(", ")}]` : "")).trim().slice(0, 2000) })) }),
+          ...(files.length ? { attachments: files.map(({ kind, media_type, data }) => ({ kind, media_type, data })) } : {}) }),
         signal: ctrl.signal,
       });
       if (!res.ok || !res.body) {
@@ -1528,6 +1622,8 @@
             cur?.b.classList.remove("streaming");
             turnEls.push(addCards(ev.items));
             cur = null;
+          } else if (ev.type === "close") {
+            closeAfter = true;
           } else if (ev.type === "cart_remove") {
             api.onRemoveFromCart?.(ev.item);
             addNote(`Odebráno z košíku: ${ev.item.name}`);
@@ -1567,8 +1663,13 @@
       lastChatActivity = Date.now();
       if (sendBtn) sendBtn.disabled = false;
       if (chatAbort === ctrl) chatAbort = null;
+      if (closeAfter && !ctrl.signal.aborted) {
+        // say goodbye first (out loud in voice mode), then step back into the corner
+        if (mode === "voice") afterSpeech(() => setTimeout(closePanel, 300));
+        else setTimeout(() => { if (panel && !busy) closePanel(); }, 1800);
+      }
       // interrupted by voice → the interruption itself takes over listening
-      if (mode === "voice") { if (!ctrl.signal.aborted) afterSpeech(() => listen()); }
+      else if (mode === "voice") { if (!ctrl.signal.aborted) afterSpeech(() => listen()); }
       else if (!panel?.querySelector(".av.happy")) setMood("idle");
     }
   }

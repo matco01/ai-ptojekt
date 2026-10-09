@@ -6,9 +6,18 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 |---|---|---|
 | Demo e-shop | http://localhost:3000/ | Smyšlený obchod s elektronikou „TechMarket“ ve stylu velkých českých e-shopů (38 produktů, akce, sety, filtry, košík) |
 | AI prodavačka | vpravo dole | Widget, který se vkládá na libovolný web jedním řádkem |
+| Web Selly | http://localhost:3000/sella/ | Stránka značky Sella pro majitele obchodů a přihlášení (`/sella/prihlaseni.html`), které vede do jejich přehledu |
 | Dashboard | http://localhost:3000/admin/ | Chování zákazníků, výkon prodavačky, využití tarifu a AI doporučení pro majitele (s přihlášením) |
 | Klienti | http://localhost:3000/admin/clients.html | Jen pro provozovatele: zakládání obchodů, přihlášení majitelů, využití a export pro fakturaci |
 | Ukázka jiného webu | http://localhost:3000/kavarna | Pražírna kávy „Bohème“: vlastní produkty z XML feedu, napojená bez jediného řádku kódu navíc (viz níže) |
+
+## Web Selly, přihlášení a jazyky
+
+- **Web** `/sella/` představuje Sellu majitelům obchodů: úvodní video (`public/sella/video/intro-cs.mp4` a `intro-en.mp4`), dvě ukázky (TechMarket, Bohème), jak to funguje, přehled a zásady.
+- **Jazyk:** při první návštěvě kteréhokoli stránky Selly (web, přihlášení, přehled) se ukáže volba Čeština / English. Volba se pamatuje v prohlížeči a dá se kdykoli změnit přepínačem CS | EN. Podle ní je web, přihlášení, video, přehled obchodu i doporučení od AI. Texty jsou v `public/sella/i18n.js` a v každé stránce (`SellaI18n.use({ cs, en })`).
+- **Přihlášení** `/sella/prihlaseni.html`: majitel obchodu (ID obchodu + heslo) skončí ve svém přehledu `/admin/` a vidí jen svůj obchod. My (ID `admin` + `ADMIN_TOKEN`) skončíme na stránce **Všichni klienti** `/admin/klienti.html`: karta každého obchodu s čísly, přihlášením a tlačítkem do jeho analýzy; mezi obchody se dá přepínat i přímo v přehledu.
+- **Hesla ukázkových obchodů:** TechMarket a Bohème mají úvodní heslo odvozené z `ADMIN_TOKEN` (např. `k7mq-2xpt-9fhd`), takže fungují i bez databáze a hned po nasazení. Najdete je na stránce Všichni klienti (Ukázat / Kopírovat / Kopírovat přístup pro majitele). **Vytvořit nové heslo** vygeneruje nové a úvodní tím přestane platit; na serveru to potřebuje databázi, lokálně se uloží do `data/passwords.json`.
+- **Video znovu:** `public/sella/film.html?lang=cs` je animace, ze které je video nahrané (každý snímek je funkcí času). Po úpravě textů se dá znovu nahrát po snímcích do MP4 (puppeteer + ffmpeg).
 
 ## Klienti (více e-shopů)
 

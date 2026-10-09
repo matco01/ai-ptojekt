@@ -50,9 +50,7 @@
     /* the wallpaper behind the glass: crisp wave edges give the glass something to bend */
     .scene { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--base); }
     .scene svg { position: absolute; inset: -4%; width: 108%; height: 108%; }
-    .scene .wave { animation: sway 40s ease-in-out infinite alternate; }
-    .scene .wave:nth-of-type(2n) { animation-duration: 52s; animation-direction: alternate-reverse; }
-    .scene .wave:nth-of-type(3n) { animation-duration: 64s; }
+    /* the waves stand still: anything moving behind the glass panes would make every pane re-render each frame */
     .scene .grain { position: absolute; inset: 0; opacity: .12; mix-blend-mode: overlay;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
     @keyframes sway { from { transform: translateX(-30px); } to { transform: translateX(40px); } }
@@ -189,16 +187,6 @@
 
     .tip { position: fixed; pointer-events: none; background: var(--pill); color: var(--pill-text); font-size: 13px; padding: 7px 12px; border-radius: 999px; z-index: 9; display: none; max-width: 320px; box-shadow: 0 12px 30px -10px var(--drop); }
 
-    /* login */
-    .login-wrap { position: relative; z-index: 1; padding: 0 16px; }
-    .login { max-width: 400px; margin: 14vh auto 0; padding: 32px; border-radius: 40px; }
-    .login .logo { font-family: var(--serif); font-size: 46px; line-height: 1; margin-bottom: 6px; }
-    .login h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; margin: 0 0 8px; color: var(--text-2); }
-    .login label { display: block; font-size: 13.5px; font-weight: 600; color: var(--text-2); margin: 14px 0 6px; }
-    .login input { width: 100%; font: inherit; padding: 12px 16px; border-radius: 999px; border: 0; background: var(--platter); color: var(--text); box-shadow: inset 0 1px 0 var(--platter-edge); }
-    .login button { width: 100%; justify-content: center; margin-top: 22px; padding: 12px; }
-    .login .err { color: var(--rose); font-size: 14px; min-height: 20px; margin: 10px 0 0; }
-
     @media (max-width: 1240px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 1080px) {
       .shell { grid-template-columns: 72px minmax(0, 1fr); }
@@ -243,36 +231,21 @@
   <!-- edge lenses for the glass panes, built per pane size by buildLens() -->
   <svg id="lens-defs" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
 
-  <div class="login-wrap">
-    <section class="login glass lens" data-lens="30 60 18" id="login" hidden>
-      <div class="logo">Sella</div>
-      <h2>Přihlášení k přehledu</h2>
-      <form id="login-form">
-        <label for="login-client">ID obchodu</label>
-        <input id="login-client" name="client" autocomplete="username" required>
-        <label for="login-password">Heslo</label>
-        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
-        <button class="primary" type="submit">Přihlásit</button>
-        <p class="err" id="login-err"></p>
-      </form>
-    </section>
-  </div>
-
   <div class="shell" id="main" hidden>
     <aside class="rail glass clear lens" data-lens="22 80 3" aria-label="Navigace">
       <div class="logo" aria-hidden="true">S</div>
       <nav>
-        <a href="#ai" class="on" data-view="ai" data-label="AI prodavačka" aria-label="AI prodavačka">
+        <a href="#ai" class="on" data-view="ai" data-label="AI prodavačka" aria-label="AI prodavačka" data-i18n-attr="data-label=v.ai;aria-label=v.ai">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></a>
-        <a href="#zakaznici" data-view="customers" data-label="Zákazníci a produkty" aria-label="Zákazníci a produkty">
+        <a href="#zakaznici" data-view="customers" data-label="Zákazníci a produkty" aria-label="Zákazníci a produkty" data-i18n-attr="data-label=v.cust;aria-label=v.cust">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></a>
-        <a href="#dotazy" data-label="Na co se ptají" aria-label="Na co se zákazníci ptají" id="rail-questions">
+        <a href="#dotazy" data-label="Na co se ptají" aria-label="Na co se zákazníci ptají" id="rail-questions" data-i18n-attr="data-label=q.h;aria-label=q.h">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg></a>
-        <a href="/admin/clients.html" id="clients-link" data-label="Klienti" aria-label="Klienti" hidden>
+        <a href="/admin/klienti.html" id="clients-link" data-label="Všichni klienti" aria-label="Všichni klienti" data-i18n-attr="data-label=all;aria-label=all" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg></a>
       </nav>
       <span class="sep"></span>
-      <button id="logout" data-label="Odhlásit" aria-label="Odhlásit" hidden>
+      <button id="logout" data-label="Odhlásit" aria-label="Odhlásit" data-i18n-attr="data-label=logout;aria-label=logout" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H4"/></svg></button>
     </aside>
 
@@ -282,7 +255,7 @@
           <h1 class="hello"><span id="greeting">Dobrý den</span>, <em id="client-name">&nbsp;</em></h1>
           <p class="sub" id="period">Přehled AI prodavačky</p>
         </div>
-        <div class="actions"><button id="refresh">↻ Obnovit</button></div>
+        <div class="actions"><span id="lang"></span><button id="refresh" data-i18n="refresh">↻ Obnovit</button></div>
       </div>
 
       <section class="view" id="view-ai">
@@ -290,26 +263,26 @@
 
         <div class="grid-wide">
           <section class="card ai-card">
-            <h2>Doporučení od AI pro majitele</h2>
-            <p class="hint">Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.</p>
-            <div id="insights" class="insights"><button class="primary" id="gen">Vygenerovat doporučení</button></div>
+            <h2 data-i18n="ins.h">Doporučení od AI pro majitele</h2>
+            <p class="hint" data-i18n="ins.p">Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.</p>
+            <div id="insights" class="insights"><button class="primary" id="gen" data-i18n="ins.gen">Vygenerovat doporučení</button></div>
           </section>
           <section class="card">
-            <h2>Nabídka pomoci</h2>
-            <p class="hint">Jak zákazníci reagují, když se jim prodavačka nabídne.</p>
+            <h2 data-i18n="offer.h">Nabídka pomoci</h2>
+            <p class="hint" data-i18n="offer.p">Jak zákazníci reagují, když se jim prodavačka nabídne.</p>
             <div id="offer"></div>
           </section>
         </div>
 
         <div class="grid2">
           <section class="card">
-            <h2>Proaktivní tipy</h2>
-            <p class="hint">Kdy se prodavačka sama ozvala a jak často zákazník tip využil.</p>
+            <h2 data-i18n="tips.h">Proaktivní tipy</h2>
+            <p class="hint" data-i18n="tips.p">Kdy se prodavačka sama ozvala a jak často zákazník tip využil.</p>
             <div class="bars" id="nudges"></div>
           </section>
           <section class="card">
-            <h2>Co AI nejčastěji doporučuje</h2>
-            <p class="hint">Počet zobrazení v kartičkách prodavačky.</p>
+            <h2 data-i18n="recs.h">Co AI nejčastěji doporučuje</h2>
+            <p class="hint" data-i18n="recs.p">Počet zobrazení v kartičkách prodavačky.</p>
             <div class="bars" id="recs"></div>
           </section>
         </div>
@@ -317,42 +290,42 @@
 
       <section class="view" id="view-customers" hidden>
         <div class="grid2">
-          <section class="card"><h2>Co zákazníci hledají</h2><p class="hint">Nejčastější hledání na webu.</p><div class="bars" id="searches"></div></section>
-          <section class="card"><h2>Hledání bez výsledku</h2><p class="hint">Poptávka, kterou obchod nepokryl: kandidáti na rozšíření sortimentu nebo synonyma.</p><div class="bars" id="misses"></div></section>
-          <section class="card"><h2>Nejprohlíženější produkty</h2><p class="hint">Počet zobrazení detailu.</p><div class="bars" id="viewed"></div></section>
-          <section class="card"><h2>Přidáno do košíku díky AI</h2><p class="hint">Kusy přidané z doporučení prodavačky.</p><div class="bars" id="cartai"></div></section>
+          <section class="card"><h2 data-i18n="srch.h">Co zákazníci hledají</h2><p class="hint" data-i18n="srch.p">Nejčastější hledání na webu.</p><div class="bars" id="searches"></div></section>
+          <section class="card"><h2 data-i18n="miss.h">Hledání bez výsledku</h2><p class="hint" data-i18n="miss.p">Poptávka, kterou obchod nepokryl: kandidáti na rozšíření sortimentu nebo synonyma.</p><div class="bars" id="misses"></div></section>
+          <section class="card"><h2 data-i18n="view.h">Nejprohlíženější produkty</h2><p class="hint" data-i18n="view.p">Počet zobrazení detailu.</p><div class="bars" id="viewed"></div></section>
+          <section class="card"><h2 data-i18n="cart.h">Přidáno do košíku díky AI</h2><p class="hint" data-i18n="cart.p">Kusy přidané z doporučení prodavačky.</p><div class="bars" id="cartai"></div></section>
         </div>
-        <section class="card"><h2>Hodně prohlížené, málo kupované</h2><p class="hint">Do košíku si je přidá méně než 15 % zájemců. Kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div></section>
+        <section class="card"><h2 data-i18n="vnb.h">Hodně prohlížené, málo kupované</h2><p class="hint" data-i18n="vnb.p">Do košíku si je přidá méně než 15 % zájemců. Kandidáti na lepší fotky, popis nebo cenu.</p><div class="bars" id="vnb"></div></section>
       </section>
 
-      <div class="switch glass clear lens" data-lens="16 70 3" role="tablist" aria-label="Pohled">
-        <button role="tab" class="on" data-view="ai" aria-selected="true">AI prodavačka</button>
-        <button role="tab" data-view="customers" aria-selected="false">Zákazníci a produkty</button>
+      <div class="switch glass clear lens" data-lens="16 70 3" role="tablist" aria-label="Pohled" data-i18n-attr="aria-label=v.label">
+        <button role="tab" class="on" data-view="ai" aria-selected="true" data-i18n="v.ai">AI prodavačka</button>
+        <button role="tab" data-view="customers" aria-selected="false" data-i18n="v.cust">Zákazníci a produkty</button>
       </div>
     </main>
 
     <aside class="side glass lens" data-lens="34 60 20" aria-label="Obchod">
       <div class="shop">
         <div class="avatar" aria-hidden="true"></div>
-        <div style="min-width:0"><h3 id="shop-name">&nbsp;</h3><small id="shop-sub">Sella · přehled obchodu</small></div>
+        <div style="min-width:0"><h3 id="shop-name">&nbsp;</h3><small id="shop-sub" data-i18n="shop.sub">Sella · přehled obchodu</small></div>
       </div>
-      <select id="client-pick" hidden aria-label="Klient"></select>
+      <select id="client-pick" hidden aria-label="Klient" data-i18n-attr="aria-label=pick"></select>
       <div class="card" id="usage-card" hidden></div>
       <div class="card catalog-card" id="catalog-card" hidden>
-        <span class="k">Katalog produktů</span>
+        <span class="k" data-i18n="cat.k">Katalog produktů</span>
         <p id="catalog-text"></p>
-        <button id="catalog-refresh" hidden>↻ Stáhnout feed znovu</button>
+        <button id="catalog-refresh" hidden data-i18n="cat.refresh">↻ Stáhnout feed znovu</button>
       </div>
-      <div class="feed-head" id="dotazy"><h2>Na co se ptají</h2><span class="k" id="q-count"></span></div>
+      <div class="feed-head" id="dotazy"><h2 data-i18n="q.h">Na co se ptají</h2><span class="k" id="q-count"></span></div>
       <ul class="questions" id="questions"></ul>
     </aside>
   </div>
   <div class="tip" id="tip"></div>
 
+<script src="/sella/i18n.js"></script>
 <script>
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const cz = (n) => Number(n).toLocaleString("cs-CZ");
   const params = new URLSearchParams(location.search);
   // passwords never belong in a URL – drop one left over from an old link
   if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "")); }
@@ -406,32 +379,102 @@
   }
   if (LENS) {
     let pending = null;
-    const panes = [...document.querySelectorAll(".glass.lens")];
+    // only the small panes (rail, view switch) bend light – on the big ones it made scrolling stutter
+    const panes = [...document.querySelectorAll(".glass.lens")].filter((el) => !el.matches(".panel, .side"));
     const ro = new ResizeObserver(() => { clearTimeout(pending); pending = setTimeout(() => panes.forEach(buildLens), 150); });
     panes.forEach((el) => ro.observe(el));
   }
-  const h = new Date().getHours();
-  $("greeting").textContent = h < 10 ? "Dobré ráno" : h < 18 ? "Dobrý den" : "Dobrý večer";
-
-  function showLogin() {
-    $("main").hidden = true;
-    $("login").hidden = false;
-    $("login-client").value ||= clientId;
-    ($("login-client").value ? $("login-password") : $("login-client")).focus();
-  }
-  $("login-form").onsubmit = async (e) => {
-    e.preventDefault();
-    $("login-err").textContent = "";
-    const r = await fetch("/api/admin/login", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client: $("login-client").value, password: $("login-password").value }),
-    });
-    if (!r.ok) { $("login-err").textContent = (await r.json().catch(() => ({}))).error || "Přihlášení se nepodařilo."; return; }
-    $("login-password").value = "";
-    $("login").hidden = true;
-    load();
+  // ---- the two languages (chosen on the Sella site, or here with the switch)
+  const I = SellaI18n;
+  const NUDGES = {
+    cs: {},
+    en: {
+      bundle: "Bundle discount", freeship: "Free shipping", "search-miss": "Search with no results", "hes-compare": "Torn between products",
+      "hes-product": "Long look at a product", "hes-filters": "Lost in filters", "hes-search": "Repeated searches", "hes-cart": "Hesitating in the cart",
+      service: "Service (trade-in, warranty…)", deal: "Category discount", accessory: "Accessory for the cart", idle: "Idle on arrival",
+    },
   };
-  $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = "/admin/"; };
+  const t = I.use({
+    cs: {
+      "v.ai": "AI prodavačka", "v.cust": "Zákazníci a produkty", "v.label": "Pohled", "q.h": "Na co se ptají", all: "Všichni klienti", logout: "Odhlásit", refresh: "↻ Obnovit",
+      "ins.h": "Doporučení od AI pro majitele", "ins.p": "Claude projde chování zákazníků a jejich dotazy a navrhne, na co se zaměřit.", "ins.gen": "Vygenerovat doporučení",
+      "ins.busy": "Analyzuji… (může trvat i minutu)", "ins.again": "Vygenerovat znovu", "ins.retry": "Zkusit znovu", "ins.err": "Chyba",
+      "offer.h": "Nabídka pomoci", "offer.p": "Jak zákazníci reagují, když se jim prodavačka nabídne.",
+      "tips.h": "Proaktivní tipy", "tips.p": "Kdy se prodavačka sama ozvala a jak často zákazník tip využil.",
+      "recs.h": "Co AI nejčastěji doporučuje", "recs.p": "Počet zobrazení v kartičkách prodavačky.",
+      "srch.h": "Co zákazníci hledají", "srch.p": "Nejčastější hledání na webu.",
+      "miss.h": "Hledání bez výsledku", "miss.p": "Poptávka, kterou obchod nepokryl: kandidáti na rozšíření sortimentu nebo synonyma.",
+      "view.h": "Nejprohlíženější produkty", "view.p": "Počet zobrazení detailu.",
+      "cart.h": "Přidáno do košíku díky AI", "cart.p": "Kusy přidané z doporučení prodavačky.",
+      "vnb.h": "Hodně prohlížené, málo kupované", "vnb.p": "Do košíku si je přidá méně než 15 % zájemců. Kandidáti na lepší fotky, popis nebo cenu.",
+      "shop.sub": "Sella · přehled obchodu", pick: "Klient", "cat.k": "Katalog produktů", "cat.refresh": "↻ Stáhnout feed znovu", "cat.busy": "Stahuji feed…",
+      morning: "Dobré ráno", day: "Dobrý den", evening: "Dobrý večer",
+      period: (d) => `Přehled AI prodavačky za posledních ${d} dní. Starší data se automaticky mažou.`,
+      notFound: "Tento klient neexistuje.", loadErr: (s) => `Nelze načíst data (${s}).`, inactive: "neaktivní",
+      visits: "Návštěvy", events: (n) => `${n} zaznamenaných událostí`, used: "Využilo prodavačku", visitsN: (n) => `${n} návštěv`,
+      asks: "Dotazy na AI", perChat: (n) => `průměrně ${n} na rozhovor`, noChat: "zatím žádný rozhovor",
+      tipsUsed: "Využité tipy", tipsOf: (a, b) => `${a} z ${b} proaktivních tipů`, noTip: "zatím žádný tip",
+      noData: "Zatím žádná data.", noTipShown: "Zatím se žádný tip nezobrazil.", allFound: "Všechna hledání něco našla.",
+      tipRow: (n, s, c, r, d) => `${n}: zobrazeno ${s}×, využito ${c}× (${r} %), zavřeno ${d}×`,
+      vnbRow: (n, v, c) => `${n}: ${v} zobrazení, ${c} přidání do košíku`,
+      offerNone: "Nabídka se zatím nezobrazila.", chat: "Chat", voice: "Hlas", browse: "Jen se dívá", noAnswer: "Bez odpovědi", later: "Otevřeno později",
+      accepted: (n) => `přijalo pomoc z ${n} nabídek`,
+      planTitle: "Odpovědi v chatu, nabídky pomoci napsané na míru a doporučení pro majitele", plan: (p, m) => `Tarif ${p} · ${m}`,
+      overLimit: "Limit vyčerpán, prodavačka odpovídá zjednodušeně bez AI.", msgsMonth: "zpráv od AI tento měsíc", ofPlan: (n) => `${n} % tarifu`,
+      qCount: (n) => `${n} posledních`, noQuestions: "Zatím žádné dotazy.", qVoice: "hlas", qChat: "chat",
+      now: "právě teď", minAgo: (m) => `před ${m} min`, hAgo: (h) => `před ${h} h`,
+      catDemo: (n) => `Ukázkový katalog, ${n} produktů.`, catNone: "Klient zatím nemá nastavený feed (<code>feed_url</code>), AI prodavačka tak nezná žádné produkty.",
+      catFeed: (n, w) => `${n} produktů z feedu${w ? `, staženo ${w}` : ""}. Obnovuje se samo každých 6 hodin.`,
+      catErr: (e, keep) => `Poslední stažení selhalo: ${e}${keep ? " Používá se předchozí katalog." : ""}`,
+    },
+    en: {
+      "v.ai": "AI assistant", "v.cust": "Customers & products", "v.label": "View", "q.h": "What they ask", all: "All clients", logout: "Sign out", refresh: "↻ Refresh",
+      "ins.h": "AI advice for the owner", "ins.p": "Claude reviews customer behaviour and questions and suggests what to focus on.", "ins.gen": "Generate advice",
+      "ins.busy": "Analysing… (can take up to a minute)", "ins.again": "Generate again", "ins.retry": "Try again", "ins.err": "Error",
+      "offer.h": "Offer of help", "offer.p": "How customers react when the assistant offers to help.",
+      "tips.h": "Proactive tips", "tips.p": "When the assistant spoke up by itself and how often the customer used the tip.",
+      "recs.h": "What the AI recommends most", "recs.p": "Times shown in the assistant's product cards.",
+      "srch.h": "What customers search for", "srch.p": "The most common searches on the site.",
+      "miss.h": "Searches with no results", "miss.p": "Demand the shop didn't cover: candidates for new products or synonyms.",
+      "view.h": "Most viewed products", "view.p": "Product detail views.",
+      "cart.h": "Added to cart thanks to AI", "cart.p": "Items added from the assistant's recommendations.",
+      "vnb.h": "Often viewed, rarely bought", "vnb.p": "Fewer than 15 % of viewers add them to the cart. Candidates for better photos, copy or price.",
+      "shop.sub": "Sella · shop insights", pick: "Client", "cat.k": "Product catalogue", "cat.refresh": "↻ Fetch the feed again", "cat.busy": "Fetching the feed…",
+      morning: "Good morning", day: "Hello", evening: "Good evening",
+      period: (d) => `The AI assistant over the last ${d} days. Older data is deleted automatically.`,
+      notFound: "This client doesn't exist.", loadErr: (s) => `Couldn't load the data (${s}).`, inactive: "inactive",
+      visits: "Visits", events: (n) => `${n} recorded events`, used: "Used the assistant", visitsN: (n) => `${n} visits`,
+      asks: "Questions to AI", perChat: (n) => `${n} per conversation on average`, noChat: "no conversation yet",
+      tipsUsed: "Tips used", tipsOf: (a, b) => `${a} of ${b} proactive tips`, noTip: "no tip yet",
+      noData: "No data yet.", noTipShown: "No tip has been shown yet.", allFound: "Every search found something.",
+      tipRow: (n, s, c, r, d) => `${n}: shown ${s}×, used ${c}× (${r} %), closed ${d}×`,
+      vnbRow: (n, v, c) => `${n}: ${v} views, ${c} added to cart`,
+      offerNone: "The offer hasn't been shown yet.", chat: "Chat", voice: "Voice", browse: "Just looking", noAnswer: "No answer", later: "Opened later",
+      accepted: (n) => `accepted help out of ${n} offers`,
+      planTitle: "Chat answers, tailored offers of help and owner advice", plan: (p, m) => `Plan ${p} · ${m}`,
+      overLimit: "Limit reached – the assistant answers in a simple mode without AI.", msgsMonth: "AI messages this month", ofPlan: (n) => `${n} % of the plan`,
+      qCount: (n) => `latest ${n}`, noQuestions: "No questions yet.", qVoice: "voice", qChat: "chat",
+      now: "just now", minAgo: (m) => `${m} min ago`, hAgo: (h) => `${h} h ago`,
+      catDemo: (n) => `Demo catalogue, ${n} products.`, catNone: "This client has no feed set yet (<code>feed_url</code>), so the assistant knows no products.",
+      catFeed: (n, w) => `${n} products from the feed${w ? `, fetched ${w}` : ""}. It refreshes itself every 6 hours.`,
+      catErr: (e, keep) => `The last fetch failed: ${e}${keep ? " The previous catalogue is in use." : ""}`,
+    },
+  });
+  const cz = (n) => Number(n).toLocaleString(I.locale());
+  const greet = () => { const h = new Date().getHours(); $("greeting").textContent = t(h < 10 ? "morning" : h < 18 ? "day" : "evening"); };
+  greet();
+  I.switcher($("lang"));
+  let last = null; // the last loaded data, re-rendered when the language changes
+  I.onChange(() => { greet(); if (last) render(last.d, last.me); const g = $("gen"); if (g && !g.disabled) g.textContent = t("ins.gen"); });
+
+  // signing in happens on the Sella site; it sends the owner back here afterwards
+  const LOGIN = "/sella/prihlaseni.html";
+  function showLogin() {
+    const q = new URLSearchParams({ next: location.pathname + location.search + location.hash });
+    if (clientId) q.set("client", clientId);
+    location.replace(`${LOGIN}?${q}`);
+  }
+  $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = LOGIN; };
   $("client-pick").onchange = (e) => { params.set("client", e.target.value); location.search = params; };
 
   // ---- views: the bottom switch and the rail show the same two views
@@ -463,14 +506,14 @@
   }
   function ago(ts) {
     const m = Math.round((Date.now() - ts) / 60000);
-    if (m < 1) return "právě teď";
-    if (m < 60) return `před ${m} min`;
-    if (m < 24 * 60) return `před ${Math.round(m / 60)} h`;
-    return new Date(ts).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" });
+    if (m < 1) return t("now");
+    if (m < 60) return t("minAgo", m);
+    if (m < 24 * 60) return t("hAgo", Math.round(m / 60));
+    return new Date(ts).toLocaleDateString(I.locale(), { day: "numeric", month: "numeric" });
   }
 
   // single-series horizontal bar list; rows: {name, value, tip, color?, label?}
-  function bars(el, rows, emptyText = "Zatím žádná data.") {
+  function bars(el, rows, emptyText = t("noData")) {
     if (!rows.length) { el.innerHTML = `<p class="empty">${emptyText}</p>`; return; }
     const max = Math.max(...rows.map((r) => r.value), 1);
     el.innerHTML = rows.map((r) => `
@@ -493,19 +536,19 @@
   });
 
   function renderOffer(o) {
-    if (!o.shown) { $("offer").innerHTML = `<p class="empty">Nabídka se zatím nezobrazila.</p>`; return; }
+    if (!o.shown) { $("offer").innerHTML = `<p class="empty">${t("offerNone")}</p>`; return; }
     const ignored = Math.max(0, o.shown - o.chat - o.voice - o.declined);
     const parts = [
-      { name: "Chat", value: o.chat, color: "var(--blue)" },
-      { name: "Hlas", value: o.voice, color: "var(--violet)" },
-      { name: "Jen se dívá", value: o.declined, color: "var(--sky)" },
-      { name: "Bez odpovědi", value: ignored, color: "var(--track)" },
+      { name: t("chat"), value: o.chat, color: "var(--blue)" },
+      { name: t("voice"), value: o.voice, color: "var(--violet)" },
+      { name: t("browse"), value: o.declined, color: "var(--sky)" },
+      { name: t("noAnswer"), value: ignored, color: "var(--track)" },
     ];
     $("offer").innerHTML = `
-      <div class="big">${cz(o.acceptRate)} %<small>přijalo pomoc z ${cz(o.shown)} nabídek</small></div>
+      <div class="big">${cz(o.acceptRate)} %<small>${t("accepted", cz(o.shown))}</small></div>
       <div class="stack" data-tip="${esc(parts.map((p) => `${p.name}: ${p.value}`).join(" · "))}">${parts.map((p) => `<i style="width:${(p.value / o.shown) * 100}%;background:${p.color}"></i>`).join("")}</div>
       <div class="legend">${parts.map((p) => `<div><i style="background:${p.color}"></i>${p.name}<b>${cz(p.value)}</b></div>`).join("")}
-        <div><i style="background:transparent;border:1px solid var(--text-3)"></i>Otevřeno později<b>${cz(o.reopened)}</b></div></div>`;
+        <div><i style="background:transparent;border:1px solid var(--text-3)"></i>${t("later")}<b>${cz(o.reopened)}</b></div></div>`;
   }
 
   function renderUsage(u) {
@@ -513,12 +556,12 @@
     if (!u) return;
     const share = u.messageLimit ? Math.min(u.messages / u.messageLimit, 1) : 0;
     const color = share >= 1 ? "var(--rose)" : share >= 0.8 ? "var(--amber)" : "var(--green)";
-    const month = new Date(u.month + "-01").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
-    $("usage-card").innerHTML = `<span class="k" title="Odpovědi v chatu, nabídky pomoci napsané na míru a doporučení pro majitele">Tarif ${esc(u.plan)} · ${esc(month)}</span>
+    const month = new Date(u.month + "-01").toLocaleDateString(I.locale(), { month: "long", year: "numeric" });
+    $("usage-card").innerHTML = `<span class="k" title="${esc(t("planTitle"))}">${esc(t("plan", I.plan(u.plan), month))}</span>
       <div class="usage" style="margin-top:10px">${ring(share, color, 72)}
         <b>${cz(u.messages)} <small>/ ${cz(u.messageLimit)}</small></b>
-        <span>${share >= 1 ? "Limit vyčerpán, prodavačka odpovídá zjednodušeně bez AI." : "zpráv od AI tento měsíc"}</span>
-        <span>${Math.round(share * 100)} % tarifu</span></div>`;
+        <span>${share >= 1 ? t("overLimit") : t("msgsMonth")}</span>
+        <span>${t("ofPlan", Math.round(share * 100))}</span></div>`;
   }
 
   async function load() {
@@ -526,72 +569,78 @@
     if (r.status === 401) return showLogin();
     $("main").hidden = false;
     if (!r.ok) {
-      $("tiles").innerHTML = `<p class="empty" style="grid-column:1/-1">${r.status === 404 ? "Tento klient neexistuje." : `Nelze načíst data (${r.status}).`}</p>`;
+      $("tiles").innerHTML = `<p class="empty" style="grid-column:1/-1">${r.status === 404 ? t("notFound") : t("loadErr", r.status)}</p>`;
       return;
     }
     const d = await r.json();
     const me = await fetch("/api/admin/me").then((x) => x.json()).catch(() => ({}));
+    last = { d, me };
+    render(d, me);
+  }
+
+  function render(d, me) {
     $("clients-link").hidden = !me.master;
     $("logout").hidden = Boolean(me.dev);
     renderCatalog(d.catalog);
     $("client-name").textContent = d.client.name;
     $("shop-name").textContent = d.client.name;
     document.title = `${d.client.name} – Sella`;
-    $("period").textContent = `Přehled AI prodavačky za posledních ${d.periodDays} dní. Starší data se automaticky mažou.`;
+    $("period").textContent = t("period", d.periodDays);
     if (d.clients?.length > 1) {
-      $("client-pick").innerHTML = d.clients.map((c) => `<option value="${esc(c.id)}"${c.id === d.client.id ? " selected" : ""}>${esc(c.name)}${c.active ? "" : " (neaktivní)"}</option>`).join("");
+      $("client-pick").innerHTML = d.clients.map((c) => `<option value="${esc(c.id)}"${c.id === d.client.id ? " selected" : ""}>${esc(c.name)}${c.active ? "" : ` (${t("inactive")})`}</option>`).join("");
       $("client-pick").hidden = false;
     }
-    const t = d.totals, o = d.offer;
+    const tt = d.totals, o = d.offer;
     const tipsShown = d.nudges.reduce((s, n) => s + n.shown, 0), tipsUsed = d.nudges.reduce((s, n) => s + n.clicked, 0);
-    const aiShare = t.sessions ? t.aiSessions / t.sessions : 0;
+    const aiShare = tt.sessions ? tt.aiSessions / tt.sessions : 0;
     const tipShare = tipsShown ? tipsUsed / tipsShown : 0;
     $("tiles").innerHTML = [
-      tile("Návštěvy", cz(t.sessions), `${cz(t.events)} zaznamenaných událostí`, icon("visits")),
-      tile("Využilo prodavačku", t.sessions ? Math.round(aiShare * 100) + " %" : "–", `${cz(t.aiSessions)} návštěv`, ring(aiShare)),
-      tile("Dotazy na AI", cz(t.userMessages), t.aiSessions ? `průměrně ${(t.userMessages / t.aiSessions).toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} na rozhovor` : "zatím žádný rozhovor", icon("chat")),
-      tile("Využité tipy", tipsShown ? cz(Math.round(tipShare * 1000) / 10) + " %" : "–", tipsShown ? `${tipsUsed} z ${tipsShown} proaktivních tipů` : "zatím žádný tip", ring(tipShare, "var(--violet)")),
+      tile(t("visits"), cz(tt.sessions), t("events", cz(tt.events)), icon("visits")),
+      tile(t("used"), tt.sessions ? Math.round(aiShare * 100) + " %" : "–", t("visitsN", cz(tt.aiSessions)), ring(aiShare)),
+      tile(t("asks"), cz(tt.userMessages), tt.aiSessions ? t("perChat", (tt.userMessages / tt.aiSessions).toLocaleString(I.locale(), { maximumFractionDigits: 1 })) : t("noChat"), icon("chat")),
+      tile(t("tipsUsed"), tipsShown ? cz(Math.round(tipShare * 1000) / 10) + " %" : "–", tipsShown ? t("tipsOf", tipsUsed, tipsShown) : t("noTip"), ring(tipShare, "var(--violet)")),
     ].join("");
 
     renderOffer(o);
     renderUsage(d.usage);
+    const nudgeName = (n) => NUDGES[I.lang][n.kind] ?? n.name;
     bars($("nudges"), d.nudges.map((n) => ({
-      name: n.name, value: n.clickRate, label: cz(n.clickRate) + " %",
-      tip: `${n.name}: zobrazeno ${n.shown}×, využito ${n.clicked}× (${n.clickRate} %), zavřeno ${n.dismissed}×`,
-    })), "Zatím se žádný tip nezobrazil.");
+      name: nudgeName(n), value: n.clickRate, label: cz(n.clickRate) + " %",
+      tip: t("tipRow", nudgeName(n), n.shown, n.clicked, n.clickRate, n.dismissed),
+    })), t("noTipShown"));
     const list = (rows) => rows.map((r) => ({ name: r.name, value: r.count }));
     bars($("searches"), list(d.topSearches));
-    bars($("misses"), list(d.searchMisses).map((r) => ({ ...r, color: "var(--rose)" })), "Všechna hledání něco našla.");
+    bars($("misses"), list(d.searchMisses).map((r) => ({ ...r, color: "var(--rose)" })), t("allFound"));
     bars($("viewed"), list(d.topViewed));
     bars($("recs"), list(d.topRecommended).map((r) => ({ ...r, color: "var(--violet)" })));
     bars($("cartai"), list(d.addToCartAi).map((r) => ({ ...r, color: "var(--green)" })));
-    bars($("vnb"), d.viewedNotBought.map((r) => ({ name: r.name, value: r.views, label: `${r.views}×`, color: "var(--amber)", tip: `${r.name}: ${r.views} zobrazení, ${r.carts} přidání do košíku` })));
+    bars($("vnb"), d.viewedNotBought.map((r) => ({ name: r.name, value: r.views, label: `${r.views}×`, color: "var(--amber)", tip: t("vnbRow", r.name, r.views, r.carts) })));
 
-    $("q-count").textContent = d.recentQuestions.length ? `${d.recentQuestions.length} posledních` : "";
+    $("q-count").textContent = d.recentQuestions.length ? t("qCount", d.recentQuestions.length) : "";
     $("questions").innerHTML = d.recentQuestions.length
-      ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<div class="meta"><span class="chip${q.mode === "voice" ? " voice" : ""}">${q.mode === "voice" ? "hlas" : "chat"}</span><span title="${esc(new Date(q.ts).toLocaleString("cs-CZ"))}">${ago(q.ts)}</span></div></li>`).join("")
-      : `<li class="empty">Zatím žádné dotazy.</li>`;
+      ? d.recentQuestions.map((q) => `<li>${esc(q.text)}<div class="meta"><span class="chip${q.mode === "voice" ? " voice" : ""}">${q.mode === "voice" ? t("qVoice") : t("qChat")}</span><span title="${esc(new Date(q.ts).toLocaleString(I.locale()))}">${ago(q.ts)}</span></div></li>`).join("")
+      : `<li class="empty">${t("noQuestions")}</li>`;
   }
 
   function renderCatalog(c) {
     $("catalog-card").hidden = !c;
     if (!c) return;
-    const when = c.updatedAt ? new Date(c.updatedAt).toLocaleString("cs-CZ") : null;
+    const when = c.updatedAt ? new Date(c.updatedAt).toLocaleString(I.locale()) : null;
     $("catalog-text").innerHTML =
-      c.source === "demo" ? `Ukázkový katalog, ${c.products} produktů.`
-      : c.source === "none" ? `Klient zatím nemá nastavený feed (<code>feed_url</code>), AI prodavačka tak nezná žádné produkty.`
-      : `${cz(c.products)} produktů z feedu${when ? `, staženo ${when}` : ""}. Obnovuje se samo každých 6 hodin.`
-        + (c.error ? `<br><span class="err">Poslední stažení selhalo: ${esc(c.error)}${c.products ? " Používá se předchozí katalog." : ""}</span>` : "");
+      c.source === "demo" ? t("catDemo", c.products)
+      : c.source === "none" ? t("catNone")
+      : t("catFeed", cz(c.products), when)
+        + (c.error ? `<br><span class="err">${esc(t("catErr", c.error, c.products))}</span>` : "");
     $("catalog-refresh").hidden = c.source !== "feed";
   }
   $("catalog-refresh").onclick = async (e) => {
     const b = e.currentTarget;
     b.disabled = true;
-    b.textContent = "Stahuji feed…";
+    b.textContent = t("cat.busy");
     const r = await call("/api/analytics/catalog", { method: "POST" });
     if (r.ok) renderCatalog(await r.json());
     b.disabled = false;
-    b.textContent = "↻ Stáhnout feed znovu";
+    b.textContent = t("cat.refresh");
   };
 
   // tiny markdown → HTML for the insights (headings, bullets, bold)
@@ -606,12 +655,13 @@
   $("insights").addEventListener("click", async (e) => {
     if (!e.target.matches("#gen")) return;
     e.target.disabled = true;
-    e.target.textContent = "Analyzuji… (může trvat i minutu)";
-    const r = await call("/api/analytics/insights", { method: "POST" });
+    e.target.textContent = t("ins.busy");
+    // the advice is written in the dashboard's language
+    const r = await call("/api/analytics/insights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lang: I.lang }) });
     const d = await r.json().catch(() => ({}));
     $("insights").innerHTML = r.ok
-      ? md(d.markdown) + `<p><button class="primary" id="gen">Vygenerovat znovu</button></p>`
-      : `<p class="empty">${esc(d.error || "Chyba")}</p><button class="primary" id="gen">Zkusit znovu</button>`;
+      ? md(d.markdown) + `<p><button class="primary" id="gen">${t("ins.again")}</button></p>`
+      : `<p class="empty">${esc(d.error || t("ins.err"))}</p><button class="primary" id="gen">${t("ins.retry")}</button>`;
   });
   $("refresh").onclick = load;
   load();

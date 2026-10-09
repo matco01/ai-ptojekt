@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sella – jak to funguje</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <!-- The intro film, shown on the TechMarket demo shop. Every frame is a pure function of time
+       (render(t)), so the page plays live and is recorded frame by frame into the MP4 files:
+       ?lang=cs|en&rec=1&d=<scene lengths in seconds, fitted to the narration>. -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #d0d9e1; overflow: hidden; }
+    body { display: grid; place-items: center; font-family: "Geist", -apple-system, Arial, sans-serif; color: #2f3133; -webkit-font-smoothing: antialiased; }
+    #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; background: #d0d9e1; transform-origin: center; flex: none; }
+    #stage * { box-sizing: border-box; }
+    .abs { position: absolute; will-change: transform, opacity; }
+    .serif { font-family: "Old Standard TT", Didot, Georgia, serif; font-weight: 400; }
+
+    /* sky */
+    .cl { position: absolute; border-radius: 50%; filter: blur(60px); }
+    #c1 { width: 820px; height: 820px; right: -240px; top: -120px; background: radial-gradient(circle at 45% 45%, #8fb3d8 0 38%, #a7c7d6 58%, transparent 70%); }
+    #c2 { width: 760px; height: 760px; right: -200px; top: -40px; filter: blur(40px); opacity: .5; background: radial-gradient(circle at 46% 40%, transparent 0 56%, #ead2ae 62%, #bcd8cf 66%, transparent 72%); }
+    #c3 { width: 420px; height: 280px; left: -80px; top: 20px; background: radial-gradient(closest-side, #b7cbdc, transparent); }
+    #grain { position: absolute; inset: 0; opacity: .18; mix-blend-mode: soft-light;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+
+    #title { left: 0; right: 0; top: 230px; text-align: center; }
+    #title .mark { font-size: 190px; line-height: 1; color: #434445; letter-spacing: -.02em; }
+    #title .mark span { display: inline-block; }
+    #title .tag { font-size: 15px; letter-spacing: .24em; text-transform: uppercase; color: #6f7781; margin-top: 18px; }
+
+    /* TechMarket in a browser window */
+    #browser { left: 150px; top: 40px; width: 980px; height: 548px; border-radius: 18px; background: #f3f5f8;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.7), 0 40px 90px -40px rgba(30,50,80,.55); overflow: hidden; }
+    #browser .bar { height: 36px; display: flex; align-items: center; gap: 7px; padding: 0 16px; background: #e8ecf1; }
+    #browser .bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(47,49,51,.18); }
+    #browser .url { margin-left: 18px; height: 22px; padding: 0 14px; border-radius: 99px; background: #fff; font-size: 12px; color: #6f7781; display: flex; align-items: center; }
+    #browser .demo { height: 22px; background: #ffd94a; font-size: 11px; font-weight: 600; color: #2f2a10; display: grid; place-items: center; }
+    #browser .head { height: 60px; display: flex; align-items: center; gap: 18px; padding: 0 22px; background: #fff; border-bottom: 3px solid #1c2663; }
+    .tmlogo { display: flex; align-items: center; gap: 6px; }
+    .tmlogo .mk { width: 30px; height: 30px; border-radius: 6px; background: #1c2663; color: #fff; display: grid; place-items: center; font: italic 900 22px/1 Arial, sans-serif; }
+    .tmlogo .wd { font: 900 20px/1 Arial, sans-serif; color: #1c2663; letter-spacing: -.5px; }
+    .tmlogo .wd b { color: #2288e5; font-weight: 700; }
+    #browser .search { flex: 1; height: 36px; display: flex; border: 1px solid #cfd4da; border-radius: 6px; overflow: hidden; }
+    #browser .search span { flex: 1; padding: 0 12px; display: flex; align-items: center; font-size: 13px; color: #8a9099; }
+    #browser .search b { padding: 0 18px; background: #2288e5; color: #fff; font-size: 13px; display: grid; place-items: center; }
+    #browser .cart { position: relative; width: 34px; height: 34px; display: grid; place-items: center; }
+    #badge { position: absolute; right: -6px; top: -4px; width: 19px; height: 19px; border-radius: 50%; background: #e0282e; color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+    #grid { position: absolute; left: 22px; top: 140px; right: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .prod { height: 186px; border-radius: 10px; background: #fff; border: 1px solid #e3e7ec; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+    .prod .img { flex: 1; display: grid; place-items: center; min-height: 0; }
+    .prod .img img { height: 92px; }
+    .prod .n { font-size: 12.5px; color: #1e70bf; line-height: 1.25; height: 31px; overflow: hidden; }
+    .prod .p { font-size: 15px; font-weight: 800; color: #1a1d21; }
+    .prod .p s { font-size: 11px; color: #9aa0a8; font-weight: 500; margin-left: 5px; }
+    .prod.hot { box-shadow: 0 0 0 2px #2288e5; border-color: #2288e5; }
+
+    #cursor { left: 0; top: 0; width: 22px; height: 22px; z-index: 30; }
+
+    /* the TechMarket mascot and what it says (the same look as the real widget) */
+    #mascot { width: 82px; height: 82px; z-index: 20; transform-origin: 50% 100%; }
+    .bub { background: #fff; border-radius: 18px; box-shadow: 0 24px 50px -24px rgba(20,30,70,.5), 0 0 0 1px rgba(28,38,99,.06); }
+    #greet { left: 392px; top: 250px; width: 410px; padding: 18px 20px 16px; z-index: 21; transform-origin: 50% 110%; }
+    #greet .who { font-size: 12.5px; font-weight: 700; color: #2288e5; margin-bottom: 4px; }
+    #greet p { margin: 0 0 14px; font-size: 16px; line-height: 1.45; min-height: 46px; }
+    #greet .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #greet .acts span { height: 38px; border-radius: 11px; display: grid; place-items: center; font-size: 14px; font-weight: 600; background: #eef2f6; }
+    #greet .acts span.pri { background: #2288e5; color: #fff; }
+    #greet .acts span.skip { grid-column: 1 / -1; height: auto; background: none; font-size: 13px; font-weight: 500; color: #7b8188; padding-top: 4px; }
+
+    #chat { left: 730px; top: 140px; width: 390px; height: 436px; border-radius: 22px; background: #fff; z-index: 22;
+      box-shadow: 0 40px 80px -36px rgba(20,30,70,.6), 0 0 0 1px rgba(28,38,99,.06); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    #chat .top { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #edf0f3; }
+    #chat .top b { font-size: 15px; } #chat .top small { display: block; font-size: 12px; color: #7b8188; }
+    .msg { max-width: 86%; padding: 10px 13px; border-radius: 16px; font-size: 14.5px; line-height: 1.45; }
+    .msg.me { align-self: flex-end; background: linear-gradient(120deg, #2288e5, #3b62d6); color: #fff; border-bottom-right-radius: 5px; }
+    .msg.bot { align-self: flex-start; background: #f1f4f8; border-bottom-left-radius: 5px; }
+    .card { align-self: flex-start; width: 100%; display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px #e3e7ec, 0 8px 20px -12px rgba(20,30,70,.3); }
+    .card img { width: 56px; height: 56px; flex: none; }
+    .card b { display: block; font-size: 14px; } .card small { color: #7b8188; font-size: 13px; }
+    .card .add { margin-left: auto; padding: 8px 12px; border-radius: 10px; background: #2288e5; color: #fff; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+    .card .add.done { background: #22b573; }
+
+    #tip { left: 690px; top: 352px; width: 370px; padding: 16px 18px; z-index: 21; transform-origin: 90% 110%; }
+    #tip .who { font-size: 12.5px; font-weight: 700; color: #2288e5; margin-bottom: 4px; }
+    #tip p { margin: 0 0 12px; font-size: 15.5px; line-height: 1.45; }
+    #tip span { display: inline-block; padding: 8px 13px; border-radius: 10px; background: #2288e5; color: #fff; font-size: 13.5px; font-weight: 600; }
+
+    /* the owner's overview */
+    #board { left: 130px; top: 50px; width: 1020px; height: 500px; border-radius: 28px; background: rgba(255,255,255,.45);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.8), 0 40px 90px -40px rgba(30,50,80,.5); padding: 26px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto 1fr; gap: 16px; }
+    #board .who { position: absolute; top: -16px; left: 28px; display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 99px; background: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 24px -12px rgba(20,30,70,.4); }
+    .tile { background: rgba(255,255,255,.62); border-radius: 20px; padding: 18px 20px; }
+    .tile .k { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: #7b8188; font-weight: 500; }
+    .tile .v { font-size: 50px; line-height: 1.1; margin-top: 8px; }
+    .tile h3 { margin: 0 0 14px; font-size: 22px; }
+    .span2 { grid-column: span 2; }
+    .bars { display: grid; gap: 14px; }
+    .bar { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; font-size: 14.5px; }
+    .bar .tr { grid-column: 1 / -1; height: 9px; border-radius: 9px; background: rgba(47,49,51,.08); overflow: hidden; }
+    .bar .fi { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8fb3d8, #4e7fb4); }
+    .qs { display: grid; gap: 9px; }
+    .qs div { padding: 9px 12px; border-radius: 12px; background: rgba(255,255,255,.75); font-size: 14px; }
+
+    #code { left: 240px; top: 230px; width: 800px; padding: 28px 30px; border-radius: 22px; background: #23262a; color: #e8ecf0; font: 400 20px/1.5 "Geist Mono", ui-monospace, monospace;
+      box-shadow: 0 40px 90px -40px rgba(20,30,50,.7); white-space: pre; }
+    #code .t { color: #8fb3d8; } #code .a { color: #ead2ae; } #code .s { color: #a9d6b8; }
+    #code .caret { display: inline-block; width: 11px; height: 22px; background: #8fb3d8; vertical-align: -4px; margin-left: 2px; }
+
+    #end { left: 0; right: 0; top: 190px; text-align: center; }
+    #end .mark { font-size: 170px; line-height: 1; color: #434445; letter-spacing: -.02em; }
+    #end .line { font-size: 24px; color: #55595e; margin-top: 22px; }
+    #end .cta { display: inline-block; margin-top: 30px; padding: 15px 28px; border-radius: 99px; background: #2f3133; color: #f3f5f7; font-size: 17px; font-weight: 500; }
+
+    /* subtitles of the narration */
+    #cap { left: 110px; right: 110px; bottom: 26px; text-align: center; font-size: 26px; line-height: 1.3; color: #2f3133; z-index: 40; min-height: 68px; display: flex; align-items: center; justify-content: center; }
+    #progress { left: 0; bottom: 0; height: 3px; background: #4e7fb4; z-index: 50; }
+  </style>
+</head>
+<body>
+<div id="stage">
+  <div class="abs cl" id="c1"></div><div class="abs cl" id="c2"></div><div class="abs cl" id="c3"></div>
+
+  <div class="abs" id="title"><div class="mark serif" id="tmark"><span>S</span><span>e</span><span>l</span><span>l</span><span>a</span></div><div class="tag" id="ttag"></div></div>
+
+  <div class="abs" id="browser">
+    <div class="bar"><i></i><i></i><i></i><span class="url">techmarket.cz</span></div>
+    <div class="demo" id="demo"></div>
+    <div class="head"><span class="tmlogo"><span class="mk">t</span><span class="wd">techmarket<b>.cz</b></span></span><span class="search"><span id="ph"></span><b id="sb"></b></span>
+      <span class="cart"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1c2663" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21.5 8H6"/></svg><span id="badge">1</span></span></div>
+    <div id="grid"></div>
+  </div>
+
+  <div class="abs bub" id="greet"><div class="who">Teko</div><p id="gtext"></p><div class="acts"><span class="pri" id="gb1"></span><span id="gb2"></span><span class="skip" id="gb3"></span></div></div>
+
+  <div class="abs" id="chat">
+    <div class="top"><span id="chatMascot"></span><div><b>Teko</b><small id="csub"></small></div></div>
+    <div class="msg me" id="m1"></div>
+    <div class="msg bot" id="m2"></div>
+    <div class="card" id="m3"><img src="/api/img/a3.svg" alt=""><div><b>Tono Buds Lite</b><small id="m3price"></small></div><span class="add" id="m3add"></span></div>
+    <div class="msg bot" id="m4"></div>
+  </div>
+
+  <div class="abs bub" id="tip"><div class="who">Teko</div><p id="ttext"></p><span id="tbtn"></span></div>
+
+  <div class="abs" id="mascot"></div>
+
+  <div class="abs" id="board">
+    <div class="who"><span class="tmlogo"><span class="mk" style="width:26px;height:26px;font-size:18px">t</span></span><span id="bwho"></span></div>
+    <div class="tile"><div class="k" id="k1"></div><div class="v serif" id="v1">0</div></div>
+    <div class="tile"><div class="k" id="k2"></div><div class="v serif" id="v2">0</div></div>
+    <div class="tile"><div class="k" id="k3"></div><div class="v serif" id="v3">0</div></div>
+    <div class="tile span2"><h3 class="serif" id="bh"></h3><div class="bars" id="bars"></div></div>
+    <div class="tile"><h3 class="serif" id="qh"></h3><div class="qs" id="qs"></div></div>
+  </div>
+
+  <div class="abs" id="code"></div>
+
+  <div class="abs" id="end"><div class="mark serif">Sella</div><div class="line" id="eline"></div><span class="cta" id="ecta"></span></div>
+
+  <svg class="abs" id="cursor" viewBox="0 0 24 24"><path d="M4 2l15 9.5-6.6 1.4L16 21l-3 1.4-3.6-8.2L4 18.6z" fill="#2f3133" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  <div class="abs serif" id="cap"></div>
+  <div class="abs" id="progress"></div>
+  <div class="abs" id="grain" style="inset:0"></div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const LANG = params.get("lang") === "en" ? "en" : "cs";
+  const T = {
+    cs: {
+      tag: "AI prodavačka pro e-shopy", demo: "DEMO obchod pro ukázku AI prodavačky", ph: "Co hledáte? Např. sluchátka", sb: "Hledat",
+      // the narration – also shown as subtitles (keep in sync with the recorded voice)
+      caps: [
+        "Tohle je Sella. AI prodavačka pro e-shopy.",
+        "Zákazník přijde do TechMarketu. Prochází telefony, váhá… a nikdo se ho nezeptá, jestli nepotřebuje poradit.",
+        "Sella ho hned pozdraví, jako prodavačka v obchodě. Může jí psát, mluvit na ni, nebo se v klidu dívat sám.",
+        "Radí jen z vašeho katalogu. Najde sluchátka do vlaku za rozumnou cenu a na přání je rovnou přidá do košíku.",
+        "Když zákazník dlouho přeskakuje mezi dvěma telefony, Sella to pozná a nabídne, že mu rozdíl vysvětlí.",
+        "A vy v přehledu vidíte, na co se lidé ptají, kde váhají a kolik nákupů vzniklo s pomocí AI.",
+        "Na web ji dostanete jedním řádkem kódu. Produkty si načte sama.",
+        "Sella. Prodavačka, která zákazníkům opravdu pomůže.",
+      ],
+      greet: "Dobrý den, vítejte v TechMarketu! Chcete s něčím poradit, nebo se radši porozhlédnete sami?",
+      b1: "Napsat", b2: "Promluvit si", b3: "Díky, jen se dívám", csub: "prodavačka · AI asistentka",
+      m1: "Hledám sluchátka do vlaku, do 3 000 Kč.", m2: "Do vlaku se vyplatí sluchátka, která vydrží celou cestu. Tyhle mají s pouzdrem až 30 hodin:",
+      price: (n) => n.toLocaleString("cs-CZ") + " Kč", stock: "skladem", add: "Do košíku", added: "V košíku ✓", m4: "Hotovo, jsou v košíku. Chcete k nim i pouzdro?",
+      tip: "Váháte mezi Nova X15 a X15 Pro? Rád vám ukážu, čím se liší.", tbtn: "Porovnat",
+      bwho: "TechMarket · přehled", k1: "Rozhovory", k2: "Využilo prodavačku", k3: "Nákupy s pomocí AI", bh: "Kde zákazníci váhají", qh: "Na co se ptají",
+      bars: [["Porovnávají dva telefony", 41], ["Dlouho stojí v košíku", 27], ["Mění filtry u notebooků", 19], ["Hledají a nic nenajdou", 13]],
+      qs: ["Je v balení nabíječka?", "Stihne to doprava do pátku?", "Vydrží baterie celý den?"],
+      line: "AI prodavačka, která zákazníkům opravdu pomůže.", cta: "Vyzkoušejte ukázku",
+      num: (n) => n.toLocaleString("cs-CZ"),
+    },
+    en: {
+      tag: "An AI salesperson for online shops", demo: "DEMO shop showing the AI salesperson", ph: "What are you looking for?", sb: "Search",
+      caps: [
+        "This is Sella. An AI salesperson for online shops.",
+        "A customer walks into TechMarket. They browse phones, hesitate… and nobody asks if they need a hand.",
+        "Sella greets them right away, like a real shop assistant. They can chat, talk, or simply browse on their own.",
+        "It recommends only from your catalogue. It finds headphones for the train at a fair price, and adds them to the cart on request.",
+        "When a customer keeps jumping between two phones, Sella notices, and offers to explain the difference.",
+        "And in your dashboard you see what people ask, where they hesitate, and how many purchases the AI helped with.",
+        "Adding it to your site takes one line of code. It reads your products by itself.",
+        "Sella. A salesperson that genuinely helps your customers.",
+      ],
+      greet: "Hi, welcome to TechMarket! Can I help you find something, or would you rather browse?",
+      b1: "Chat", b2: "Talk", b3: "Thanks, just looking", csub: "shop assistant · AI",
+      m1: "I need headphones for the train, under CZK 3,000.", m2: "For the train you want headphones that last the whole trip. These give you up to 30 hours with the case:",
+      price: (n) => "CZK " + n.toLocaleString("en-GB"), stock: "in stock", add: "Add to cart", added: "In cart ✓", m4: "Done, they're in your cart. Want a case to go with them?",
+      tip: "Torn between the Nova X15 and X15 Pro? I can show you how they differ.", tbtn: "Compare",
+      bwho: "TechMarket · insights", k1: "Conversations", k2: "Used the assistant", k3: "Purchases with AI", bh: "Where customers hesitate", qh: "What they ask",
+      bars: [["Comparing two phones", 41], ["Lingering in the cart", 27], ["Changing laptop filters", 19], ["Searching and finding nothing", 13]],
+      qs: ["Is a charger in the box?", "Will it arrive by Friday?", "Does the battery last all day?"],
+      line: "An AI salesperson that genuinely helps your customers.", cta: "Try the demo",
+      num: (n) => n.toLocaleString("en-GB"),
+    },
+  }[LANG];
+  document.documentElement.lang = LANG;
+  const $ = (id) => document.getElementById(id);
+
+  // ---- static content
+  $("ttag").textContent = T.tag; $("demo").textContent = T.demo; $("ph").textContent = T.ph; $("sb").textContent = T.sb;
+  $("gb1").textContent = T.b1; $("gb2").textContent = T.b2; $("gb3").textContent = T.b3; $("csub").textContent = T.csub;
+  $("m3price").textContent = `${T.price(1290)} · ${T.stock}`;
+  $("ttext").textContent = T.tip; $("tbtn").textContent = T.tbtn;
+  $("bwho").textContent = T.bwho; $("k1").textContent = T.k1; $("k2").textContent = T.k2; $("k3").textContent = T.k3; $("bh").textContent = T.bh; $("qh").textContent = T.qh;
+  $("bars").innerHTML = T.bars.map(([n, v]) => `<div class="bar"><span>${n}</span><em style="font-style:normal;color:#7b8188">${v} %</em><div class="tr"><div class="fi" data-w="${v}"></div></div></div>`).join("");
+  $("qs").innerHTML = T.qs.map((q) => `<div>„${q}“</div>`).join("");
+  $("eline").textContent = T.line; $("ecta").textContent = T.cta;
+
+  // the real TechMarket products (pictures from the shop's own catalogue)
+  const PRODUCTS = [["m1", "Nova X15 Pro 256 GB", 24990, 27990], ["a3", "Tono Buds Lite", 1290], ["n1", "Vektor Air 14 (16 GB / 512 GB)", 29990], ["m2", "Nova X15 128 GB", 17990],
+    ["w1", "Nova Watch 6 44 mm", 7490], ["a2", "Tono Buds Pro", 4490], ["n3", "Lumen Book 15 (16 GB / 512 GB)", 14990, 17490], ["x1", "Powerbanka 20 000 mAh 65 W", 1190, 1490]];
+  $("grid").innerHTML = PRODUCTS.map(([id, name, price, old], i) =>
+    `<div class="prod" id="p${i}"><div class="img"><img src="/api/img/${id}.svg" alt=""></div><div class="n">${name}</div><div class="p">${T.price(price)}${old ? `<s>${T.price(old)}</s>` : ""}</div></div>`).join("");
+
+  // the TechMarket mascot: its logo tile with eyes and a smile – what the widget makes from the shop's logo
+  const TEE = "M42.6 29.6 L52.2 24.9 L52.2 42 L57.4 42 Q58.6 42 58.6 43.2 L58.6 48.3 Q58.6 49.5 57.4 49.5 L52.2 49.5 L52.2 57.4 Q52.2 60.4 55.2 60.4 L57.6 60.4 Q58.8 60.4 58.8 61.6 L58.8 66 Q58.8 67.1 57.6 67.3 Q55 67.7 52.6 67.7 Q42.6 67.7 42.6 57.8 L42.6 49.5 L37.6 49.5 Q36.4 49.5 36.4 48.3 L36.4 43.2 Q36.4 42 37.6 42 L42.6 42 Z";
+  const face = (s) => `<svg width="${s}" height="${s}" viewBox="0 0 100 100"><defs><linearGradient id="g${s}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a4aa0"/><stop offset=".45" stop-color="#26347a"/><stop offset="1" stop-color="#141c4d"/></linearGradient></defs>
+    <ellipse cx="52" cy="102" rx="38" ry="3.6" fill="rgba(15,24,73,.16)"/>
+    <g transform="rotate(-4.5 50 50)"><rect x="4" y="4" width="92" height="92" rx="25" fill="url(#g${s})"/>
+    <path d="M11.5 27 Q12.5 11.5 28 9.6" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="${TEE}" fill="#fff"/>
+    <path d="M13.3 27.6 Q20 17 28.4 20.5" fill="none" stroke="#0d1440" stroke-width="3.8" stroke-linecap="round"/><path d="M70 22 Q79 16 86.5 25.5" fill="none" stroke="#0d1440" stroke-width="3.8" stroke-linecap="round"/>
+    <circle cx="20" cy="50.4" r="12.6" fill="#fff" stroke="#0d1440" stroke-width="1.4"/><circle cx="80" cy="49.3" r="12.6" fill="#fff" stroke="#0d1440" stroke-width="1.4"/>
+    <g class="pupils"><circle cx="23" cy="50.4" r="8.8" fill="#101850"/><circle cx="77" cy="49.3" r="8.8" fill="#101850"/><circle cx="26.9" cy="52.5" r="2.5" fill="#fff"/><circle cx="80.9" cy="51.4" r="2.5" fill="#fff"/></g>
+    <path d="M33.5 72.5 Q47 81 61.5 72" fill="none" stroke="#0d1440" stroke-width="3.2" stroke-linecap="round"/></g></svg>`;
+  $("mascot").innerHTML = face(82);
+  $("chatMascot").innerHTML = face(36);
+
+  // ---- timing helpers
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  const out = (x) => 1 - Math.pow(1 - clamp(x), 3);
+  const io = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const on = (t, a, b, fi = 0.6, fo = 0.6) => Math.min(out((t - a) / fi), out((b - t) / fo));
+  const type = (text, t, a, cps = 38) => text.slice(0, Math.max(0, Math.floor((t - a) * cps)));
+  const set = (el, op, tf = "") => { el.style.opacity = op; el.style.transform = tf; el.style.visibility = op > 0.001 ? "visible" : "hidden"; };
+
+  // scene lengths: given by the recording (fitted to the narration), otherwise the shortest that works
+  const NAMES = ["title", "shop", "greet", "chat", "hes", "board", "code", "end"];
+  const MIN = [5, 6, 7, 10, 7, 8, 5, 6];
+  const lens = (params.get("d") || "").split(",").map(Number);
+  const S = {};
+  let acc = 0;
+  NAMES.forEach((n, i) => { S[n] = acc; acc += Math.max(MIN[i], lens[i] || 0); });
+  S.len = acc;
+  const DURATION = S.len;
+  // cursor waypoints, relative to their scene: [scene, seconds into it, x, y]
+  const path = [["shop", 0.6, 300, 600], ["shop", 1.6, 330, 290], ["shop", 2.8, 1000, 290], ["shop", 3.8, 560, 300], ["shop", 4.8, 760, 480], ["shop", 5.6, 640, 400],
+    ["greet", 1.6, 640, 420], ["greet", 3.4, 506, 380], ["greet", 4, 500, 376],
+    ["hes", -0.3, 900, 600], ["hes", 0.6, 270, 260], ["hes", 1.5, 1000, 270], ["hes", 2.3, 270, 260], ["hes", 3.1, 1000, 270], ["hes", 3.9, 280, 280], ["hes", 5, 280, 300]]
+    .map(([s, dt, x, y]) => [S[s] + dt, x, y]);
+  function cursorAt(t) {
+    let i = path.findIndex((p) => p[0] > t);
+    if (i <= 0) i = i === 0 ? 1 : path.length - 1;
+    const [t0, x0, y0] = path[i - 1], [t1, x1, y1] = path[i];
+    const k = io((t - t0) / (t1 - t0));
+    return [lerp(x0, x1, k), lerp(y0, y1, k)];
+  }
+  function hop(t, a, d, x0, y0, x1, y1, h) {
+    const u = clamp((t - a) / d);
+    const x = lerp(x0, x1, u), y = lerp(y0, y1, u) - h * 4 * u * (1 - u);
+    const land = clamp((t - a - d) / 0.5);
+    const sq = t > a + d ? 1 - 0.18 * Math.exp(-6 * land) * Math.cos(land * 9) : 1;
+    return `translate(${x}px, ${y}px) scale(${2 - sq}, ${sq})`;
+  }
+  const CODE = [["t", "<script"], ["", " "], ["a", "src"], ["", "="], ["s", '"https://sella…/prodavac.js"'], ["", "\n        "],
+    ["a", "data-client"], ["", "="], ["s", '"techmarket"'], ["", " "], ["a", "defer"], ["t", "><\/script>"]];
+
+  function render(t) {
+    $("c1").style.transform = `translate(${Math.sin(t / 9) * 40}px, ${Math.cos(t / 11) * 30}px)`;
+    $("c2").style.transform = `translate(${Math.sin(t / 9) * 44}px, ${Math.cos(t / 11) * 34}px)`;
+    $("c3").style.transform = `translate(${Math.cos(t / 7) * 30}px, ${Math.sin(t / 8) * 20}px)`;
+
+    // 1 · title
+    const tv = on(t, S.title, S.shop - 0.3, 0.01, 0.8);
+    set($("title"), tv, `translateY(${(1 - tv) * -20}px)`);
+    [...$("tmark").children].forEach((s, i) => { const k = out((t - 0.2 - i * 0.12) / 0.9); s.style.opacity = k; s.style.transform = `translateY(${(1 - k) * 30}px)`; s.style.filter = `blur(${(1 - k) * 10}px)`; });
+    $("ttag").style.opacity = out((t - 1.2) / 0.8);
+
+    // 2–4 · TechMarket
+    const bv = on(t, S.shop, S.board - 0.2, 0.8, 0.7);
+    set($("browser"), bv, `translateY(${(1 - bv) * 40}px) scale(${0.96 + 0.04 * bv})`);
+    const added = S.chat + 7.1;
+    $("badge").style.opacity = t > added ? 1 : 0;
+    $("badge").style.transform = `scale(${t > added ? 1 + 0.5 * Math.exp(-8 * (t - added)) : 0})`;
+    $("p0").classList.toggle("hot", t > S.hes + 0.6 && t < S.board);
+    $("p3").classList.toggle("hot", t > S.hes + 1.5 && t < S.board);
+
+    const cv = Math.max(on(t, S.shop + 0.5, S.greet + 4.2, 0.4, 0.4), on(t, S.hes - 0.5, S.hes + 5.2, 0.4, 0.4));
+    const [cx, cy] = cursorAt(t);
+    set($("cursor"), cv, `translate(${cx}px, ${cy}px)`);
+
+    let mv = 0, mt = "";
+    if (t >= S.greet && t < S.chat) {
+      mv = 1;
+      mt = hop(t, S.greet, 1.1, 1080, 520, 560, 470, 180);
+      if (t > S.greet + 2.8 && t < S.greet + 6) mt += ` rotate(${Math.sin((t - S.greet) * 6) * 3}deg)`;
+    } else if (t >= S.hes && t < S.board) {
+      mv = on(t, S.hes, S.board - 0.2, 0.4, 0.5);
+      mt = t < S.hes + 3.2 ? `translate(1080px, 600px)` : hop(t, S.hes + 3.2, 0.8, 1080, 600, 1040, 500, 60);
+    }
+    set($("mascot"), mv, mt);
+    const look = `translate(${Math.max(-3, Math.min(3, (cx - 600) / 120))}px, ${Math.max(-2, Math.min(2, (cy - 450) / 120))}px)`;
+    $("mascot").querySelectorAll(".pupils").forEach((p) => { p.style.transform = look; });
+
+    const gv = on(t, S.greet + 1.4, S.chat - 0.6, 0.5, 0.4);
+    set($("greet"), gv, `scale(${0.6 + 0.4 * out((t - S.greet - 1.4) / 0.5)})`);
+    $("gtext").textContent = type(T.greet, t, S.greet + 1.8, 45);
+    $("gb1").style.boxShadow = t > S.greet + 4 && t < S.chat ? "0 0 0 3px rgba(34,136,229,.35)" : "none";
+
+    const chv = on(t, S.chat, S.hes - 0.3, 0.6, 0.5);
+    set($("chat"), chv, `translateY(${(1 - chv) * 30}px)`);
+    const show = (id, a) => { const k = out((t - a) / 0.4); $(id).style.opacity = k; $(id).style.transform = `translateY(${(1 - k) * 10}px)`; };
+    $("m1").textContent = T.m1; show("m1", S.chat + 0.6);
+    $("m2").textContent = type(T.m2, t, S.chat + 2.2, 55) || "…"; show("m2", S.chat + 1.8);
+    show("m3", S.chat + 4.3);
+    $("m3add").textContent = t > added ? T.added : T.add; $("m3add").classList.toggle("done", t > added);
+    $("m4").textContent = type(T.m4, t, S.chat + 7.8, 55); show("m4", S.chat + 7.6);
+    if (t >= S.chat + 5 && t < S.chat + 9.6) {
+      const k = io((t - S.chat - 5) / 1.8);
+      set($("cursor"), on(t, S.chat + 5, S.chat + 9.6, 0.3, 0.4), `translate(${lerp(900, 1046, k)}px, ${lerp(560, 388, k)}px) scale(${t > S.chat + 7 && t < S.chat + 7.25 ? 0.85 : 1})`);
+    }
+
+    const hv = on(t, S.hes + 4, S.board - 0.3, 0.5, 0.4);
+    set($("tip"), hv, `scale(${0.6 + 0.4 * out((t - S.hes - 4) / 0.5)})`);
+
+    const ov = on(t, S.board, S.code - 0.3, 0.8, 0.6);
+    set($("board"), ov, `translateY(${(1 - ov) * 40}px)`);
+    const cnt = out((t - S.board - 0.6) / 1.8);
+    $("v1").textContent = T.num(Math.round(1284 * cnt));
+    $("v2").textContent = Math.round(18 * cnt) + " %";
+    $("v3").textContent = T.num(Math.round(212 * cnt));
+    $("bars").querySelectorAll(".fi").forEach((f, i) => { f.style.width = f.dataset.w * out((t - S.board - 1 - i * 0.2) / 1.4) + "%"; });
+    [...$("qs").children].forEach((q, i) => { const k = out((t - S.board - 2 - i * 0.5) / 0.5); q.style.opacity = k; q.style.transform = `translateX(${(1 - k) * 16}px)`; });
+
+    const kv = on(t, S.code, S.end - 0.3, 0.6, 0.5);
+    set($("code"), kv, `translateY(${(1 - kv) * 30}px)`);
+    let left = Math.max(0, Math.floor((t - S.code - 0.6) * 30)), html = "";
+    for (const [cls, text] of CODE) {
+      if (left <= 0) break;
+      const part = text.slice(0, left); left -= text.length;
+      const safe = part.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]);
+      html += cls ? `<span class="${cls}">${safe}</span>` : safe;
+    }
+    $("code").innerHTML = html + (Math.floor(t * 2) % 2 ? '<span class="caret"></span>' : "");
+
+    const ev = on(t, S.end, DURATION + 5, 0.9, 0.1);
+    set($("end"), ev, `translateY(${(1 - ev) * 20}px)`);
+
+    // subtitles: the line that is being spoken in this scene
+    let si = NAMES.findIndex((n, i) => t >= S[n] && t < (S[NAMES[i + 1]] ?? DURATION + 99));
+    if (si < 0) si = NAMES.length - 1;
+    if ($("cap").dataset.i !== String(si)) { $("cap").textContent = T.caps[si]; $("cap").dataset.i = si; }
+    const nextStart = S[NAMES[si + 1]] ?? DURATION + 1;
+    const capv = si === 0 || si === NAMES.length - 1 ? 0 : on(t, S[NAMES[si]] + 0.35, nextStart - 0.1, 0.4, 0.3);
+    set($("cap"), capv, `translateY(${(1 - capv) * 10}px)`);
+
+    $("progress").style.width = (t / DURATION) * 100 + "%";
+    $("progress").style.opacity = params.has("rec") ? 0 : 1;
+  }
+
+  const fit = () => { const k = Math.min(innerWidth / 1280, innerHeight / 720); $("stage").style.transform = `scale(${k})`; };
+  addEventListener("resize", fit); fit();
+
+  window.__duration = DURATION;
+  window.__scenes = NAMES.map((n) => S[n]);
+  window.__render = render;
+  window.__ready = Promise.all([document.fonts.ready, ...[...document.images].map((im) => im.complete ? 0 : new Promise((r) => { im.onload = im.onerror = r; }))]).then(() => true);
+  if (!params.has("rec")) {
+    let t0 = null;
+    const loop = (now) => { t0 ??= now; render(((now - t0) / 1000) % DURATION); requestAnimationFrame(loop); };
+    window.__ready.then(() => requestAnimationFrame(loop));
+  } else render(0);
+</script>
+</body>
+</html>

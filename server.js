@@ -19,7 +19,7 @@ import { recordUsage, allowance, usageForMonth, monthKey } from "./lib/usage.js"
 import { limitsFor, PLANS } from "./lib/plans.js";
 import { alert } from "./lib/alerts.js";
 import {
-  MASTER, isProduction, hashPassword, verifyPassword, safeEqual, generatePassword,
+  MASTER, isProduction, hashPassword, verifyPassword, safeEqual, generatePassword, demoPassword,
   createSession, readSession, sessionCookie, readCookie,
 } from "./lib/auth.js";
 
@@ -30,7 +30,9 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ""; // our master password (login
 
 // Vercel sets X-Forwarded-For itself (clients can't spoof it there), so req.ip is the visitor's IP.
 app.set("trust proxy", process.env.VERCEL ? true : "loopback");
-app.use(express.json({ limit: "20kb" }));
+// small bodies everywhere – except the chat, which can carry photos/PDFs (Vercel allows ≈ 4.5 MB per request)
+const smallJson = express.json({ limit: "20kb" }), chatJson = express.json({ limit: "4500kb" });
+app.use((req, res, next) => (req.path === "/api/chat" ? chatJson : smallJson)(req, res, next));
 // the widget's analytics beacons arrive as text/plain (see flush() in the widget) – JSON inside
 app.use("/api/events", express.text({ type: "text/plain", limit: "20kb" }), (req, res, next) => {
   if (typeof req.body === "string") { try { req.body = JSON.parse(req.body); } catch { req.body = {}; } }
@@ -210,7 +212,7 @@ app.post("/api/proactive", rateLimit("proactive", 60, 60e3, { shared: true }), w
 });
 
 app.post("/api/chat", rateLimit("chat", 30, 5 * 60e3, { shared: true }), withClient(), async (req, res) => {
-  const { sessionId, text, context } = req.body ?? {};
+  const { sessionId, text, attachments, context } = req.body ?? {};
   if (!validSession(sessionId)) return res.status(400).json({ error: "Neplatná session." });
 
   res.set({ "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache", Connection: "keep-alive" });
@@ -225,7 +227,7 @@ app.post("/api/chat", rateLimit("chat", 30, 5 * 60e3, { shared: true }), withCli
   const used = [];
   try {
     await chat({
-      sessionId, text, send, signal: abort.signal, catalog: req.cat, useAi, meter: (u) => used.push(u),
+      sessionId, text, attachments, send, signal: abort.signal, catalog: req.cat, useAi, meter: (u) => used.push(u),
       context: { ...cleanSignals(context, req.cat), clientId: req.client.id, agentName: agentName(req.client) },
     });
     send({ type: "done" });
@@ -309,6 +311,8 @@ app.post("/api/admin/login", sameOrigin, rateLimit("login", 10, 15 * 60e3, { sha
       sessionFor = id;
       // move the old plain-text password to a hash
       setPasswordHash(id, hashPassword(password)).catch((err) => console.error("password upgrade failed:", err.message));
+    } else if (client && isBuiltIn(id) && safeEqual(password, demoPassword(id))) {
+      sessionFor = id; // a showcase shop's starting password (until a new one is set)
     } else {
       verifyPassword(password, "scrypt$16384$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // same timing as a real check
     }
@@ -375,7 +379,8 @@ app.post("/api/analytics/insights", admin, rateLimit("insights", 10, 10 * 60e3, 
   if (!(await allowance(req.client)).chat) return res.status(429).json({ error: "Limit zpráv od AI v tarifu je pro tento měsíc vyčerpaný." });
   const used = [];
   try {
-    res.json({ markdown: await generateInsights(await summarize(req.client.id, req.cat), req.cat, (u) => used.push(u)) });
+    const lang = req.body?.lang === "en" ? "en" : "cs"; // the dashboard's language
+    res.json({ markdown: await generateInsights(await summarize(req.client.id, req.cat), req.cat, (u) => used.push(u), lang) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Analýzu se nepodařilo vygenerovat." });
@@ -403,7 +408,9 @@ app.get("/api/admin/clients", async (req, res) => {
           agentName: c.agentName, description: c.description ?? "", feedUrl: c.feedUrl ?? "",
           info: c.info ?? {}, integration: c.integration ?? {}, freeShippingFrom: c.freeShippingFrom ?? null,
           plan: c.plan, monthlyMessageLimit: c.monthlyMessageLimit, ownerEmail: c.ownerEmail ?? "", notes: c.notes ?? "",
-          hasPassword: Boolean(c.passwordHash || c.legacyToken),
+          hasPassword: Boolean(c.passwordHash || c.legacyToken || (isBuiltIn(c.id) && demoPassword(c.id))),
+          // a showcase shop's starting password can be shown to us (it is derived, not stored)
+          demoPassword: isBuiltIn(c.id) && !c.passwordHash && !c.legacyToken ? demoPassword(c.id) : null,
           limits: limitsFor(c),
           usage: { messages: u.messages, aiCalls: u.ai_calls, ttsChars: u.tts_chars, costUsd: Math.round(u.cost_usd * 100) / 100 },
           feed: c.catalog === "techmarket" ? { products: techmarket.products.length, demo: true } : feeds.get(c.id) ?? null,
