@@ -146,6 +146,21 @@
     .demo p { margin: 0; color: var(--ink-2); font-size: 15px; }
     .demo .go { margin-left: auto; font-size: 22px; color: var(--ink-3); transition: transform .2s; } .demo:hover .go { transform: translateX(4px); color: var(--ink); }
     .nav .sella-lang { margin-left: 4px; }
+
+    /* price list */
+    .prices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 44px; }
+    .plan { padding: 24px; display: flex; flex-direction: column; gap: 6px; position: relative; }
+    .plan.popular { box-shadow: inset 0 0 0 2px var(--accent), 0 30px 80px -40px rgba(30, 50, 80, .45); }
+    .plan .flag { position: absolute; top: -12px; left: 22px; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; background: var(--accent); color: #fff; padding: 5px 11px; border-radius: 99px; }
+    .plan .nm { font: 400 30px/1.1 var(--serif); }
+    .plan .pr { font: 400 44px/1.05 var(--serif); margin: 10px 0 2px; letter-spacing: -.01em; }
+    .plan .pr small { font: 400 15px var(--sans); color: var(--ink-3); }
+    .plan .per { font-size: 13.5px; color: var(--ink-3); min-height: 20px; }
+    .plan ul { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 9px; font-size: 15px; color: var(--ink-2); }
+    .plan ul li::before { content: "✓"; color: #2f8a5d; font-weight: 700; margin-right: 9px; }
+    .prices-note { margin-top: 22px; color: var(--ink-3); font-size: 15px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    @media (max-width: 1000px) { .prices { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .prices { grid-template-columns: 1fr; } }
     @media (max-width: 900px) { .demos { grid-template-columns: 1fr; } }
     @media (max-width: 520px) { .film { border-radius: 18px; } .film .play .disc { width: 70px; height: 70px; } .demo { padding: 18px; } .demo .ico { width: 52px; height: 52px; } }
   </style>
@@ -159,6 +174,7 @@
         <a href="#jak" data-i18n="nav.how">Jak to funguje</a>
         <a href="#prehled" data-i18n="nav.overview">Přehled pro majitele</a>
         <a href="#zasady" data-i18n="nav.rules">Zásady</a>
+        <a href="#cenik" data-i18n="nav.pricing">Ceník</a>
       </nav>
       <span id="lang"></span>
       <a class="btn light" href="/sella/prihlaseni.html" data-i18n="nav.login">Přihlásit se</a>
@@ -286,6 +302,20 @@
       </div>
     </section>
 
+    <section class="block" id="cenik">
+      <div class="wrap">
+        <div class="ov-head rv">
+          <div>
+            <p class="eyebrow" data-i18n="pr.eyebrow">Ceník</p>
+            <h2 class="title" data-i18n-html="pr.title">Platíte jen za to, <em>kolik</em> prodává.</h2>
+          </div>
+          <p class="lead" data-i18n="pr.lead">Tarify se liší jen počtem zpráv a hlasu – všechno ostatní mají všechny. Když se zprávy tarifu vyčerpají, prodavačka se do konce měsíce sama vypne, takže nikdy nezaplatíte víc.</p>
+        </div>
+        <div class="prices" id="prices"></div>
+        <div class="prices-note rv"><span data-i18n="pr.note">Tarif si vyberete i změníte kdykoli ve svém přehledu. Ceny jsou bez DPH.</span><a class="btn dark" href="/sella/prihlaseni.html"><span data-i18n="pr.cta">Přihlásit se a vybrat tarif</span> <span class="arr">→</span></a></div>
+      </div>
+    </section>
+
     <section class="block closing">
       <div class="wrap rv">
         <h2 class="title" data-i18n-html="close.title">Už se Sellou <em>prodáváte</em>?</h2>
@@ -340,6 +370,11 @@
         "close.title": "Už se Sellou <em>prodáváte</em>?", "close.lead": "Přihlaste se ID svého obchodu a heslem, které jste od nás dostali.", "close.btn": "Přihlásit se do přehledu",
         "close.alt": 'Zatím ne? Vyzkoušejte si ji na <a href="/techmarket/">obchodě s elektronikou</a> nebo na <a href="/kavarna">pražírně kávy</a>.',
         "foot.privacy": "Ochrana soukromí", "foot.login": "Přihlášení", "title": "Sella – AI prodavačka pro e-shopy", "play": "Přehrát video",
+        "nav.pricing": "Ceník", "pr.eyebrow": "Ceník", "pr.title": "Platíte jen za to, <em>kolik</em> prodává.",
+        "pr.lead": "Tarify se liší jen počtem zpráv a hlasu – všechno ostatní mají všechny. Když se zprávy tarifu vyčerpají, prodavačka se do konce měsíce sama vypne, takže nikdy nezaplatíte víc.",
+        "pr.note": "Tarif si vyberete i změníte kdykoli ve svém přehledu. Ceny jsou bez DPH.", "pr.cta": "Přihlásit se a vybrat tarif",
+        "pr.month": "/ měsíc", "pr.free": "Zdarma", "pr.popular": "Nejoblíbenější", "pr.msgs": "zpráv od AI měsíčně", "pr.voice": "znaků přirozeného hlasu",
+        "pr.all": "Přehled, AI doporučení, fotky v chatu", "pr.perMsg": "za zprávu", "pr.trial": "na vyzkoušení",
       },
       en: {
         "nav.top": "Sella – back to top", "nav.label": "Main", "nav.demos": "Showcases", "nav.how": "How it works", "nav.overview": "Owner insights", "nav.rules": "Principles", "nav.login": "Sign in",
@@ -371,6 +406,11 @@
         "close.title": "Already selling with <em>Sella</em>?", "close.lead": "Sign in with your shop ID and the password we sent you.", "close.btn": "Sign in to your insights",
         "close.alt": 'Not yet? Try it on an <a href="/techmarket/">electronics store</a> or a <a href="/kavarna">coffee roastery</a>.',
         "foot.privacy": "Privacy", "foot.login": "Sign in", "title": "Sella – an AI salesperson for online shops", "play": "Play video",
+        "nav.pricing": "Pricing", "pr.eyebrow": "Pricing", "pr.title": "You pay for <em>how much</em> it sells.",
+        "pr.lead": "Plans differ only in messages and voice – everything else is in all of them. When a plan's messages run out, the assistant switches itself off until the month ends, so you never pay more.",
+        "pr.note": "Pick or change your plan any time in your insights. Prices exclude VAT.", "pr.cta": "Sign in and pick a plan",
+        "pr.month": "/ month", "pr.free": "Free", "pr.popular": "Most popular", "pr.msgs": "AI messages a month", "pr.voice": "characters of natural voice",
+        "pr.all": "Insights, AI advice, photos in chat", "pr.perMsg": "per message", "pr.trial": "to try it out",
       },
     });
     I.switcher(document.getElementById("lang"));
@@ -391,6 +431,23 @@
     video.addEventListener("ended", () => { play.hidden = false; });
     setFilm();
     I.onChange(setFilm);
+
+    // the price list – straight from the server's plans
+    let plans = [];
+    function renderPlans() {
+      const nf = (n, o) => Number(n).toLocaleString(I.locale(), o);
+      const money = (n, o) => (I.lang === "cs" ? nf(n, o) + " Kč" : "CZK " + nf(n, o));
+      document.getElementById("prices").innerHTML = plans.map((p, i) => `
+        <div class="pane plan rv in${p.popular ? " popular" : ""}" style="--d:${i}">
+          ${p.popular ? `<span class="flag">${I.t("pr.popular")}</span>` : ""}
+          <span class="nm">${I.lang === "en" ? p.nameEn : p.name}</span>
+          <span class="pr">${p.priceCzk ? money(p.priceCzk) : I.t("pr.free")} ${p.priceCzk ? `<small>${I.t("pr.month")}</small>` : ""}</span>
+          <span class="per">${p.priceCzk ? `${money(p.priceCzk / p.messages, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${I.t("pr.perMsg")}` : I.t("pr.trial")}</span>
+          <ul><li>${nf(p.messages)} ${I.t("pr.msgs")}</li><li>${nf(p.ttsChars)} ${I.t("pr.voice")}</li><li>${I.t("pr.all")}</li></ul>
+        </div>`).join("");
+    }
+    fetch("/api/plans").then((r) => r.json()).then((d) => { plans = d.plans || []; renderPlans(); }).catch(() => {});
+    I.onChange(renderPlans);
 
     // the nav gets a frosted bar once the page scrolls
     const nav = document.getElementById("nav");

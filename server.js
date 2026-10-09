@@ -3,20 +3,20 @@ import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
-import { techmarket } from "./lib/catalog.js";
+import { techmarket, techmarketEn } from "./lib/catalog.js";
 import { getCatalog, catalogStatus, storedStatuses } from "./lib/catalogs.js";
 import { productSvg } from "./lib/images.js";
 import { feedXml as kavarnaFeed, kavarnaSvg } from "./catalog/kavarna.js";
 import { recordMany, summarize, purgeOld, EVENT_TYPES, NUDGE_LABELS, RETENTION_DAYS } from "./lib/analytics.js";
 import { chat, generateInsights, writeHesitationOffer, ChatError, MODEL, hasApiKey } from "./lib/assistant.js";
 import { personaName } from "./lib/persona.js";
-import { getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, isBuiltIn } from "./lib/clients.js";
+import { getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn } from "./lib/clients.js";
 import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
 import { rateLimit, hit } from "./lib/ratelimit.js";
 import { recordUsage, allowance, usageForMonth, monthKey } from "./lib/usage.js";
-import { limitsFor, PLANS } from "./lib/plans.js";
+import { limitsFor, PLANS, publicPlans } from "./lib/plans.js";
 import { alert } from "./lib/alerts.js";
 import {
   MASTER, isProduction, hashPassword, verifyPassword, safeEqual, generatePassword, demoPassword,
@@ -65,7 +65,8 @@ const withClient = ({ lenient = false } = {}) => async (req, res, next) => {
     : lenient || req.get("Sec-Fetch-Site") === "same-origin";
   if (!ok) return res.status(403).json({ error: "Tento web nemá povolený přístup." });
   req.client = client;
-  req.cat = await getCatalog(client);
+  req.lang = (req.body?.lang ?? req.query.lang) === "en" ? "en" : "cs"; // the page's language (Czech by default)
+  req.cat = await getCatalog(client, { lang: req.lang });
   next();
 };
 
@@ -177,8 +178,9 @@ app.post("/api/tts", rateLimit("tts", 120, 60e3, { shared: true }), withClient()
 
 // TechMarket demo shop's own data (public/shop.js renders the shop from it)
 app.get("/api/catalog", (req, res) => {
-  const { store, categories, products, related } = techmarket;
-  res.json({ store: { name: store.name, tagline: store.tagline, freeShippingFrom: store.freeShippingFrom }, categories, products, related, promotions: techmarket.activePromotions() });
+  const cat = req.query.lang === "en" ? techmarketEn : techmarket; // the demo shop in Czech or English
+  const { store, categories, products, related } = cat;
+  res.json({ store: { name: store.name, tagline: store.tagline, freeShippingFrom: store.freeShippingFrom }, categories, products, related, promotions: cat.activePromotions() });
 });
 
 app.get("/api/img/:id.svg", (req, res) => {
@@ -191,17 +193,28 @@ app.post("/api/cart/price", rateLimit("cart", 60, 60e3), withClient(), (req, res
 
 // Greeting on arrival + behaviour-based tips. Rule-based: instant and free (except the AI-written
 // offer of help for a hesitating customer, which counts towards the shop's usage).
+// is the shop's assistant switched on? (off once the plan's messages for the month are used up)
+app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req, res) => {
+  const a = await allowance(req.client);
+  res.json({ on: a.chat && req.client.active !== false });
+});
+
+// the plans shops can choose (Sella price list)
+app.get("/api/plans", (req, res) => res.json({ plans: publicPlans() }));
+
 app.post("/api/proactive", rateLimit("proactive", 60, 60e3, { shared: true }), withClient(), async (req, res) => {
   const { sessionId, trigger, signals } = req.body ?? {};
   if (!validSession(sessionId)) return res.status(400).json({ error: "Neplatná session." });
-  const s = { ...cleanSignals(signals, req.cat), agentName: agentName(req.client) };
+  const s = { ...cleanSignals(signals, req.cat), agentName: agentName(req.client), lang: req.lang };
+  // the month's messages are used up → the assistant is off until the shop picks a bigger plan
+  if (!(await allowance(req.client)).chat) return res.json({ off: true });
   if (trigger === "greeting") return res.json({ greeting: greeting(s, req.cat) });
   const nudge = nextNudge(s, req.cat);
   if (nudge?.hesitation) {
     // a stuck customer gets an offer written for their exact situation
     const used = [];
     nudge.text = await writeHesitationOffer({
-      ...nudge.hesitation, declined: s.declined, fallback: nudge.text, shopName: req.client.name,
+      ...nudge.hesitation, declined: s.declined, fallback: nudge.text, shopName: req.client.name, lang: req.lang,
       useAi: (await allowance(req.client)).chat, meter: (u) => used.push(u),
     });
     // an AI-written offer costs like an answer, so it counts towards the plan as one message
@@ -222,13 +235,14 @@ app.post("/api/chat", rateLimit("chat", 30, 5 * 60e3, { shared: true }), withCli
   const abort = new AbortController();
   res.on("close", () => { if (!res.writableEnded) abort.abort(); });
 
-  // over the monthly limit → the shop keeps working, the chat answers in the simple mode
+  // over the plan's monthly limit → the assistant switches itself off on the page
   const useAi = (await allowance(req.client)).chat;
+  if (!useAi) { send({ type: "off" }); send({ type: "done" }); return res.end(); }
   const used = [];
   try {
     await chat({
       sessionId, text, attachments, send, signal: abort.signal, catalog: req.cat, useAi, meter: (u) => used.push(u),
-      context: { ...cleanSignals(context, req.cat), clientId: req.client.id, agentName: agentName(req.client) },
+      context: { ...cleanSignals(context, req.cat), clientId: req.client.id, agentName: agentName(req.client), lang: req.lang },
     });
     send({ type: "done" });
   } catch (err) {
@@ -355,7 +369,7 @@ app.get("/api/admin/me", (req, res) => {
 // What the shop owner sees about their plan: price, what's included and how much is used. Our own
 // cost (Claude API) is shown only to us – owners see their price, never our margin.
 const usageView = (client, a, { master = false } = {}) => ({
-  month: monthKey(), plan: a.limits.planName, messages: a.usage.messages, messageLimit: a.limits.messages,
+  month: monthKey(), plan: a.limits.planName, planId: a.limits.plan, messages: a.usage.messages, messageLimit: a.limits.messages,
   ttsChars: a.usage.tts_chars, ttsLimit: a.limits.ttsChars,
   priceCzk: a.limits.priceCzk, // null = by agreement
   pricePerMessageCzk: a.limits.priceCzk != null && a.limits.messages ? Math.round((a.limits.priceCzk / a.limits.messages) * 100) / 100 : null,
@@ -372,10 +386,23 @@ app.get("/api/analytics", admin, async (req, res) => {
       client: { id: req.client.id, name: req.client.name },
       catalog: catalogStatus(req.client),
       usage: usageView(req.client, await allowance(req.client), { master: req.isMaster }),
+      plans: publicPlans(),
       clients: req.isMaster ? (await listClients()).map(({ id, name, active }) => ({ id, name, active })) : null,
     });
   } catch (err) { fail(res, err); }
 });
+// the shop picks a plan in its overview; it applies right away
+app.post("/api/analytics/plan", admin, rateLimit("plan", 10, 10 * 60e3, { shared: true }), async (req, res) => {
+  const plan = str(req.body?.plan, 20);
+  const allowed = req.isMaster ? Boolean(PLANS[plan]) : publicPlans().some((p) => p.id === plan);
+  if (!allowed) return res.status(400).json({ error: "Neznámý tarif." });
+  try {
+    await setClientPlan(req.client.id, plan);
+    const client = await getClient(req.client.id, { includeInactive: true });
+    res.json({ ok: true, usage: usageView(client, await allowance(client), { master: req.isMaster }) });
+  } catch (err) { fail(res, err); }
+});
+
 // downloads the client's feed again right now (normally every 6 hours)
 app.post("/api/analytics/catalog", admin, rateLimit("catalog", 6, 10 * 60e3, { shared: true }), async (req, res) => {
   try { await getCatalog(req.client, { refresh: true }); res.json(catalogStatus(req.client)); } catch (err) { fail(res, err); }

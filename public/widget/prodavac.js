@@ -41,6 +41,61 @@
     lang: script?.dataset.lang || "cs-CZ",
   };
 
+  // ---------------------------------------------------------- language ----
+  // Czech or English: data-lang on the embed, else the page's own <html lang>. The assistant talks,
+  // writes and listens in it (the AI answers in it too).
+  const UI_LANG = /^en/i.test(script?.dataset.lang || window.AIProdavac?.lang || document.documentElement.lang || "") ? "en" : "cs";
+  if (UI_LANG === "en" && !script?.dataset.lang) cfg.lang = "en-GB";
+  const TEXT = {
+    cs: {
+      open: "Otevřít prodavačku", openNamed: (n) => `Otevřít prodavačku ${n}`, role: "prodavačka · AI asistentka", close: "Zavřít", closeTip: "Zavřít tip",
+      skip: "Díky, jen se dívám", notNow: "Teď ne, díky", launch: "Poradit s nákupem", write: "Napsat", talk: "Promluvit si",
+      greet: (n) => `Dobrý den, vítejte! Jsem ${n}. Chcete s něčím poradit, nebo se radši porozhlédnete sami?`,
+      quip: "Jasně, v klidu se porozhlédněte. Kdyby něco, jsem tady.",
+      idle: "Ráda poradím", think: "Přemýšlím…", typing: "Píšu…", speak: "Mluvím…", listen: "Poslouchám…", happy: "Skvělá volba! 🎉",
+      noVoice: "Váš prohlížeč nepodporuje hlasové ovládání (zkuste Chrome nebo Edge). Můžeme si ale psát.",
+      openVoice: "Výborně, poslouchám. Řekněte mi, co hledáte, nebo k čemu to budete potřebovat.",
+      openChat: "Výborně! 🙂 Co hledáte?\n\nKlidně popište, k čemu to potřebujete – nebo vyberte:",
+      chipGift: "🎁 Hledám dárek", askGift: "Hledám dárek. Co byste doporučila?", chipDeals: "🏷️ Jaké máte akce?", askDeals: "Jaké teď máte výhodné akce?",
+      chipShip: "🚚 Doprava a vrácení", askShip: "Jak funguje doprava a vrácení zboží?", listening: "Poslouchám.",
+      panel: (n) => `Prodavačka ${n}`, switchMode: "Přepnout hlas / psaní",
+      maxFiles: (n) => `Najednou můžete poslat nejvýš ${n} přílohy.`, fileType: "Umím otevřít fotky a PDF – tenhle soubor bohužel ne.", pdfBig: "PDF je moc velké (max. 2,5 MB).",
+      fileFail: (n) => `Soubor ${n} se nepodařilo načíst.`, rmFile: "Odebrat přílohu", loadingFile: "Načítám přílohu", drop: "Pusťte soubor sem",
+      tapTalk: "Klepněte pro mluvení / přerušení", preparing: "Připravuji…", toChat: "Raději budu psát",
+      attach: "Přiložit fotku nebo soubor", attachTitle: "Přiložit fotku nebo PDF", placeholder: "Napište, co hledáte…", msgLabel: "Zpráva pro prodavačku",
+      legal: "Odpovídá umělá inteligence a může se splést", privacy: "Ochrana soukromí", addCart: "Do košíku", inCart: "V košíku",
+      thinking: (n) => `${n} přemýšlí…`, connFail: "Spojení se nezdařilo.", removed: (n) => `Odebráno z košíku: ${n}`, added: (n) => `Přidáno do košíku: ${n}`,
+      addOnPage: (n) => `${n} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`, simple: "Teď odpovídám ve zjednodušeném režimu.",
+      vListening: "Poslouchám vás…", vThinking: "Přemýšlím…", vSpeakTouch: "Mluvím… (klepnutím mě přerušíte)", vSpeak: "Mluvím… (klidně mi skočte do řeči)", vIdle: "Klepněte na mě a mluvte",
+      micDenied: "Mikrofon není povolen. Povolte ho v prohlížeči, nebo přepněte na psaní.",
+      offNote: "Prodavačka je teď nedostupná. Děkujeme za pochopení.", attached: "přiloženo",
+    },
+    en: {
+      open: "Open the shop assistant", openNamed: (n) => `Open ${n}, the shop assistant`, role: "shop assistant · AI", close: "Close", closeTip: "Close tip",
+      skip: "Thanks, just looking", notNow: "Not now, thanks", launch: "Help me choose", write: "Chat", talk: "Talk",
+      greet: (n) => `Hi, welcome! I'm ${n}. Can I help you find something, or would you rather browse?`,
+      quip: "Sure, take your time. I'm here if you need me.",
+      idle: "Happy to help", think: "Thinking…", typing: "Typing…", speak: "Speaking…", listen: "Listening…", happy: "Great choice! 🎉",
+      noVoice: "Your browser doesn't support voice (try Chrome or Edge). We can chat instead.",
+      openVoice: "Great, I'm listening. Tell me what you're looking for, or what you need it for.",
+      openChat: "Great! 🙂 What are you looking for?\n\nTell me what you need it for – or pick one:",
+      chipGift: "🎁 Looking for a gift", askGift: "I'm looking for a gift. What would you recommend?", chipDeals: "🏷️ Any deals?", askDeals: "What good deals do you have right now?",
+      chipShip: "🚚 Delivery & returns", askShip: "How do delivery and returns work?", listening: "I'm listening.",
+      panel: (n) => `Shop assistant ${n}`, switchMode: "Switch voice / typing",
+      maxFiles: (n) => `You can send at most ${n} attachments at once.`, fileType: "I can open photos and PDFs – not this file, sorry.", pdfBig: "The PDF is too big (max. 2.5 MB).",
+      fileFail: (n) => `Couldn't load ${n}.`, rmFile: "Remove attachment", loadingFile: "Loading attachment", drop: "Drop the file here",
+      tapTalk: "Tap to talk / interrupt", preparing: "Getting ready…", toChat: "I'd rather type",
+      attach: "Attach a photo or file", attachTitle: "Attach a photo or PDF", placeholder: "Type what you're looking for…", msgLabel: "Message to the assistant",
+      legal: "Answers come from AI and may be wrong", privacy: "Privacy", addCart: "Add to cart", inCart: "In cart",
+      thinking: (n) => `${n} is thinking…`, connFail: "Couldn't connect.", removed: (n) => `Removed from cart: ${n}`, added: (n) => `Added to cart: ${n}`,
+      addOnPage: (n) => `You can add ${n} to the cart on its product page – just click its card.`, simple: "I'm answering in a simple mode right now.",
+      vListening: "Listening…", vThinking: "Thinking…", vSpeakTouch: "Speaking… (tap to interrupt)", vSpeak: "Speaking… (feel free to interrupt)", vIdle: "Tap me and talk",
+      micDenied: "The microphone isn't allowed. Allow it in your browser, or switch to typing.",
+      offNote: "The shop assistant isn't available right now. Thanks for understanding.", attached: "attached",
+    },
+  }[UI_LANG];
+  const L = (k, ...a) => (typeof TEXT[k] === "function" ? TEXT[k](...a) : TEXT[k]);
+
   cfg.privacy = script.dataset.privacyUrl || cfg.api + "/soukromi.html";
 
   // ----------------------------------------------------------- consent ----
@@ -187,7 +242,7 @@
       ...extra,
     };
   }
-  const post = (path, body) => fetch(cfg.api + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client: cfg.client, ...body }) }).then((r) => r.json());
+  const post = (path, body) => fetch(cfg.api + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client: cfg.client, lang: UI_LANG, ...body }) }).then((r) => r.json());
 
   // ------------------------------------------- automatic shop integration ----
   // Shops that don't call our JS API (no AIProdavac.getContext) are read from what their pages
@@ -394,6 +449,14 @@
   // follow the cursor). Colours, font, corner radius and light/dark mode are read
   // from the host website, so she fits in on any shop without configuration.
   const host = document.createElement("div");
+  // The shop's plan has no messages left this month → the assistant switches itself off on the page
+  // (it comes back next month, or as soon as the shop picks a bigger plan).
+  let off = false;
+  function switchOff(delay = 0) {
+    if (off) return;
+    off = true;
+    setTimeout(() => host.remove(), delay);
+  }
   host.id = "ai-prodavac";
   const root = host.attachShadow({ mode: "open" });
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -736,7 +799,7 @@
     .m.only-files .files { margin-bottom: -2px; }
     .m .files img { width: 132px; height: 132px; object-fit: cover; border-radius: 12px; display: block; }
     .m .fchip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 10px; background: rgba(255,255,255,.2); font-size: 13.5px; font-weight: 600; }
-    .panel.dropping::after { content: "Pusťte soubor sem"; position: absolute; inset: 8px; border-radius: inherit; border: 2px dashed var(--c); background: ${mix("--c", 10)};
+    .panel.dropping::after { content: "${L("drop")}"; position: absolute; inset: 8px; border-radius: inherit; border: 2px dashed var(--c); background: ${mix("--c", 10)};
       display: grid; place-items: center; font-weight: 700; color: var(--c); pointer-events: none; z-index: 5; }
 
     /* voice stage */
@@ -817,7 +880,7 @@
   const wrap = root.querySelector(".wrap");
   const el = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const fmtPrice = (n) => n.toLocaleString("cs-CZ") + " Kč";
+  const fmtPrice = (n) => (UI_LANG === "en" ? n.toLocaleString("en-GB") + " CZK" : n.toLocaleString("cs-CZ") + " Kč");
   const img = (src) => (src?.startsWith("/") ? cfg.api + src : src);
   const aurora = `<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>`;
 
@@ -1000,7 +1063,7 @@
   function md(text) {
     const blocks = esc(text.trim())
       .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
-      .replace(/(?<!\d)(\d+(?:[\s ]\d{3})*(?:,\d+)?[\s ]?(?:Kč|,-))/g, '<span class="kc">$1</span>')
+      .replace(/(?<!\d)(\d+(?:[\s ]\d{3})*(?:,\d+)?[\s ]?(?:Kč|CZK|,-))/g, '<span class="kc">$1</span>')
       .split(/\n{2,}/);
     return blocks.map((b, i) => {
       const lines = b.split("\n");
@@ -1025,7 +1088,7 @@
   }
 
   // ---------------------------------------------------------- launcher ----
-  const launcher = el(`<button class="launch" aria-label="Otevřít prodavačku"></button>`); // face added at boot
+  const launcher = el(`<button class="launch" aria-label="${L("open")}"></button>`); // face added at boot
   launcher.onclick = () => {
     hideFloat();
     api.track("assistant_opened");
@@ -1056,7 +1119,7 @@
       }
     }
   }
-  const who = (mood = "") => `<div class="who">${avatar(48, { mood })}<div><b>${esc(cfg.name)}</b><span>prodavačka · AI asistentka</span></div></div>`;
+  const who = (mood = "") => `<div class="who">${avatar(48, { mood })}<div><b>${esc(cfg.name)}</b><span>${L("role")}</span></div></div>`;
 
   // Like a salesperson walking up to you: shows up right after you come in.
   let greetingData = null;
@@ -1091,13 +1154,13 @@
         <div class="scrim"></div>
         <div class="greeter">
           <div class="bubble">
-            <button class="x" data-m="no" aria-label="Zavřít">${ICON.close}</button>
+            <button class="x" data-m="no" aria-label="${L("close")}">${ICON.close}</button>
             <p class="g-name">${esc(cfg.name)}</p>
             <p class="g-text" id="aip-greet"></p>
             <div class="g-acts">
-              <button class="g-btn pri" data-m="chat">${ICON.chat}Napsat</button>
-              <button class="g-btn" data-m="voice">${ICON.mic}Promluvit si</button>
-              <button class="g-skip" data-m="no">Díky, jen se dívám</button>
+              <button class="g-btn pri" data-m="chat">${ICON.chat}${L("write")}</button>
+              <button class="g-btn" data-m="voice">${ICON.mic}${L("talk")}</button>
+              <button class="g-skip" data-m="no">${L("skip")}</button>
             </div>
           </div>
           <div class="hop">${avatar(96)}<span class="ground"></span></div>
@@ -1144,12 +1207,12 @@
     };
     api.track("offer_shown");
 
-    const text = post("/api/proactive", { sessionId, trigger: "greeting", signals: signals() }).then((r) => r.greeting).catch(() => null);
+    const text = post("/api/proactive", { sessionId, trigger: "greeting", signals: signals() }).then((r) => { if (r.off) switchOff(); return r.greeting; }).catch(() => null);
     await jump.finished.catch(() => {});
     if (chosen) return;
     stage.querySelector(".greeter").classList.add("landed");
     updateEyes();
-    greetingData = (await text) ?? { text: `Dobrý den, vítejte! Jsem ${cfg.name}. Chcete s něčím poradit, nebo se radši porozhlédnete sami?` };
+    greetingData = (await text) ?? { text: L("greet", cfg.name) };
     setAv(av, "talk");
     await typeInto(stage.querySelector(".g-text"), greetingData.text.replace(/\s*\p{Extended_Pictographic}️?/gu, ""));
     setAv(av, "idle");
@@ -1159,7 +1222,7 @@
     state.choice = "declined"; state.lastNudgeAt = Date.now(); saveState();
     api.track("offer_declined");
     // answer like a person would, then step back
-    const quip = el(`<div class="quip" role="status">Jasně, v klidu se porozhlédněte. Kdyby něco, jsem tady.</div>`);
+    const quip = el(`<div class="quip" role="status">${L("quip")}</div>`);
     showFloat(quip, 3000, { pauseOnHover: false });
   }
 
@@ -1180,11 +1243,11 @@
     const card = el(`
       <div class="tip glass" role="status">
         ${aurora}
-        <button class="x gbtn" aria-label="Zavřít tip">${ICON.close}</button>
+        <button class="x gbtn" aria-label="${L("closeTip")}">${ICON.close}</button>
         ${who()}
         <p></p>
         ${n.product ? `<div class="prod"><img src="${esc(img(n.product.image))}" alt=""><div><b>${esc(n.product.name)}</b><span>${fmtPrice(n.product.price)}</span></div></div>` : ""}
-        <div class="chips">${n.actions.map((a, i) => `<button class="chip ${i ? "" : "solid"}" data-i="${i}" style="--i:${i + 2}">${esc(a.label)}</button>`).join("")}${stuck ? `<button class="chip ghost" data-no style="--i:${n.actions.length + 2}">Teď ne, díky</button>` : ""}</div>
+        <div class="chips">${n.actions.map((a, i) => `<button class="chip ${i ? "" : "solid"}" data-i="${i}" style="--i:${i + 2}">${esc(a.label)}</button>`).join("")}${stuck ? `<button class="chip ghost" data-no style="--i:${n.actions.length + 2}">${L("notNow")}</button>` : ""}</div>
         <span class="timer"></span>
       </div>`);
     const dismiss = () => {
@@ -1214,6 +1277,7 @@
 
   let checking = false;
   async function checkNudge() {
+    if (off) return;
     if (checking || busy || !state.greeted || document.visibilityState !== "visible") return;
     if (floatEl) return;                                             // something is already on screen
     if (!state.choice) return;                                       // greeting still unanswered
@@ -1227,8 +1291,9 @@
     if (Date.now() - state.lastNudgeAt < gap) return;
     checking = true;
     try {
-      const { nudge } = await post("/api/proactive", { sessionId, trigger: "tick", signals: signals() });
-      if (nudge && !floatEl && !busy) showTip(nudge);
+      const r = await post("/api/proactive", { sessionId, trigger: "tick", signals: signals() });
+      if (r.off) return switchOff();
+      if (r.nudge && !floatEl && !busy) showTip(r.nudge);
     } catch {} finally { checking = false; }
   }
 
@@ -1238,7 +1303,7 @@
   const history = ss.get("history") || [];
   const saveHistory = () => ss.set("history", history.slice(-60));
 
-  const MOOD_TEXT = { idle: "Ráda poradím", think: "Přemýšlím…", talk: "Píšu…", speak: "Mluvím…", listen: "Poslouchám…", happy: "Skvělá volba! 🎉" };
+  const MOOD_TEXT = { idle: L("idle"), think: L("think"), talk: L("typing"), speak: L("speak"), listen: L("listen"), happy: L("happy") };
   let happyTimer = null;
   /** Klára's mood drives her face in the header (and on the voice stage) plus the status line. */
   function setMood(mood, text) {
@@ -1247,7 +1312,7 @@
     for (const av of panel.querySelectorAll(".head .av, .stage .av")) setAv(av, mood);
     const st = panel.querySelector(".status");
     st.classList.toggle("busy", mood !== "idle" && mood !== "happy");
-    st.querySelector("span").textContent = text || (mode === "voice" && mood === "talk" ? "Mluvím…" : MOOD_TEXT[mood]);
+    st.querySelector("span").textContent = text || (mode === "voice" && mood === "talk" ? L("speak") : MOOD_TEXT[mood]);
     if (mood === "happy") happyTimer = setTimeout(() => setMood(busy ? "think" : "idle"), 1600);
   }
 
@@ -1255,7 +1320,7 @@
     let note = null;
     if (m === "voice" && !Recognition) {
       m = "chat";
-      note = "Váš prohlížeč nepodporuje hlasové ovládání (zkuste Chrome nebo Edge). Můžeme si ale psát.";
+      note = L("noVoice");
     }
     mode = m;
     if (!state.choice) { state.choice = m; saveState(); }
@@ -1266,17 +1331,17 @@
     if (note) addNote(note);
     if (!history.length && !fromTip) { // from a tip the customer's question goes straight in
       const opening = m === "voice"
-        ? "Výborně, poslouchám. Řekněte mi, co hledáte, nebo k čemu to budete potřebovat."
-        : "Výborně! 🙂 Co hledáte?\n\nKlidně popište, k čemu to potřebujete – nebo vyberte:";
+        ? L("openVoice")
+        : L("openChat");
       addBubble("bot", opening);
       if (m === "chat") {
         const chips = [];
         if (fromGreeting && greetingData?.ask) chips.push({ label: greetingData.ask.replace(/\..*$/, ""), ask: greetingData.ask });
-        chips.push({ label: "🎁 Hledám dárek", ask: "Hledám dárek. Co byste doporučila?" }, { label: "🏷️ Jaké máte akce?", ask: "Jaké teď máte výhodné akce?" }, { label: "🚚 Doprava a vrácení", ask: "Jak funguje doprava a vrácení zboží?" });
+        chips.push({ label: L("chipGift"), ask: L("askGift") }, { label: L("chipDeals"), ask: L("askDeals") }, { label: L("chipShip"), ask: L("askShip") });
         addChips(chips);
       }
     }
-    if (mode === "voice") speak(history.length === 1 ? history[0].text : "Poslouchám.", () => listen());
+    if (mode === "voice") speak(history.length === 1 ? history[0].text : L("listening"), () => listen());
     else footer.querySelector("textarea")?.focus();
   }
 
@@ -1294,13 +1359,13 @@
 
   function buildPanel() {
     panel = el(`
-      <div class="panel glass" role="dialog" aria-label="Prodavačka ${esc(cfg.name)}">
+      <div class="panel glass" role="dialog" aria-label="${esc(L("panel", cfg.name))}">
         ${aurora}
         <div class="head">
           ${avatar(46)}
           <div class="title"><b>${esc(cfg.name)}</b><div class="status"><i></i><span>${MOOD_TEXT.idle}</span></div></div>
-          <button class="gbtn" data-a="switch" title="Přepnout hlas / psaní"></button>
-          <button class="gbtn" data-a="close" title="Zavřít">${ICON.close}</button>
+          <button class="gbtn" data-a="switch" title="${L("switchMode")}"></button>
+          <button class="gbtn" data-a="close" title="${L("close")}">${ICON.close}</button>
         </div>
         <div class="msgs" aria-live="polite"></div>
         <div class="footer"></div>
@@ -1352,10 +1417,10 @@
   }
   async function addFiles(list) {
     for (const file of [...list]) {
-      if (pendingFiles.length + preparing >= MAX_FILES) { addNote(`Najednou můžete poslat nejvýš ${MAX_FILES} přílohy.`); break; }
+      if (pendingFiles.length + preparing >= MAX_FILES) { addNote(L("maxFiles", MAX_FILES)); break; }
       const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-      if (!isPdf && !file.type.startsWith("image/")) { addNote("Umím otevřít fotky a PDF – tenhle soubor bohužel ne."); continue; }
-      if (isPdf && file.size > MAX_PDF) { addNote("PDF je moc velké (max. 2,5 MB)."); continue; }
+      if (!isPdf && !file.type.startsWith("image/")) { addNote(L("fileType")); continue; }
+      if (isPdf && file.size > MAX_PDF) { addNote(L("pdfBig")); continue; }
       preparing++; renderTray();
       try {
         if (isPdf) pendingFiles.push({ kind: "pdf", media_type: "application/pdf", name: file.name, data: await blobToB64(file) });
@@ -1363,7 +1428,7 @@
           const blob = await shrinkImage(file);
           pendingFiles.push({ kind: "image", media_type: "image/jpeg", name: file.name || "foto.jpg", data: await blobToB64(blob), thumb: URL.createObjectURL(blob) });
         }
-      } catch { addNote(`Soubor ${file.name} se nepodařilo načíst.`); }
+      } catch { addNote(L("fileFail", file.name)); }
       finally { preparing--; renderTray(); }
     }
     footer?.querySelector("textarea")?.focus();
@@ -1374,8 +1439,8 @@
     tray.hidden = !pendingFiles.length && !preparing;
     tray.innerHTML = pendingFiles.map((f, i) => `
       <div class="att ${f.kind}">${f.kind === "image" ? `<img src="${f.thumb}" alt="">` : `${ICON.file}<span>${esc(f.name)}</span>`}
-        <button type="button" class="rm" data-i="${i}" aria-label="Odebrat přílohu">${ICON.close}</button></div>`).join("")
-      + (preparing ? `<div class="att loading" aria-label="Načítám přílohu"></div>` : "");
+        <button type="button" class="rm" data-i="${i}" aria-label="${L("rmFile")}">${ICON.close}</button></div>`).join("")
+      + (preparing ? `<div class="att loading" aria-label="${L("loadingFile")}"></div>` : "");
     tray.querySelectorAll(".rm").forEach((b) => b.onclick = () => {
       const [f] = pendingFiles.splice(+b.dataset.i, 1);
       if (f?.thumb) URL.revokeObjectURL(f.thumb);
@@ -1393,10 +1458,10 @@
     if (mode === "voice") {
       footer.innerHTML = `
         <div class="stage">
-          <button class="orbbtn" style="background:none;border:none;padding:0" title="Klepněte pro mluvení / přerušení">${avatar(118)}</button>
-          <div class="vstat">Připravuji…</div>
+          <button class="orbbtn" style="background:none;border:none;padding:0" title="${L("tapTalk")}">${avatar(118)}</button>
+          <div class="vstat">${L("preparing")}</div>
           <div class="interim"></div>
-          <button class="toChat">${ICON.keys} Raději budu psát</button>
+          <button class="toChat">${ICON.keys} ${L("toChat")}</button>
         </div>`;
       // tap while she talks = interrupt and listen right away; tap while listening = cancel
       footer.querySelector(".orbbtn").onclick = () => {
@@ -1410,13 +1475,13 @@
         <div class="tray" hidden></div>
         <form class="input">
           <div class="field">
-            <button class="attach" type="button" aria-label="Přiložit fotku nebo soubor" title="Přiložit fotku nebo PDF">${ICON.clip}</button>
+            <button class="attach" type="button" aria-label="${L("attach")}" title="${L("attachTitle")}">${ICON.clip}</button>
             <input type="file" accept="image/*,application/pdf" multiple hidden>
-            <textarea rows="1" placeholder="Napište, co hledáte…" maxlength="600" aria-label="Zpráva pro prodavačku"></textarea>
+            <textarea rows="1" placeholder="${L("placeholder")}" maxlength="600" aria-label="${L("msgLabel")}"></textarea>
             <button class="send" type="submit" aria-label="Odeslat">${ICON.send}</button>
           </div>
         </form>
-        <div class="legal">Odpovídá umělá inteligence a může se splést · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">Ochrana soukromí</a></div>`;
+        <div class="legal">${L("legal")} · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">${L("privacy")}</a></div>`;
       const form = footer.querySelector("form");
       const ta = form.querySelector("textarea");
       const picker = form.querySelector("input[type=file]");
@@ -1486,7 +1551,7 @@
             <div class="name">${esc(p.name)}</div>
             ${p.highlights?.[0] ? `<div class="hl">${esc(p.highlights[0])}</div>` : ""}
             <div class="price">${fmtPrice(p.price)}${p.oldPrice ? `<span class="old">${fmtPrice(p.oldPrice)}</span>` : ""}</div>
-            <button class="add">${ICON.cart} Do košíku</button>
+            <button class="add">${ICON.cart} ${L("addCart")}</button>
           </div>
         </div>`);
       // on a phone the chat covers the page – step aside so the product is visible (the chat stays saved)
@@ -1509,7 +1574,7 @@
         const btn = e.currentTarget;
         if (!addToShopCart({ id: p.id, name: p.name, price: p.price, quantity: 1, url: p.url })) return openProduct(p);
         api.track("add_to_cart", { productId: p.id, quantity: 1, source: "ai_card" });
-        btn.innerHTML = `${ICON.check} V košíku`;
+        btn.innerHTML = `${ICON.check} ${L("inCart")}`;
         btn.disabled = true;
         btn.classList.add("done");
         flyToCart(card.querySelector(".img img"));
@@ -1566,7 +1631,7 @@
     if (sendBtn) sendBtn.disabled = true;
     msgs?.querySelectorAll(":scope > .chips").forEach((c) => c.remove());
     addBubble("me", text, files);
-    const typing = el(`<div class="thinking">${avatar(26, { mood: "think" })}<span class="shimmer">${esc(cfg.name)} přemýšlí…</span></div>`);
+    const typing = el(`<div class="thinking">${avatar(26, { mood: "think" })}<span class="shimmer">${esc(L("thinking", cfg.name))}</span></div>`);
     msgs.append(typing);
     setMood("think");
     scrollDown();
@@ -1586,13 +1651,13 @@
         method: "POST", headers: { "Content-Type": "application/json" },
         // the transcript so far (without this message) travels along, so the conversation survives
         // even if the server is a fresh serverless instance that never saw it
-        body: JSON.stringify({ client: cfg.client, sessionId, text, context: signals({ via, history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: (h.text + (h.files?.length ? ` [přiloženo: ${h.files.map((x) => x.name).join(", ")}]` : "")).trim().slice(0, 2000) })) }),
+        body: JSON.stringify({ client: cfg.client, lang: UI_LANG, sessionId, text, context: signals({ via, history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: (h.text + (h.files?.length ? ` [${L("attached")}: ${h.files.map((x) => x.name).join(", ")}]` : "")).trim().slice(0, 2000) })) }),
           ...(files.length ? { attachments: files.map(({ kind, media_type, data }) => ({ kind, media_type, data })) } : {}) }),
         signal: ctrl.signal,
       });
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Spojení se nezdařilo.");
+        throw new Error(err.error || L("connFail"));
       }
       const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
       let buf = "";
@@ -1622,20 +1687,24 @@
             cur?.b.classList.remove("streaming");
             turnEls.push(addCards(ev.items));
             cur = null;
+          } else if (ev.type === "off") {
+            // the plan's messages ran out mid-conversation: say so, then step away
+            addNote(L("offNote"));
+            switchOff(2600);
           } else if (ev.type === "close") {
             closeAfter = true;
           } else if (ev.type === "cart_remove") {
             api.onRemoveFromCart?.(ev.item);
-            addNote(`Odebráno z košíku: ${ev.item.name}`);
+            addNote(L("removed", ev.item.name));
             const t = cartTarget()?.getBoundingClientRect();
             if (t) burst(t.left + t.width / 2, t.top + t.height / 2, cartTarget());
           } else if (ev.type === "cart") {
             if (addToShopCart(ev.item)) {
-              addNote(`Přidáno do košíku: ${ev.item.name}`);
+              addNote(L("added", ev.item.name));
               flyToCart(msgs.querySelector(`.pc[data-id="${CSS.escape(ev.item.id)}"] .img img`));
               setMood("happy");
             } else {
-              addNote(`${ev.item.name} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`);
+              addNote(L("addOnPage", ev.item.name));
             }
           } else if (ev.type === "replace") {
             turnEls.forEach((n) => n.remove());
@@ -1644,7 +1713,7 @@
             enqueueSpeech(ev.text);
           } else if (ev.type === "mode" && ev.offline && !state.offlineNoted) {
             state.offlineNoted = true; saveState();
-            addNote("Teď odpovídám ve zjednodušeném režimu.");
+            addNote(L("simple"));
           } else if (ev.type === "error") {
             addBubble("err", ev.message);
             if (mode === "voice") enqueueSpeech(ev.message);
@@ -1654,7 +1723,7 @@
       }
       flushSpeech(true);
     } catch (e) {
-      if (e.name !== "AbortError") addBubble("err", e.message || "Spojení se nezdařilo.");
+      if (e.name !== "AbortError") addBubble("err", e.message || L("connFail"));
     } finally {
       saveHistory(); // the streamed answer grew in place
       typing.remove();
@@ -1735,7 +1804,7 @@
     if (!vstat) return;
     const mood = { listening: "listen", thinking: "think", speaking: "speak", idle: "idle" }[st];
     setMood(mood);
-    vstat.textContent = { listening: "Poslouchám vás…", thinking: "Přemýšlím…", speaking: touchDevice ? "Mluvím… (klepnutím mě přerušíte)" : "Mluvím… (klidně mi skočte do řeči)", idle: "Klepněte na mě a mluvte" }[st];
+    vstat.textContent = { listening: L("vListening"), thinking: L("vThinking"), speaking: touchDevice ? L("vSpeakTouch") : L("vSpeak"), idle: L("vIdle") }[st];
   }
 
   let speakingText = ""; // what she is saying right now – to tell her own voice from the customer's
@@ -1930,7 +1999,7 @@
   // ---- cutting in by voice: she keeps her ears open while she talks ----
   let bargeRec = null, barged = false;
   const normSpeech = (t) => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]+/g, " ");
-  const STOP_WORDS = /\b(stop|stuj|pockej|pockejte|dost|moment|ticho|prestan|zadrz)\b/;
+  const STOP_WORDS = /\b(stop|stuj|pockej|pockejte|dost|moment|ticho|prestan|zadrz|wait|hold on|enough|quiet)\b/;
   function isOwnVoice(said) {
     // the microphone also hears the speakers: ignore what is mostly her own words
     const words = normSpeech(said).split(/\s+/).filter((w) => w.length > 2);
@@ -1968,7 +2037,7 @@
         barged = false;
         const interim = footer?.querySelector(".interim");
         if (interim) interim.textContent = "";
-        const question = said.replace(/^\s*(stop|stůj|počkejte|počkej|dost|moment|ticho|přestaň|zadrž)[\s,.!]*/i, "").trim();
+        const question = said.replace(/^\s*(stop|stůj|počkejte|počkej|dost|moment|ticho|přestaň|zadrž|wait|hold on|enough|quiet)[\s,.!]*/i, "").trim();
         if (question.split(/\s+/).length >= 2) { chime("done"); setVoiceState("thinking"); send(question); }
         else listen(); // just "stop" – she stays quiet and listens
       } else if (speaking && mode === "voice") startBargeIn(); // recognition timed out while she was still talking
@@ -2006,7 +2075,7 @@
       if (interim) interim.textContent = t || finalText;
     };
     rec.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") addNote("Mikrofon není povolen. Povolte ho v prohlížeči, nebo přepněte na psaní.");
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") addNote(L("micDenied"));
     };
     rec.onend = () => {
       listening = false;
@@ -2027,13 +2096,16 @@
   // -------------------------------------------------------------- boot ----
   api.open = (m = "chat") => openPanel(m);
 
-  function boot() {
+  async function boot() {
+    // is the shop's assistant on? (off when its plan's messages for the month are used up)
+    const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}`).then((r) => (r.ok ? r.json() : { on: true })).then((d) => d.on !== false).catch(() => true);
+    if (!on) { off = true; return; }
     theme = detectTheme();
     AV = detectPersona();
     nameReady = loadName();
     const pageReady = autoInit().catch(() => {});
-    launcher.innerHTML = avatar(60) + `<span class="launch-label">Poradit s nákupem</span>`;
-    nameReady.then(() => launcher.setAttribute("aria-label", `Otevřít prodavačku ${cfg.name}`));
+    launcher.innerHTML = avatar(60) + `<span class="launch-label">${L("launch")}</span>`;
+    nameReady.then(() => launcher.setAttribute("aria-label", L("openNamed", cfg.name)));
     document.body.append(host);
     wrap.append(launcher);
     updateEyes();

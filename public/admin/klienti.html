@@ -93,7 +93,7 @@
       cs: {
         title: "Všichni klienti – Sella", manage: "Správa klientů", logout: "Odhlásit", h1: "Všichni <em>klienti</em>", loading: "Načítám…",
         month: (m) => `Přehled · ${m}`, clients: "Klienti", aiMsgs: "Zprávy od AI", cost: "Náklad AI",
-        active: "aktivní", inactive: "neaktivní", demo: "naše ukázka",
+        active: "aktivní", inactive: "neaktivní", demo: "naše ukázka", off: "bot vypnutý – limit tarifu",
         visits: "Návštěvy", used: "Využilo AI", questions: "Dotazy", plan: "Tarif", of: (a, b) => `${a} z ${b}`, days: (d) => `za ${d} dní`,
         login: "Přihlášení", id: "ID", pw: "Heslo",
         pwDemo: "Úvodní heslo ukázky – platí, dokud nevytvoříte nové.", pwSet: "nastaveno (uložen jen otisk)", pwNone: "zatím nemá",
@@ -107,7 +107,7 @@
       en: {
         title: "All clients – Sella", manage: "Manage clients", logout: "Sign out", h1: "All <em>clients</em>", loading: "Loading…",
         month: (m) => `Overview · ${m}`, clients: "Clients", aiMsgs: "AI messages", cost: "AI cost",
-        active: "active", inactive: "inactive", demo: "our demo",
+        active: "active", inactive: "inactive", demo: "our demo", off: "bot off – plan limit",
         visits: "Visits", used: "Used AI", questions: "Questions", plan: "Plan", of: (a, b) => `${a} of ${b}`, days: (d) => `last ${d} days`,
         login: "Login", id: "ID", pw: "Password",
         pwDemo: "The demo's starting password – valid until you create a new one.", pwSet: "set (only a hash is stored)", pwNone: "none yet",
@@ -163,7 +163,7 @@
           <div class="head">
             <span class="mono" style="--tint:${TINTS[i % TINTS.length]}">${esc(c.name.slice(0, 1))}</span>
             <div style="min-width:0"><h2>${esc(c.name)}</h2><div class="meta">${esc(c.id)} · ${esc(c.domains.join(", ") || t("demo"))}</div></div>
-            <span class="chip${c.active ? "" : " off"}">${c.active ? t("active") : t("inactive")}</span>
+            <span class="chip${c.active && c.usage.messages < c.limits.messages ? "" : " off"}">${!c.active ? t("inactive") : c.usage.messages >= c.limits.messages ? t("off") : t("active")}</span>
           </div>
           <div class="stats">
             <div class="stat"><div class="k">${t("visits")}</div><div class="v">${s ? nf(s.sessions) : "–"}</div><div class="s">${s ? t("days", s.days) : "&nbsp;"}</div></div>

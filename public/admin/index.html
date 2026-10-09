@@ -90,6 +90,31 @@
     .ours { margin-top: 18px; padding-top: 14px; border-top: 1px dashed rgba(47,49,51,.18); font-size: 13.5px; color: var(--ink-2); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .ours b { font-weight: 600; color: var(--ink); }
     .ours a { color: var(--accent); text-decoration: none; }
+    .price .change { margin-top: 16px; width: 100%; height: 44px; font-size: 14.5px; }
+    .price .off { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: rgba(192,84,75,.1); color: #8f3a32; font-size: 14px; line-height: 1.45; }
+    .status.off i { background: #c0544b; box-shadow: 0 0 0 4px rgba(192,84,75,.18); }
+
+    /* choosing a plan */
+    .plans-bg { position: fixed; inset: 0; z-index: 50; background: rgba(208,217,225,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: grid; place-items: center; padding: 20px; animation: fadeIn .25s ease both; }
+    @keyframes fadeIn { from { opacity: 0; } }
+    .plans-box { width: min(1080px, 100%); max-height: calc(100vh - 40px); overflow: auto; padding: 28px; border-radius: 30px; background: #f6f8fa; box-shadow: 0 40px 100px -30px rgba(30,50,80,.6); }
+    .plans-box .top { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 18px; }
+    .plans-box h3 { font: 400 32px/1.1 var(--serif); margin: 0; }
+    .plans-box .top p { margin: 6px 0 0; color: var(--ink-3); font-size: 14.5px; }
+    .plans-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .pl { position: relative; padding: 20px; border-radius: 20px; background: #fff; box-shadow: inset 0 0 0 1px rgba(47,49,51,.08); display: flex; flex-direction: column; gap: 6px; }
+    .pl.popular { box-shadow: inset 0 0 0 2px #4e7fb4; }
+    .pl .flag { position: absolute; top: -11px; left: 18px; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: #4e7fb4; color: #fff; padding: 4px 10px; border-radius: 99px; }
+    .pl .nm { font: 400 26px/1.1 var(--serif); }
+    .pl .pr { font: 400 34px/1.1 var(--serif); margin-top: 6px; }
+    .pl .pr small { font: 400 13.5px var(--sans); color: var(--ink-3); }
+    .pl ul { list-style: none; padding: 0; margin: 10px 0 14px; display: grid; gap: 7px; font-size: 14px; color: var(--ink-2); }
+    .pl ul li::before { content: "✓"; color: #2f8a5d; font-weight: 700; margin-right: 8px; }
+    .pl .btn { margin-top: auto; height: 42px; font-size: 14px; }
+    .pl .btn[disabled] { opacity: .55; cursor: default; transform: none; }
+    .plans-err { color: #a3433a; font-size: 14px; margin-top: 12px; min-height: 20px; }
+    @media (max-width: 900px) { .plans-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .plans-grid { grid-template-columns: 1fr; } .plans-box { padding: 20px; } }
 
     /* AI advice */
     .advice { margin-top: 14px; padding: 26px 28px; border-radius: 28px; color: #eef3f9; background: linear-gradient(150deg, #5a88bf, #2f4f80); box-shadow: 0 30px 70px -36px rgba(30,50,90,.7); }
@@ -242,7 +267,10 @@
       cs: {
         home: "Domů", pick: "Obchod", all: "Všichni klienti", logout: "Odhlásit", refresh: "↻ Obnovit",
         morning: "Dobré ráno", day: "Dobrý den", evening: "Dobrý večer", period: (d) => `Přehled AI prodavačky · posledních ${d} dní`,
-        running: "Prodavačka běží s AI", limited: "Limit vyčerpán – odpovídá zjednodušeně",
+        running: "Prodavačka běží s AI", limited: "Prodavačka je vypnutá – limit tarifu vyčerpán",
+        change: "Změnit tarif", upgrade: "Zvýšit tarif a zapnout prodavačku", offNote: (m) => `Tento měsíc jste vyčerpali všech ${m} zpráv, takže se prodavačka na vašem webu vypnula. Zapne se znovu 1. dne dalšího měsíce – nebo hned, když zvolíte vyšší tarif.`,
+        plansH: "Vyberte tarif", plansP: "Platí hned. Když se vyčerpají zprávy tarifu, prodavačka se do konce měsíce vypne.", current: "Váš tarif", choose: "Vybrat", chosen: "Tarif změněn.",
+        plMsgs: (n) => `${n} zpráv od AI měsíčně`, plVoice: (n) => `${n} znaků přirozeného hlasu`, plAll: "Celý přehled, AI doporučení, fotky v chatu", popular: "Nejoblíbenější", closeP: "Zavřít",
         visits: "Návštěvy", visitsS: (n) => `${n} zaznamenaných událostí`, used: "Využilo prodavačku", usedS: (a, b) => `${a} z ${b} návštěv`,
         asks: "Dotazy na AI", asksS: (n) => `průměrně ${n} na rozhovor`, noChat: "zatím žádný rozhovor",
         bought: "Nákupy s pomocí AI", boughtS: (a, b) => `z ${b} objednávek celkem`, noOrders: "zatím žádná objednávka",
@@ -279,7 +307,10 @@
       en: {
         home: "Home", pick: "Shop", all: "All clients", logout: "Sign out", refresh: "↻ Refresh",
         morning: "Good morning", day: "Hello", evening: "Good evening", period: (d) => `AI assistant insights · last ${d} days`,
-        running: "The assistant runs with AI", limited: "Limit reached – simple answers only",
+        running: "The assistant runs with AI", limited: "The assistant is off – plan limit reached",
+        change: "Change plan", upgrade: "Upgrade and switch the assistant on", offNote: (m) => `You've used all ${m} messages this month, so the assistant switched off on your site. It comes back on the 1st of next month – or right away when you pick a bigger plan.`,
+        plansH: "Choose a plan", plansP: "Applies right away. When the plan's messages run out, the assistant switches off until the month ends.", current: "Your plan", choose: "Choose", chosen: "Plan changed.",
+        plMsgs: (n) => `${n} AI messages a month`, plVoice: (n) => `${n} characters of natural voice`, plAll: "Full insights, AI advice, photos in chat", popular: "Most popular", closeP: "Close",
         visits: "Visits", visitsS: (n) => `${n} recorded events`, used: "Used the assistant", usedS: (a, b) => `${a} of ${b} visits`,
         asks: "Questions to AI", asksS: (n) => `${n} per conversation on average`, noChat: "no conversation yet",
         bought: "Purchases with AI", boughtS: (a, b) => `of ${b} orders in total`, noOrders: "no order yet",
@@ -394,7 +425,7 @@
         $("client-pick").hidden = false; $("shop-name").hidden = true;
       } else { $("shop-name").textContent = d.client.name; $("shop-name").hidden = false; }
       const limited = u && !u.aiActive;
-      $("status").classList.toggle("limited", Boolean(limited));
+      $("status").classList.toggle("off", Boolean(limited));
       $("status").querySelector("span").textContent = limited ? t("limited") : t("running");
 
       // the four main numbers
@@ -471,7 +502,44 @@
           <div class="note">${share >= 1 ? t("over") : t("msgNote")}</div></div>
         <div class="meter"><div class="top"><span>${t("voiceUse")}</span><b>${nf(u.ttsChars)} / ${nf(u.ttsLimit)}</b></div>
           <div class="tr"><div class="fi" style="width:${tts * 100}%;background:${color(tts)}"></div></div></div>
+        ${!u.aiActive ? `<div class="off">${t("offNote", nf(u.messageLimit))}</div>` : ""}
+        <button class="btn ${u.aiActive ? "light" : "dark"} change" id="change-plan">${u.aiActive ? t("change") : t("upgrade")}</button>
         ${u.costUsd != null ? `<div class="ours"><span>${t("ours", u.costUsd.toFixed(2), nf(u.aiCalls))}</span><a href="/admin/klienti.html">${t("oursLink")}</a></div>` : ""}`;
+    }
+
+    // ---- choosing a plan: applies right away (a shop that ran out gets its assistant back)
+    document.addEventListener("click", (e) => { if (e.target.closest("#change-plan")) openPlans(); });
+    function openPlans() {
+      const d = last?.d;
+      if (!d?.plans) return;
+      const planName = (p) => (I.lang === "en" ? p.nameEn : p.name);
+      const bg = document.createElement("div");
+      bg.className = "plans-bg";
+      bg.innerHTML = `<div class="plans-box" role="dialog" aria-modal="true" aria-label="${t("plansH")}">
+        <div class="top"><div><h3>${t("plansH")}</h3><p>${t("plansP")}</p></div><button class="btn light" data-close>${t("closeP")}</button></div>
+        <div class="plans-grid">${d.plans.map((p) => {
+          const mine = p.id === d.usage.planId;
+          return `<div class="pl${p.popular ? " popular" : ""}">${p.popular ? `<span class="flag">${t("popular")}</span>` : ""}
+            <span class="nm">${esc(planName(p))}</span>
+            <span class="pr">${p.priceCzk ? kc(p.priceCzk) : t("free")} ${p.priceCzk ? `<small>${t("perMonth")}</small>` : ""}</span>
+            <ul><li>${t("plMsgs", nf(p.messages))}</li><li>${t("plVoice", nf(p.ttsChars))}</li><li>${t("plAll")}</li></ul>
+            <button class="btn ${mine ? "light" : "dark"}" data-plan="${p.id}" ${mine ? "disabled" : ""}>${mine ? t("current") : t("choose")}</button></div>`;
+        }).join("")}</div>
+        <p class="plans-err" id="plans-err"></p></div>`;
+      document.body.append(bg);
+      const close = () => bg.remove();
+      bg.onclick = async (e) => {
+        if (e.target === bg || e.target.closest("[data-close]")) return close();
+        const b = e.target.closest("[data-plan]");
+        if (!b || b.disabled) return;
+        b.disabled = true;
+        const r = await call("/api/analytics/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: b.dataset.plan }) });
+        const res = await r.json().catch(() => ({}));
+        if (!r.ok) { b.disabled = false; bg.querySelector("#plans-err").textContent = res.error || "Error"; return; }
+        close();
+        load();
+      };
+      addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); removeEventListener("keydown", esc); } });
     }
 
     function renderCatalog(c) {

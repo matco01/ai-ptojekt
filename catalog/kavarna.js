@@ -33,6 +33,36 @@ const gear = [
     params: { "Typ": "plnoautomat", "Mlýnek": "vestavěný keramický", "Napěňování": "automatické", "Tlak": "15 bar" } },
 ];
 
+// English version of the same shop (the demo page can switch languages); ids and prices stay the same
+const ROAST_EN = ["", "very light", "light", "medium", "medium-dark", "dark"];
+const EN = {
+  et: { name: "Ethiopia Yirgacheffe", origin: "Ethiopia", notes: ["jasmine", "bergamot", "peach"],
+    description: "A floral, fresh coffee from Ethiopia's Yirgacheffe. Jasmine, bergamot and ripe peach in the cup. Shines on a filter, V60 or Chemex." },
+  co: { name: "Colombia Huila", origin: "Colombia", notes: ["caramel", "red apple", "cocoa"],
+    description: "A balanced, sweet coffee almost everyone loves. Caramel, red apple and cocoa. Great on a filter and in a French press." },
+  ke: { name: "Kenya Nyeri AA", origin: "Kenya", notes: ["blackcurrant", "grapefruit", "cane sugar"],
+    description: "A limited, juicy Kenya with a bright acidity: blackcurrant, grapefruit and cane sugar. For those who love a fruity coffee." },
+  br: { name: "Brazil Santos", origin: "Brazil", notes: ["nut", "milk chocolate"],
+    description: "Our best-selling espresso. Gentle and low in acidity, with nut and milk chocolate. Great with milk – cappuccino, flat white." },
+  gu: { name: "Guatemala Antigua", origin: "Guatemala", notes: ["dark chocolate", "smoke", "plum"],
+    description: "A full, bold espresso with dark chocolate, a hint of smoke and plum. For lovers of a classic, stronger coffee." },
+  bl: { name: "Bohème Espresso Blend", origin: "Blend", notes: ["cocoa", "hazelnut", "honey"],
+    description: "Our house blend of Brazil and Colombia, tuned for espresso. Cocoa, hazelnut and honey – reliable in an espresso machine and a moka pot." },
+  rw: { name: "Rwanda Nyamasheke", origin: "Rwanda", notes: ["cranberry", "tea", "hibiscus"],
+    description: "A delicate, tea-like coffee from Rwanda with notes of cranberry and hibiscus. Light body, a long sweet finish. For the filter." },
+  dc: { name: "Colombia Decaf", origin: "Colombia", notes: ["panela", "almond", "orange"],
+    description: "A decaf that doesn't taste like one. The caffeine is removed gently with sugarcane. Panela, almond and orange." },
+  kiri: { name: "Kiri hand grinder", category: "Equipment | Grinders",
+    description: "A hand grinder with steel burrs and 40 grind settings – from espresso to French press. For travel and home.",
+    params: { "Burrs": "steel", "Grind settings": "40", "Capacity": "25 g" } },
+  goose: { name: "Gooseneck kettle", category: "Equipment | Kettles",
+    description: "A kettle with a slim spout for precise pouring when brewing filter coffee. Thermometer in the lid.",
+    params: { "Volume": "0.9 l", "Thermometer": "in the lid", "Material": "stainless steel" } },
+  barista: { name: "Barista One", category: "Equipment | Coffee machines",
+    description: "A fully automatic coffee machine with a built-in grinder. Cappuccino and latte at one touch, easy cleaning.",
+    params: { "Type": "fully automatic", "Grinder": "built-in ceramic", "Milk frothing": "automatic", "Pressure": "15 bar" } },
+};
+
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const item = (p) => `  <SHOPITEM>
     <ITEM_ID>${p.id}</ITEM_ID>
@@ -47,18 +77,31 @@ ${Object.entries(p.params).map(([k, v]) => `    <PARAM><PARAM_NAME>${esc(k)}</PA
     <DELIVERY_DATE>0</DELIVERY_DATE>
   </SHOPITEM>`;
 
-export const feedXml = `<?xml version="1.0" encoding="utf-8"?>
+function buildFeed(lang) {
+  const en = lang === "en";
+  const coffee = (c) => {
+    const e = en ? EN[c.id] : null;
+    return item(en ? {
+      ...c, ...e, brand: "Bohème", url: `/kavarna?kava=${c.id}`,
+      category: `Coffee | ${c.type === "espresso" ? "Espresso coffee" : c.type === "decaf" ? "Decaf coffee" : "Filter coffee"}`,
+      params: { "Flavour notes": e.notes.join(", "), "Roast": ROAST_EN[c.roast], "Brewing": c.type === "espresso" ? "espresso" : "filter", "Origin": e.origin, "Region": c.region, "Pack": "250 g, whole bean" },
+    } : {
+      ...c, brand: "Bohème", url: `/kavarna?kava=${c.id}`,
+      category: `Káva | ${c.type === "espresso" ? "Káva na espresso" : c.type === "decaf" ? "Káva bez kofeinu" : "Káva na filtr"}`,
+      params: { "Chuťové tóny": c.notes.join(", "), "Pražení": ROAST[c.roast], "Příprava": c.type === "espresso" ? "espresso" : "filtr", "Země původu": c.origin, "Region": c.region, "Balení": "250 g, zrnková" },
+    });
+  };
+  return `<?xml version="1.0" encoding="utf-8"?>
 <SHOP>
 ${[
-  ...coffees.map((c) => item({
-    ...c, brand: "Bohème", url: `/kavarna?kava=${c.id}`,
-    category: `Káva | ${c.type === "espresso" ? "Káva na espresso" : c.type === "decaf" ? "Káva bez kofeinu" : "Káva na filtr"}`,
-    params: { "Chuťové tóny": c.notes.join(", "), "Pražení": ROAST[c.roast], "Příprava": c.type === "espresso" ? "espresso" : "filtr", "Země původu": c.origin, "Region": c.region, "Balení": "250 g, zrnková" },
-  })),
-  ...gear.map((g) => item({ ...g, brand: "Bohème", url: `/kavarna?vybaveni=${g.id}` })),
+  ...coffees.map(coffee),
+  ...gear.map((g) => item({ ...g, ...(en ? EN[g.id] : {}), brand: "Bohème", url: `/kavarna?vybaveni=${g.id}` })),
 ].join("\n")}
 </SHOP>
 `;
+}
+export const feedXml = buildFeed("cs");
+export const feedXmlEn = buildFeed("en");
 
 // ---- product images: the same illustrated bags as on the page ----
 const TONES = {
