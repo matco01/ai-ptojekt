@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { techmarket, techmarketEn } from "./lib/catalog.js";
-import { getCatalog, catalogStatus, storedStatuses } from "./lib/catalogs.js";
+import { getCatalog, catalogStatus, storedStatuses, sourceOf } from "./lib/catalogs.js";
 import { productSvg } from "./lib/images.js";
 import { feedXml as kavarnaFeed, kavarnaSvg } from "./catalog/kavarna.js";
 import { recordMany, summarize, purgeOld, EVENT_TYPES, NUDGE_LABELS, RETENTION_DAYS } from "./lib/analytics.js";
@@ -626,11 +626,15 @@ app.get("/api/cron/daily", async (req, res) => {
   try {
     report.purgedEvents = await purgeOld();
     if (db) await db.from("rate_limits").delete().lt("window_start", Date.now() - 32 * 864e5);
-    for (const client of await listClients()) {
-      if (!client.active || !client.feedUrl) continue;
+    // feeds first (quick), then shops read from their websites (a minute or two each) while time is left
+    const started = Date.now();
+    const shops = (await listClients()).filter((c) => c.active && !c.feedXml && c.catalog !== "techmarket" && sourceOf(c) !== "none")
+      .sort((a, b) => Number(sourceOf(a) === "web") - Number(sourceOf(b) === "web"));
+    for (const client of shops) {
+      if (Date.now() - started > 150e3) { report.feeds.push({ id: client.id, skipped: "no time left – next night" }); continue; }
       await getCatalog(client, { refresh: true }); // alerts by itself when the download fails
       const s = catalogStatus(client);
-      report.feeds.push({ id: client.id, products: s?.products ?? 0, error: s?.error ?? null });
+      report.feeds.push({ id: client.id, source: s?.source, products: s?.products ?? 0, error: s?.error ?? null });
     }
     res.json(report);
   } catch (err) {

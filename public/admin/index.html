@@ -341,7 +341,10 @@
         "q.h": "Na co se ptají", qCount: (n) => `${n} posledních dotazů`, noQuestions: "Zatím žádné dotazy.", qVoice: "hlas", qChat: "chat",
         "tipsList.h": "Které tipy fungují", "tipsList.p": "Kdy se prodavačka sama ozvala a jak často zákazník tip využil.",
         "cat.k": "Katalog produktů", "cat.refresh": "↻ Stáhnout feed znovu", "cat.busy": "Stahuji feed…",
-        catDemo: (n) => `Ukázkový katalog, ${n} produktů.`, catNone: "Zatím není nastavený produktový feed, prodavačka tak nezná žádné produkty.",
+        catDemo: (n) => `Ukázkový katalog, ${n} produktů.`, catNone: "Zatím neznáme adresu vašeho webu, prodavačka tak nezná žádné produkty. Doplňte doménu v nastavení obchodu.",
+        catWeb: (n, w) => `${n} produktů načtených z vašeho webu${w ? `, naposledy ${w}` : ""}. Načítají se znovu každou noc.`,
+        catWebPending: "Načítám produkty z vašeho webu… Může to trvat až 2 minuty, stránku nechte otevřenou.",
+        "cat.web": "↻ Načíst produkty z webu znovu", "cat.webBusy": "Čtu váš web…",
         catFeed: (n, w) => `${n} produktů z feedu${w ? `, staženo ${w}` : ""}. Obnovuje se samo každých 6 hodin.`,
         catErr: (e, keep) => `Poslední stažení selhalo: ${e}${keep ? " Používá se předchozí katalog." : ""}`,
         noData: "Zatím žádná data.", allFound: "Všechna hledání něco našla.",
@@ -361,8 +364,8 @@
         "site.h": "Na vašem webu", "site.p": "Kód pro vložení, kde prodavačka smí běžet, a vaše platby.",
         embedH: "Kód pro váš web", embedP: "Vložte ho na všechny stránky e-shopu, těsně před </body>.", copy: "Zkopírovat kód", copied: "Zkopírováno ✓",
         embedOnly: (d) => `Funguje jen na: <b>${d}</b>`, embedLocked: "Kód se odemkne po zaplacení tarifu – bez platby prodavačka na webu nepoběží.",
-        setH: "Nastavení obchodu", setDomains: "Domény e-shopu", setFeed: "Produktový feed (XML)", setFeedPh: "https://…/feed.xml", save: "Uložit", saving: "Ukládám…",
-        saved: "Uloženo.", savedFeed: "Uloženo. Stahuji produkty z feedu…", setDemo: "Ukázkový obchod – nastavení spravujeme my.", setDomainsHint: "Víc domén oddělte čárkou.",
+        setH: "Nastavení obchodu", setDomains: "Domény e-shopu", setFeed: "Produktový feed (XML) – nepovinné, bez něj čteme produkty přímo z webu", setFeedPh: "https://…/feed.xml", save: "Uložit", saving: "Ukládám…",
+        saved: "Uloženo.", savedFeed: "Uloženo. Načítám produkty…", setDemo: "Ukázkový obchod – nastavení spravujeme my.", setDomainsHint: "Víc domén oddělte čárkou.",
         billH: "Platby", billManual: "Platíte na fakturu podle dohody s námi.", billUnpaid: "Zatím nezaplaceno.",
         stOk: "Zaplaceno", stPast: "Platba selhala", stEnded: "Zrušeno", stManual: "Na fakturu", stUnpaid: "Nezaplaceno",
         nextPay: (d) => `Další platba: <b>${d}</b>`, endsOn: (d) => `Zaplaceno do: <b>${d}</b>`, pastP: "Stripe platbu během pár dní zkusí znovu. Aktualizujte prosím kartu.",
@@ -399,7 +402,10 @@
         "q.h": "What they ask", qCount: (n) => `latest ${n} questions`, noQuestions: "No questions yet.", qVoice: "voice", qChat: "chat",
         "tipsList.h": "Which tips work", "tipsList.p": "When the assistant spoke up by itself and how often the customer used the tip.",
         "cat.k": "Product catalogue", "cat.refresh": "↻ Fetch the feed again", "cat.busy": "Fetching the feed…",
-        catDemo: (n) => `Demo catalogue, ${n} products.`, catNone: "No product feed is set yet, so the assistant knows no products.",
+        catDemo: (n) => `Demo catalogue, ${n} products.`, catNone: "We don't know your website's address yet, so the assistant knows no products. Add your domain in the shop settings.",
+        catWeb: (n, w) => `${n} products read from your website${w ? `, last ${w}` : ""}. They're read again every night.`,
+        catWebPending: "Reading products from your website… This can take up to 2 minutes, keep the page open.",
+        "cat.web": "↻ Read products from the website again", "cat.webBusy": "Reading your website…",
         catFeed: (n, w) => `${n} products from the feed${w ? `, fetched ${w}` : ""}. It refreshes itself every 6 hours.`,
         catErr: (e, keep) => `The last fetch failed: ${e}${keep ? " The previous catalogue is in use." : ""}`,
         noData: "No data yet.", allFound: "Every search found something.",
@@ -419,8 +425,8 @@
         "site.h": "On your website", "site.p": "The embed code, where the assistant may run, and your payments.",
         embedH: "Code for your website", embedP: "Add it to every page of your shop, just before </body>.", copy: "Copy code", copied: "Copied ✓",
         embedOnly: (d) => `Works only on: <b>${d}</b>`, embedLocked: "The code unlocks once you pay for a plan – without payment the assistant won't run on your site.",
-        setH: "Shop settings", setDomains: "Shop domains", setFeed: "Product feed (XML)", setFeedPh: "https://…/feed.xml", save: "Save", saving: "Saving…",
-        saved: "Saved.", savedFeed: "Saved. Fetching products from the feed…", setDemo: "Demo shop – we manage its settings.", setDomainsHint: "Separate more domains with commas.",
+        setH: "Shop settings", setDomains: "Shop domains", setFeed: "Product feed (XML) – optional, without it we read products straight from your website", setFeedPh: "https://…/feed.xml", save: "Save", saving: "Saving…",
+        saved: "Saved.", savedFeed: "Saved. Loading products…", setDemo: "Demo shop – we manage its settings.", setDomainsHint: "Separate more domains with commas.",
         billH: "Payments", billManual: "You pay by invoice as agreed with us.", billUnpaid: "Not paid yet.",
         stOk: "Paid", stPast: "Payment failed", stEnded: "Cancelled", stManual: "By invoice", stUnpaid: "Unpaid",
         nextPay: (d) => `Next payment: <b>${d}</b>`, endsOn: (d) => `Paid until: <b>${d}</b>`, pastP: "Stripe will retry in a few days. Please update your card.",
@@ -723,7 +729,8 @@
         btn.disabled = false; btn.textContent = t("save");
         if (!r.ok) { msg.className = "msg err"; msg.textContent = res.error || "Error"; return; }
         msg.className = "msg ok";
-        if (feedUrl && feedUrl !== oldFeed) {
+        const oldDomains = last.d.client.domains.join(","), newDomains = res.domains.join(",");
+        if ((feedUrl && feedUrl !== oldFeed) || (!feedUrl && (oldFeed || newDomains !== oldDomains))) {
           msg.textContent = t("savedFeed");
           const cr = await call("/api/analytics/catalog", { method: "POST" });
           if (cr.ok) renderCatalog(await cr.json());
@@ -752,18 +759,32 @@
     function renderCatalog(c) {
       if (!c) { $("catalog-text").textContent = ""; return; }
       const when = c.updatedAt ? new Date(c.updatedAt).toLocaleString(I.locale()) : null;
+      const web = c.source === "web";
       $("catalog-text").innerHTML = c.source === "demo" ? t("catDemo", c.products)
         : c.source === "none" ? t("catNone")
-        : t("catFeed", nf(c.products), when) + (c.error ? `<br><span class="err">${esc(t("catErr", c.error, c.products))}</span>` : "");
-      $("catalog-refresh").hidden = c.source !== "feed";
+        : web && c.pending ? t("catWebPending")
+        : (web ? t("catWeb", nf(c.products), when) : t("catFeed", nf(c.products), when)) + (c.error ? `<br><span class="err">${esc(t("catErr", c.error, c.products))}</span>` : "");
+      const btn = $("catalog-refresh");
+      btn.hidden = !(c.source === "feed" || web) || (web && c.pending);
+      if (!btn.disabled) btn.textContent = t(web ? "cat.web" : "cat.refresh");
+      btn.dataset.web = web ? "1" : "";
+      // the first time a shop without a feed opens its overview, its website is read right away
+      if (web && c.pending && !readingWebsite) reloadCatalog();
     }
-    $("catalog-refresh").onclick = async (e) => {
-      const b = e.currentTarget;
-      b.disabled = true; b.textContent = t("cat.busy");
-      const r = await call("/api/analytics/catalog", { method: "POST" });
-      if (r.ok) renderCatalog(await r.json());
-      b.disabled = false; b.textContent = t("cat.refresh");
-    };
+    let readingWebsite = false;
+    async function reloadCatalog() {
+      const b = $("catalog-refresh"), web = b.dataset.web === "1";
+      readingWebsite = true;
+      b.disabled = true; b.textContent = t(web ? "cat.webBusy" : "cat.busy");
+      try {
+        const r = await call("/api/analytics/catalog", { method: "POST" });
+        if (r.ok) renderCatalog({ ...(await r.json()), pending: false });
+      } finally {
+        b.disabled = false; b.textContent = t(web ? "cat.web" : "cat.refresh");
+        readingWebsite = false;
+      }
+    }
+    $("catalog-refresh").onclick = reloadCatalog;
 
     // tiny markdown → HTML for the advice (headings, bullets, bold)
     function md(text) {

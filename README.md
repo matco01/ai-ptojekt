@@ -63,7 +63,15 @@ Kód pro web klienta (přímo, nebo přes jeho Google Tag Manager):
 
 **Tarify a limity** (`lib/plans.js`): každý tarif má měsíční limit zpráv, které napíše AI (odpověď v chatu, nabídka pomoci napsaná na míru váhajícímu zákazníkovi i doporučení pro majitele se počítají každá jako jedna), a znaků přirozeného hlasu; u klienta jde nastavit vlastní limit. Server počítá každé volání Claude (tokeny → cena v USD) a hlas do tabulky `usage`. Po vyčerpání limitu zpráv se prodavačka na webu obchodu do konce měsíce vypne (nebo do vyššího tarifu); vyčerpaný hlas přejde na hlas prohlížeče. Při 80 % a 100 % limitu přijde upozornění. Majitel vidí čerpání v přehledu, vy u všech klientů na stránce Klienti, kde je i **export CSV za měsíc** pro fakturaci. Ceny tarifů jsou v `lib/plans.js`; obchody z registrace platí přes Stripe (viz výše), ručním klientům fakturujete podle exportu.
 
-**Produkty z feedu:** server feed stáhne při první návštěvě a pak každých 6 hodin (a každou noc v rámci údržby). Uloží ho zabalený (gzip) do Supabase Storage, takže nový server ho nemusí stahovat znovu, a AI doporučuje jen z něj. Feed větší než 60 MB se odmítne. Když stažení selže, jede se dál na posledním funkčním katalogu, chyba se ukáže v přehledu a přijde upozornění.
+**Produkty – feed není potřeba:** obchod zadá jen adresu webu. Sella si produkty přečte sama, v tomto pořadí (`lib/crawl.js`):
+1. **Shopify** – všechny produkty z veřejné adresy `/products.json`.
+2. **Feed** na obvyklé adrese nebo odkazovaný z úvodní stránky (Heureka / Zboží.cz / Google), když ho obchod má.
+3. **Stránky webu** – najde je přes sitemap (jinak proklikáním odkazů z úvodní stránky, nejvýš 150 stránek) a přečte produktová data, která e-shopy publikují kvůli Googlu (JSON-LD `Product`, Open Graph). Umí to Shoptet, WooCommerce, Upgates i většina ostatních.
+4. **AI** – když stránky taková data nemají, přečte produkty z textu až 25 stránek Claude (Haiku; řádově haléře za celý web, počítá se do využití obchodu). Potřebuje `ANTHROPIC_API_KEY`.
+
+Web se nikdy nečte uprostřed dotazu zákazníka. Poprvé ho spustí přehled majitele (karta „Katalog produktů“ ukáže „Načítám produkty z vašeho webu…“, trvá to až 2 minuty), pak ho znovu načte každá noční údržba; tlačítko „Načíst produkty z webu znovu“ ho načte hned. Weby, které stránky skládají až v prohlížeči (čistě JavaScriptové aplikace), takhle přečíst nejdou – ty potřebují feed. Časový limit čtení: `CRAWL_SECONDS` (výchozí 100).
+
+**Produkty z feedu:** když obchod feed zadá (při registraci nebo v nastavení, nepovinné), použije se místo čtení webu. Server ho stáhne při první návštěvě a pak každých 6 hodin. Produkty se ukládají zabalené (gzip) do Supabase Storage, takže nový server je nemusí stahovat znovu. Feed větší než 60 MB se odmítne. Když stažení selže, jede se dál na posledním funkčním katalogu, chyba se ukáže v přehledu a přijde upozornění.
 
 **Napojení bez kódu u klienta:** widget si sám přečte, co web publikuje kvůli Googlu:
 - na jakém produktu zákazník je – ze strukturovaných dat produktu (JSON-LD / microdata) nebo z adresy stránky porovnané s URL ve feedu,
