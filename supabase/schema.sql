@@ -38,6 +38,13 @@ alter table clients add column if not exists monthly_message_limit integer;     
 alter table clients add column if not exists owner_email text;           -- where login details and alerts for the owner go
 alter table clients add column if not exists notes text;                 -- internal notes (contract, contact person…)
 
+-- Self sign-up and payments through Stripe (v4). See lib/billing.js.
+alter table clients add column if not exists billing_status text not null default 'manual'; -- manual | unpaid | active | past_due | canceled
+alter table clients add column if not exists stripe_customer_id text;
+alter table clients add column if not exists stripe_subscription_id text;
+alter table clients add column if not exists paid_until timestamptz;     -- end of the period paid for
+create index if not exists clients_stripe_customer on clients (stripe_customer_id);
+
 -- The last downloaded product feed per client. The products themselves live gzipped in the
 -- private Storage bucket "catalogs" (<client_id>.json.gz); this row only describes them.
 create table if not exists catalogs (

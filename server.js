@@ -10,7 +10,11 @@ import { feedXml as kavarnaFeed, kavarnaSvg } from "./catalog/kavarna.js";
 import { recordMany, summarize, purgeOld, EVENT_TYPES, NUDGE_LABELS, RETENTION_DAYS } from "./lib/analytics.js";
 import { chat, generateInsights, writeHesitationOffer, ChatError, MODEL, hasApiKey } from "./lib/assistant.js";
 import { personaName } from "./lib/persona.js";
-import { getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn } from "./lib/clients.js";
+import {
+  getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
+  normalizeDomain, createSignedUpClient, setOwnerSettings,
+} from "./lib/clients.js";
+import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated } from "./lib/billing.js";
 import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
@@ -30,6 +34,17 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ""; // our master password (login
 
 // Vercel sets X-Forwarded-For itself (clients can't spoof it there), so req.ip is the visitor's IP.
 app.set("trust proxy", process.env.VERCEL ? true : "loopback");
+// Stripe's payment notifications: the signature is checked against the exact raw body (see lib/billing.js)
+app.post("/api/stripe/webhook", express.raw({ type: "*/*", limit: "1mb" }), async (req, res) => {
+  try {
+    await handleWebhook(req.body, req.get("Stripe-Signature"));
+    res.json({ received: true });
+  } catch (err) {
+    if (!err.status) { console.error("stripe webhook:", err); alert("stripe-webhook", `Stripe webhook selhal: ${err.message}`); }
+    res.status(err.status ?? 500).json({ error: err.status ? err.message : "webhook failed" }); // 5xx → Stripe tries again later
+  }
+});
+
 // small bodies everywhere – except the chat, which can carry photos/PDFs (Vercel allows ≈ 4.5 MB per request)
 const smallJson = express.json({ limit: "20kb" }), chatJson = express.json({ limit: "4500kb" });
 app.use((req, res, next) => (req.path === "/api/chat" ? chatJson : smallJson)(req, res, next));
@@ -57,8 +72,13 @@ app.use((req, res, next) => {
  * client's domains. `lenient` = also accept requests without an Origin header (analytics beacons).
  */
 const withClient = ({ lenient = false } = {}) => async (req, res, next) => {
-  const client = await getClient(req.body?.client ?? req.query.client);
-  if (!client) return res.status(404).json({ error: "Neznámý klient – zkontrolujte data-client ve vložení widgetu." });
+  const id = req.body?.client ?? req.query.client;
+  const client = await getClient(id);
+  if (!client) {
+    // registered but not paid (or switched off) → the assistant doesn't run
+    if (await getClient(id, { includeInactive: true })) return res.status(402).json({ error: "Sella pro tento obchod není aktivní – zaplaťte tarif ve svém přehledu Sella." });
+    return res.status(404).json({ error: "Neznámý klient – zkontrolujte data-client ve vložení widgetu." });
+  }
   const origin = req.get("Origin");
   const ok = origin
     ? originAllowed(client, origin, req.get("Host"))
@@ -286,7 +306,14 @@ app.post("/api/events", rateLimit("events", 120, 60e3), withClient({ lenient: tr
 });
 
 // --- dashboard logins -------------------------------------------------------
-// Shop owners: shop ID + their password. Us: ID "admin" + ADMIN_TOKEN (sees every client).
+// Shop owners: shop ID (or their e-mail) + their password. Us: ID "admin" + ADMIN_TOKEN (sees every client).
+// A shop that signed up but hasn't paid yet may sign in – paying happens in its overview. A shop we
+// switched off by hand ("manual" billing, inactive) may not.
+const canSignIn = (c) => Boolean(c && (c.active || c.billing !== "manual"));
+async function ownerClient(login) {
+  if (!login.includes("@")) return getClient(login, { includeInactive: true });
+  return (await listClients()).find((c) => c.ownerEmail?.toLowerCase() === login) ?? null;
+}
 // Locally, without ADMIN_TOKEN, requests from this computer are let in without a login.
 const isLocalRequest = (req) => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress) && !req.get("X-Forwarded-For");
 
@@ -307,7 +334,7 @@ function sameOrigin(req, res, next) {
 }
 
 app.post("/api/admin/login", sameOrigin, rateLimit("login", 10, 15 * 60e3, { shared: true }), async (req, res) => {
-  const id = str(req.body?.client, 40).trim().toLowerCase();
+  const id = str(req.body?.client, 200).trim().toLowerCase();
   const password = str(req.body?.password, 200);
   const fail = () => res.status(401).json({ error: "Nesprávné ID obchodu nebo heslo." });
   if (!id || !password) return fail();
@@ -318,15 +345,16 @@ app.post("/api/admin/login", sameOrigin, rateLimit("login", 10, 15 * 60e3, { sha
   if (id === "admin") {
     if (ADMIN_TOKEN && safeEqual(password, ADMIN_TOKEN)) sessionFor = MASTER;
   } else {
-    const client = await getClient(id);
+    const found = await ownerClient(id);
+    const client = canSignIn(found) ? found : null;
     if (client?.passwordHash) {
-      if (verifyPassword(password, client.passwordHash)) sessionFor = id;
+      if (verifyPassword(password, client.passwordHash)) sessionFor = client.id;
     } else if (client?.legacyToken && safeEqual(password, client.legacyToken)) {
-      sessionFor = id;
+      sessionFor = client.id;
       // move the old plain-text password to a hash
-      setPasswordHash(id, hashPassword(password)).catch((err) => console.error("password upgrade failed:", err.message));
-    } else if (client && isBuiltIn(id) && safeEqual(password, demoPassword(id))) {
-      sessionFor = id; // a showcase shop's starting password (until a new one is set)
+      setPasswordHash(client.id, hashPassword(password)).catch((err) => console.error("password upgrade failed:", err.message));
+    } else if (client && isBuiltIn(client.id) && safeEqual(password, demoPassword(client.id))) {
+      sessionFor = client.id; // a showcase shop's starting password (until a new one is set)
     } else {
       verifyPassword(password, "scrypt$16384$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // same timing as a real check
     }
@@ -346,8 +374,8 @@ async function admin(req, res, next) {
   const s = currentSession(req);
   if (!s) return res.status(401).json({ error: "Přihlaste se prosím." });
   const master = s.clientId === MASTER;
-  const client = await getClient(master ? req.query.client || "techmarket" : s.clientId, { includeInactive: master });
-  if (!client) return res.status(404).json({ error: "Neznámý klient." });
+  const client = await getClient(master ? req.query.client || "techmarket" : s.clientId, { includeInactive: true });
+  if (!client || (!master && !canSignIn(client))) return res.status(404).json({ error: "Neznámý klient." });
   req.client = client;
   req.isMaster = master;
   req.cat = await getCatalog(client);
@@ -377,29 +405,115 @@ const usageView = (client, a, { master = false } = {}) => ({
   ...(master ? { costUsd: Math.round(a.usage.cost_usd * 100) / 100, aiCalls: a.usage.ai_calls } : {}),
 });
 
+// Billing as the owner sees it. "needsPayment" = signed up, the assistant waits for the first payment.
+const billingView = (c) => ({
+  status: c.billing, paidUntil: c.paidUntil ?? null,
+  needsPayment: c.billing !== "manual" && !c.active,
+  canManage: Boolean(c.stripeCustomerId) && paymentsEnabled(), // Stripe portal: card, invoices, cancelling
+  payments: paymentsEnabled() ? "stripe" : simulated() ? "simulated" : "off",
+});
+
 app.use("/api/analytics", sameOrigin);
+app.use("/api/billing", sameOrigin);
 app.get("/api/analytics", admin, async (req, res) => {
   try {
     const stats = await summarize(req.client.id, req.cat);
+    const c = req.client;
     res.json({
       ...stats,
-      client: { id: req.client.id, name: req.client.name },
+      client: { id: c.id, name: c.name, active: c.active, domains: c.domains, feedUrl: c.feedUrl ?? "", ownerEmail: c.ownerEmail ?? "", builtIn: isBuiltIn(c.id) },
+      billing: billingView(c),
       catalog: catalogStatus(req.client),
       usage: usageView(req.client, await allowance(req.client), { master: req.isMaster }),
       plans: publicPlans(),
-      clients: req.isMaster ? (await listClients()).map(({ id, name, active }) => ({ id, name, active })) : null,
+      clients: req.isMaster ? (await listClients()).map(({ id, name, active, billing }) => ({ id, name, active, billing })) : null,
     });
   } catch (err) { fail(res, err); }
 });
-// the shop picks a plan in its overview; it applies right away
+// The shop picks a plan in its overview. A paying shop (Stripe) changes it through billing – the
+// price difference is charged right away; a shop we invoice by hand ("manual") switches directly.
 app.post("/api/analytics/plan", admin, rateLimit("plan", 10, 10 * 60e3, { shared: true }), async (req, res) => {
   const plan = str(req.body?.plan, 20);
   const allowed = req.isMaster ? Boolean(PLANS[plan]) : publicPlans().some((p) => p.id === plan);
   if (!allowed) return res.status(400).json({ error: "Neznámý tarif." });
   try {
-    await setClientPlan(req.client.id, plan);
+    if (req.client.billing !== "manual" && !req.isMaster) {
+      if (!req.client.active) return res.status(402).json({ error: "Nejdřív prosím zaplaťte tarif." });
+      await startPayment(req.client, plan, { lang: req.body?.lang });
+    } else await setClientPlan(req.client.id, plan);
     const client = await getClient(req.client.id, { includeInactive: true });
     res.json({ ok: true, usage: usageView(client, await allowance(client), { master: req.isMaster }) });
+  } catch (err) { fail(res, err); }
+});
+
+// The owner's own settings: where the assistant may run and where its products come from.
+app.post("/api/analytics/settings", admin, rateLimit("settings", 20, 10 * 60e3, { shared: true }), async (req, res) => {
+  if (isBuiltIn(req.client.id) && !req.isMaster) return res.status(403).json({ error: "Ukázkový obchod nelze měnit." });
+  const domains = [];
+  for (const d of String(req.body?.domains ?? "").split(/[\s,]+/).filter(Boolean).slice(0, 10)) {
+    const n = normalizeDomain(d);
+    if (!n) return res.status(400).json({ error: `Neplatná doména: ${str(d, 80)}`, code: "domain" });
+    if (!domains.includes(n)) domains.push(n);
+  }
+  if (!domains.length) return res.status(400).json({ error: "Zadejte aspoň jednu doménu obchodu.", code: "domain" });
+  const feedUrl = str(req.body?.feedUrl, 1000).trim();
+  if (feedUrl && !/^https?:\/\/\S+$/i.test(feedUrl)) return res.status(400).json({ error: "Adresa feedu musí začínat https://", code: "feed" });
+  try {
+    await setOwnerSettings(req.client.id, { domains, feedUrl });
+    res.json({ ok: true, domains, feedUrl });
+  } catch (err) { fail(res, err); }
+});
+
+// --- payments (lib/billing.js) ----------------------------------------------
+const pageUrl = (req, p) => `${req.protocol}://${req.get("Host")}${p}`;
+// pay for a plan: Stripe's payment page (or done at once – a plan change, or simulated locally)
+app.post("/api/billing/checkout", admin, rateLimit("checkout", 10, 10 * 60e3, { shared: true }), async (req, res) => {
+  if (req.client.billing === "manual") return res.status(400).json({ error: "Tento obchod platí na fakturu – tarif změníte přímo." });
+  const lang = req.body?.lang === "en" ? "en" : "cs";
+  const back = `/admin/${req.isMaster ? `?client=${req.client.id}` : ""}`;
+  try {
+    res.json(await startPayment(req.client, str(req.body?.plan, 20), {
+      lang, successUrl: pageUrl(req, `${back}${back.includes("?") ? "&" : "?"}paid=1`), cancelUrl: pageUrl(req, back),
+    }));
+  } catch (err) { fail(res, err); }
+});
+// card, invoices and cancelling – Stripe's customer portal
+app.post("/api/billing/portal", admin, async (req, res) => {
+  try {
+    res.json(await billingPortal(req.client, { lang: req.body?.lang, returnUrl: pageUrl(req, `/admin/${req.isMaster ? `?client=${req.client.id}` : ""}`) }));
+  } catch (err) { fail(res, err); }
+});
+
+// --- self sign-up on the Sella site ("Chci Sellu") --------------------------
+// Creates the shop's account with its widget switched off and signs the owner in; the overview
+// then asks them to pay – only a paid shop's embed code works.
+app.post("/api/signup", sameOrigin, rateLimit("signup-form", 40, 10 * 60e3, { shared: true }), async (req, res) => {
+  const b = req.body ?? {};
+  if (b.website) return res.json({ ok: true }); // honeypot field – only bots fill it in
+  const name = str(b.name, 80).trim();
+  const email = str(b.email, 200).trim().toLowerCase();
+  const password = str(b.password, 200);
+  const domain = normalizeDomain(str(b.domain, 200));
+  const feedUrl = str(b.feedUrl, 1000).trim();
+  const plan = str(b.plan, 20);
+  const bad = (code, error) => res.status(400).json({ code, error });
+  if (name.length < 2) return bad("name", "Vyplňte název obchodu.");
+  if (!domain) return bad("domain", "Zadejte adresu e-shopu, např. mujobchod.cz.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad("email", "Zadejte platný e-mail.");
+  if (password.length < 10) return bad("password", "Heslo musí mít aspoň 10 znaků.");
+  if (feedUrl && !/^https?:\/\/\S+$/i.test(feedUrl)) return bad("feed", "Adresa feedu musí začínat https://");
+  if (!PLANS[plan]?.public || !PLANS[plan].priceCzk) return bad("plan", "Vyberte tarif.");
+  if (b.terms !== true) return bad("terms", "Potvrďte prosím podmínky.");
+  try {
+    const clients = await listClients();
+    if (clients.some((c) => c.ownerEmail?.toLowerCase() === email)) return res.status(409).json({ code: "email", error: "S tímto e-mailem už účet existuje – přihlaste se." });
+    if (clients.some((c) => c.domains.includes(domain))) return res.status(409).json({ code: "domain", error: "Tento e-shop už Sellu má. Ozvěte se nám, pokud jde o omyl." });
+    // at most a few new accounts per network and hour (checked only once the form is valid)
+    if (!(await hit(`signup:${req.ip}`, 60 * 60e3, 5))) return res.status(429).json({ error: "Příliš mnoho registrací, zkuste to prosím později." });
+    const id = await createSignedUpClient({ name, domain, email, passwordHash: hashPassword(password), plan, feedUrl });
+    alert(`signup:${id}`, `Nová registrace: ${name} (${domain}, ${email}), tarif ${PLANS[plan].name}.`);
+    res.set("Set-Cookie", sessionCookie(createSession(id), { secure: req.secure }));
+    res.json({ ok: true, id });
   } catch (err) { fail(res, err); }
 });
 
@@ -441,6 +555,7 @@ app.get("/api/admin/clients", async (req, res) => {
           agentName: c.agentName, description: c.description ?? "", feedUrl: c.feedUrl ?? "",
           info: c.info ?? {}, integration: c.integration ?? {}, freeShippingFrom: c.freeShippingFrom ?? null,
           plan: c.plan, monthlyMessageLimit: c.monthlyMessageLimit, ownerEmail: c.ownerEmail ?? "", notes: c.notes ?? "",
+          billing: c.billing, paidUntil: c.paidUntil ?? null, createdAt: c.createdAt ?? null,
           hasPassword: Boolean(c.passwordHash || c.legacyToken || (isBuiltIn(c.id) && demoPassword(c.id))),
           // a showcase shop's starting password can be shown to us (it is derived, not stored)
           demoPassword: isBuiltIn(c.id) && !c.passwordHash && !c.legacyToken ? demoPassword(c.id) : null,
@@ -483,11 +598,11 @@ app.get("/api/admin/usage.csv", async (req, res) => {
     const [clients, usage] = await Promise.all([listClients(), usageForMonth(month)]);
     const usageOf = new Map(usage.map((u) => [u.client_id, u]));
     const cell = (v) => (/[",;\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? ""));
-    const lines = [["client_id", "name", "plan", "month", "messages", "message_limit", "ai_calls", "input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens", "tts_chars", "cost_usd", "plan_price_czk"]];
+    const lines = [["client_id", "name", "billing", "plan", "month", "messages", "message_limit", "ai_calls", "input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens", "tts_chars", "cost_usd", "plan_price_czk"]];
     for (const c of clients) {
       const u = usageOf.get(c.id) ?? {};
       const l = limitsFor(c);
-      lines.push([c.id, c.name, l.plan, month, u.messages ?? 0, l.messages, u.ai_calls ?? 0, u.input_tokens ?? 0, u.output_tokens ?? 0, u.cache_read_tokens ?? 0, u.cache_write_tokens ?? 0, u.tts_chars ?? 0, (u.cost_usd ?? 0).toFixed(4), l.priceCzk ?? ""]);
+      lines.push([c.id, c.name, c.billing, l.plan, month, u.messages ?? 0, l.messages, u.ai_calls ?? 0, u.input_tokens ?? 0, u.output_tokens ?? 0, u.cache_read_tokens ?? 0, u.cache_write_tokens ?? 0, u.tts_chars ?? 0, (u.cost_usd ?? 0).toFixed(4), l.priceCzk ?? ""]);
     }
     res.set({ "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="vyuziti-${month}.csv"` });
     res.send("﻿" + lines.map((l) => l.map(cell).join(";")).join("\r\n"));

@@ -38,6 +38,7 @@
     @keyframes shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
     form .btn { width: 100%; }
     form .btn[disabled] { opacity: .6; cursor: default; transform: none; }
+    .help a { color: var(--ink); text-underline-offset: 3px; }
     .help { margin: 18px 0 0; text-align: center; font-size: 13.5px; color: var(--ink-3); }
     footer { text-align: center; padding: 0 16px 26px; font-size: 13px; color: var(--ink-3); }
     footer a { text-decoration: none; } footer a:hover { color: var(--ink); }
@@ -59,7 +60,7 @@
         <p class="sub" data-i18n="sub">Co dělá vaše prodavačka a co hledají vaši zákazníci.</p>
         <div class="field">
           <input id="client" name="client" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder=" " required>
-          <label for="client" data-i18n="id">ID obchodu</label>
+          <label for="client" data-i18n="id">E-mail nebo ID obchodu</label>
         </div>
         <div class="field">
           <input id="password" name="password" type="password" autocomplete="current-password" placeholder=" " required>
@@ -69,6 +70,7 @@
         <p class="err" id="err" role="alert"></p>
         <button class="btn dark" type="submit" id="go"><span data-i18n="go">Přihlásit se</span> <span class="arr">→</span></button>
         <p class="help" data-i18n="help">Zapomněli jste heslo? Napište nám a pošleme vám nové.</p>
+        <p class="help" data-i18n-html="new">Ještě nemáte účet? <a href="/sella/registrace.html">Chci Sellu</a></p>
       </form>
     </div>
   </main>
@@ -83,16 +85,16 @@
     const t = I.use({
       cs: {
         title: "Přihlášení – Sella", back: "← Zpět na Sellu", h1: "Přehled vašeho obchodu", sub: "Co dělá vaše prodavačka a co hledají vaši zákazníci.",
-        id: "ID obchodu", pw: "Heslo", show: "Ukázat", hide: "Skrýt", showLabel: "Zobrazit heslo", hideLabel: "Skrýt heslo", go: "Přihlásit se",
+        id: "E-mail nebo ID obchodu", pw: "Heslo", new: "Ještě nemáte účet? <a href=\"/sella/registrace.html\">Chci Sellu</a>", show: "Ukázat", hide: "Skrýt", showLabel: "Zobrazit heslo", hideLabel: "Skrýt heslo", go: "Přihlásit se",
         help: "Zapomněli jste heslo? Napište nám a pošleme vám nové.", privacy: "Ochrana soukromí",
-        empty: "Vyplňte prosím ID obchodu i heslo.", bad: "Nesprávné ID obchodu nebo heslo.", many: "Příliš mnoho pokusů, zkuste to za 15 minut.",
+        empty: "Vyplňte prosím e-mail (nebo ID obchodu) i heslo.", bad: "Nesprávný e-mail, ID obchodu nebo heslo.", many: "Příliš mnoho pokusů, zkuste to za 15 minut.",
         failed: "Přihlášení se nepodařilo.", offline: "Spojení se nezdařilo, zkuste to prosím znovu.",
       },
       en: {
         title: "Sign in – Sella", back: "← Back to Sella", h1: "Your shop's insights", sub: "What your assistant does and what your customers look for.",
-        id: "Shop ID", pw: "Password", show: "Show", hide: "Hide", showLabel: "Show password", hideLabel: "Hide password", go: "Sign in",
+        id: "E-mail or shop ID", pw: "Password", new: "No account yet? <a href=\"/sella/registrace.html\">Get Sella</a>", show: "Show", hide: "Hide", showLabel: "Show password", hideLabel: "Hide password", go: "Sign in",
         help: "Forgot your password? Write to us and we'll send you a new one.", privacy: "Privacy",
-        empty: "Please fill in both your shop ID and password.", bad: "Wrong shop ID or password.", many: "Too many attempts, please try again in 15 minutes.",
+        empty: "Please fill in your e-mail (or shop ID) and password.", bad: "Wrong e-mail, shop ID or password.", many: "Too many attempts, please try again in 15 minutes.",
         failed: "Signing in didn't work.", offline: "Couldn't connect, please try again.",
       },
     });

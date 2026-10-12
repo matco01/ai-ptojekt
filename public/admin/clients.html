@@ -3,145 +3,218 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI prodavač – klienti</title>
+  <title>Správa klientů – Sella</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/sella/sella.css">
+  <!-- Our settings page (operator only): add and edit shops, their embed code, the owner's login,
+       and the monthly usage export for invoicing. Same look as the rest of Sella. -->
   <style>
-    :root {
-      color-scheme: light;
-      --bg: #f3f5f8; --card: #ffffff; --card-2: #f7f8fa; --line: #e3e7ed;
-      --text: #151922; --text-2: #465061; --text-3: #667085;
-      --blue: #2f6fdb; --orange: #e0662f; --green: #1f8a5c; --amber: #b7791f;
-      --track: #eceff4; --shadow: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.05);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root:where(:not([data-theme="light"])) {
-        color-scheme: dark;
-        --bg: #14171d; --card: #1d2129; --card-2: #232833; --line: #2d333f;
-        --text: #eef1f6; --text-2: #c0c7d3; --text-3: #959eae;
-        --blue: #5b95f0; --orange: #f08352; --green: #4cc38a; --amber: #e0a943;
-        --track: #2a303b; --shadow: 0 1px 2px rgba(0,0,0,.3);
-      }
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
-    header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-    .head-in { max-width: 1180px; margin: 0 auto; padding: 16px 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    header h1 { font-size: 20px; margin: 0; flex: 1; }
-    button, a.btn { font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--line); background: var(--card); color: var(--text); text-decoration: none; display: inline-block; }
-    button:hover, a.btn:hover { background: var(--card-2); border-color: var(--text-3); }
-    button.primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
-    button.small, a.small { padding: 5px 10px; font-size: 13.5px; }
-    button:disabled { opacity: .55; cursor: default; }
-    input, select, textarea { font: inherit; font-size: 14.5px; width: 100%; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); color: var(--text); }
-    textarea { min-height: 70px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13.5px; }
-    main { max-width: 1180px; margin: 0 auto; padding: 28px 28px 72px; display: grid; gap: 22px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 22px 24px; }
-    .card h2 { font-size: 17px; margin: 0 0 4px; }
-    .hint { font-size: 14px; color: var(--text-3); margin: 0 0 16px; }
-    .table-wrap { overflow-x: auto; margin: 0 -8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
-    th { text-align: left; font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 700; padding: 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-    td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-    td small { display: block; color: var(--text-3); font-size: 13px; }
-    .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .bad { color: var(--orange); font-weight: 600; }
-    .warn { color: var(--amber); font-weight: 600; }
-    .ok { color: var(--green); }
-    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px 18px; }
-    .grid .wide { grid-column: 1 / -1; }
-    label { display: block; font-size: 13.5px; font-weight: 600; color: var(--text-2); margin-bottom: 5px; }
-    label small { font-weight: 400; color: var(--text-3); }
-    .check { display: flex; gap: 8px; align-items: center; font-weight: 600; }
-    .check input { width: auto; }
-    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
-    .err { color: var(--orange); font-size: 14px; }
-    pre { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; white-space: pre-wrap; word-break: break-all; font-size: 13.5px; margin: 0; }
-    .notice { background: color-mix(in srgb, var(--amber) 14%, var(--card)); border-radius: 12px; padding: 12px 16px; font-size: 14.5px; }
+    .wrap { width: min(1180px, 100% - 48px); margin: 0 auto; }
     [hidden] { display: none !important; }
-    @media (max-width: 600px) { .head-in, main { padding-left: 16px; padding-right: 16px; } .card { padding: 18px; } }
+    header { display: flex; align-items: center; gap: 14px; padding: 22px 0 10px; flex-wrap: wrap; }
+    header .wordmark { font-size: 34px; text-decoration: none; }
+    header .tools { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    header .btn { height: 42px; padding: 0 18px; font-size: 14.5px; }
+    .btn[disabled] { opacity: .5; cursor: default; transform: none; }
+    .intro { margin: 40px 0 24px; }
+    .intro h1 { font: 400 clamp(38px, 5vw, 58px)/1.05 var(--serif); margin: 0; letter-spacing: -.015em; }
+    .intro h1 em { color: var(--accent); }
+    .intro p { margin: 10px 0 0; color: var(--ink-3); font-size: 15px; }
+    .card { padding: 26px 28px; margin-bottom: 18px; }
+    .card h2 { font: 400 26px/1.15 var(--serif); margin: 0 0 4px; }
+    .hint { font-size: 14px; color: var(--ink-3); margin: 0 0 18px; }
+    .notice { padding: 14px 18px; margin-bottom: 18px; font-size: 14.5px; color: var(--ink-2); }
+    .notice a { color: var(--accent); }
+
+    /* the client form */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 18px; }
+    .grid .wide { grid-column: 1 / -1; }
+    label { display: block; font-size: 13.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+    label small { font-weight: 400; color: var(--ink-3); }
+    input, select, textarea { font: inherit; font-size: 15px; width: 100%; padding: 11px 14px; border-radius: 14px; border: 0; color: var(--ink);
+      background: rgba(255,255,255,.7); box-shadow: inset 0 0 0 1px rgba(47,49,51,.1); transition: box-shadow .15s, background .15s; }
+    input:focus, select:focus, textarea:focus { outline: none; background: #fff; box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px rgba(78,127,180,.14); }
+    input:disabled { opacity: .65; }
+    textarea { min-height: 76px; resize: vertical; font: 13.5px/1.5 "Geist Mono", ui-monospace, monospace; }
+    textarea.plain { font: inherit; font-size: 15px; }
+    .check { display: flex; gap: 10px; align-items: center; font-weight: 600; margin-top: 28px; }
+    .check input { width: 18px; height: 18px; box-shadow: none; accent-color: var(--accent); }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 20px; }
+    .row .btn { height: 44px; padding: 0 20px; font-size: 14.5px; }
+    .err { color: #a3433a; font-size: 14px; }
+    .ok { color: #2f7a55; }
+    .sub { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); }
+    pre { background: #23262a; color: #e8ecf0; border-radius: 16px; padding: 16px 18px; white-space: pre-wrap; word-break: break-all; font: 13.5px/1.55 "Geist Mono", ui-monospace, monospace; margin: 0; }
+    pre.msg { background: rgba(255,255,255,.7); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(47,49,51,.1); font-family: var(--sans); font-size: 14.5px; word-break: normal; }
+
+    /* the client list */
+    .table-wrap { overflow-x: auto; margin: 0 -10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+    th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-3); font-weight: 500; padding: 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    td { padding: 14px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    td b { font-weight: 600; }
+    td small { display: block; color: var(--ink-3); font-size: 13px; margin-top: 2px; }
+    .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: rgba(47,138,93,.13); color: #2f7a55; }
+    .pill.warn { background: rgba(183,122,29,.15); color: #8c5d12; }
+    .pill.bad { background: rgba(192,84,75,.14); color: #a3433a; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mini { border: 0; background: rgba(255,255,255,.75); color: var(--ink); font: 500 13px var(--sans); padding: 7px 12px; border-radius: 99px; cursor: pointer; text-decoration: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); }
+    .mini:hover { background: #fff; }
+    .export { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .export label { margin: 0; }
+    .export input { width: auto; }
+    .export .btn { height: 42px; padding: 0 18px; font-size: 14px; }
+    footer { padding: 30px 0 40px; color: var(--ink-3); font-size: 13px; text-align: center; }
+    @media (max-width: 640px) { .wrap { width: calc(100% - 28px); } .card { padding: 20px 18px; } }
   </style>
 </head>
 <body>
-  <header>
-    <div class="head-in">
-      <h1>AI prodavač · klienti</h1>
-      <a class="btn" href="/admin/">← Přehled</a>
-      <button class="primary" id="new">+ Nový klient</button>
-    </div>
-  </header>
-  <main>
-    <p class="notice" id="denied" hidden>Tahle stránka je jen pro provozovatele. <a href="/sella/prihlaseni.html?client=admin&amp;next=/admin/clients.html">Přihlaste se</a> jako <b>admin</b> s heslem ADMIN_TOKEN.</p>
-    <p class="notice" id="nodb" hidden>Bez databáze (SUPABASE_URL / SUPABASE_SECRET_KEY) nejde klienty ukládat – vidíte jen vestavěné ukázky.</p>
+  <div class="wrap">
+    <header>
+      <a class="wordmark" href="/admin/klienti.html" data-i18n-attr="title=all">Sella</a>
+      <div class="tools">
+        <span id="lang"></span>
+        <a class="btn light" href="/admin/klienti.html" data-i18n="back">← Všichni klienti</a>
+        <button class="btn dark" id="new" data-i18n="new">+ Nový klient</button>
+      </div>
+    </header>
 
-    <section class="card" id="editor" hidden>
-      <h2 id="editor-title">Nový klient</h2>
-      <p class="hint">Po uložení vytvořte majiteli přihlášení a pošlete mu ho i s kódem pro web.</p>
+    <section class="intro">
+      <h1 data-i18n-html="h1">Správa <em>klientů</em></h1>
+      <p data-i18n="sub">Nastavení obchodů, kód pro jejich web, přihlášení majitelů a export pro fakturaci.</p>
+    </section>
+
+    <p class="pane notice" id="denied" hidden data-i18n-html="denied"></p>
+    <p class="pane notice" id="nodb" hidden data-i18n="nodb"></p>
+
+    <section class="pane card" id="editor" hidden>
+      <h2 id="editor-title"></h2>
+      <p class="hint" data-i18n="edHint">Po uložení vytvořte majiteli přihlášení a pošlete mu ho i s kódem pro web.</p>
       <form id="form" class="grid">
-        <div><label for="f-id">ID <small>– do vložení widgetu, nejde změnit</small></label><input id="f-id" required pattern="[a-z0-9][a-z0-9\-]{1,39}" placeholder="napr-datart"></div>
-        <div><label for="f-name">Název obchodu</label><input id="f-name" required></div>
-        <div class="wide"><label for="f-domains">Domény <small>– oddělte čárkou; subdomény (www., m.) jsou povolené samy</small></label><input id="f-domains" placeholder="datart.cz, datart.sk"></div>
-        <div class="wide"><label for="f-feed">Produktový feed <small>– Heureka / Zboží.cz nebo Google Merchant XML</small></label><input id="f-feed" type="url" placeholder="https://www.obchod.cz/feed/heureka.xml"></div>
-        <div class="wide"><label for="f-desc">Co je to za obchod <small>– AI podle toho mluví</small></label><input id="f-desc" placeholder="e-shop s elektronikou a spotřebiči"></div>
-        <div><label for="f-agent">Jméno prodavačky <small>– prázdné = odvodí se od názvu</small></label><input id="f-agent"></div>
-        <div><label for="f-ship">Doprava zdarma od (Kč)</label><input id="f-ship" type="number" min="0" step="1"></div>
-        <div><label for="f-plan">Tarif</label><select id="f-plan"></select></div>
-        <div><label for="f-limit">Vlastní limit zpráv / měsíc <small>– prázdné = podle tarifu</small></label><input id="f-limit" type="number" min="0" step="1"></div>
-        <div><label for="f-email">E-mail majitele</label><input id="f-email" type="email"></div>
-        <div><label class="check"><input id="f-active" type="checkbox" checked> Aktivní (widget běží)</label></div>
-        <div class="wide"><label for="f-info">Informace o obchodě <small>– JSON téma → text; na doprava/vrácení/platbu AI odpovídá jen odsud</small></label>
+        <div><label for="f-id"><span data-i18n="fId">ID</span> <small data-i18n="fIdS">– do vložení widgetu, nejde změnit</small></label><input id="f-id" required pattern="[a-z0-9][a-z0-9\-]{1,39}" placeholder="napr-datart"></div>
+        <div><label for="f-name" data-i18n="fName">Název obchodu</label><input id="f-name" required></div>
+        <div class="wide"><label for="f-domains"><span data-i18n="fDom">Domény</span> <small data-i18n="fDomS">– oddělte čárkou; subdomény (www., m.) jsou povolené samy</small></label><input id="f-domains" placeholder="datart.cz, datart.sk"></div>
+        <div class="wide"><label for="f-feed"><span data-i18n="fFeed">Produktový feed</span> <small data-i18n="fFeedS">– Heureka / Zboží.cz nebo Google Merchant XML</small></label><input id="f-feed" type="url" placeholder="https://www.obchod.cz/feed/heureka.xml"></div>
+        <div class="wide"><label for="f-desc"><span data-i18n="fDesc">Co je to za obchod</span> <small data-i18n="fDescS">– AI podle toho mluví</small></label><input id="f-desc" data-i18n-attr="placeholder=fDescP"></div>
+        <div><label for="f-agent"><span data-i18n="fAgent">Jméno prodavačky</span> <small data-i18n="fAgentS">– prázdné = odvodí se od názvu</small></label><input id="f-agent"></div>
+        <div><label for="f-ship" data-i18n="fShip">Doprava zdarma od (Kč)</label><input id="f-ship" type="number" min="0" step="1"></div>
+        <div><label for="f-plan" data-i18n="fPlan">Tarif</label><select id="f-plan"></select></div>
+        <div><label for="f-limit"><span data-i18n="fLimit">Vlastní limit zpráv / měsíc</span> <small data-i18n="fLimitS">– prázdné = podle tarifu</small></label><input id="f-limit" type="number" min="0" step="1"></div>
+        <div><label for="f-email" data-i18n="fEmail">E-mail majitele</label><input id="f-email" type="email"></div>
+        <div><label class="check"><input id="f-active" type="checkbox" checked> <span data-i18n="fActive">Aktivní (widget běží)</span></label></div>
+        <div class="wide"><label for="f-info"><span data-i18n="fInfo">Informace o obchodě</span> <small data-i18n="fInfoS">– JSON téma → text; na doprava/vrácení/platbu AI odpovídá jen odsud</small></label>
           <textarea id="f-info" rows="5" placeholder='{"doprava": "…", "vraceni": "…", "platba": "…", "kontakt": "…"}'></textarea></div>
-        <div class="wide"><label for="f-integ">Úpravy napojení <small>– jen pro neobvyklé weby, JSON</small></label>
+        <div class="wide"><label for="f-integ"><span data-i18n="fInteg">Úpravy napojení</span> <small data-i18n="fIntegS">– jen pro neobvyklé weby, JSON</small></label>
           <textarea id="f-integ" rows="2" placeholder='{"addToCart": "#buy-button", "cart": ".header-cart", "thankYou": "objednavka/hotovo"}'></textarea></div>
-        <div class="wide"><label for="f-notes">Interní poznámky</label><textarea id="f-notes" rows="2" style="font-family:inherit"></textarea></div>
+        <div class="wide"><label for="f-notes" data-i18n="fNotes">Interní poznámky</label><textarea id="f-notes" rows="2" class="plain"></textarea></div>
       </form>
       <div class="row">
-        <button class="primary" id="save">Uložit</button>
-        <button id="cancel">Zavřít</button>
+        <button class="btn dark" id="save" data-i18n="save">Uložit</button>
+        <button class="btn light" id="cancel" data-i18n="close">Zavřít</button>
         <span class="err" id="form-err"></span>
       </div>
-      <div id="onboard" hidden>
-        <h2 style="margin-top:26px">Kód pro web klienta</h2>
-        <p class="hint">Vloží se na všechny stránky obchodu – přímo, nebo přes Google Tag Manager.</p>
+      <div id="onboard" class="sub" hidden>
+        <h2 data-i18n="embedH">Kód pro web klienta</h2>
+        <p class="hint" data-i18n="embedP">Vloží se na všechny stránky obchodu – přímo, nebo přes Google Tag Manager.</p>
         <pre id="embed"></pre>
         <div class="row">
-          <button id="copy-embed">Kopírovat kód</button>
-          <button id="make-login">Vytvořit nové přihlášení majitele</button>
+          <button class="btn light" id="copy-embed" data-i18n="copyCode">Kopírovat kód</button>
+          <button class="btn dark" id="make-login" data-i18n="makeLogin">Vytvořit nové přihlášení majitele</button>
           <span class="err" id="login-err"></span>
         </div>
-        <div id="credentials" hidden>
-          <h2 style="margin-top:26px">Zpráva pro majitele</h2>
-          <p class="hint">Heslo se zobrazí jen teď – uloží se jen jeho otisk. Nové přihlášení zneplatní staré heslo.</p>
-          <pre id="message"></pre>
+        <div id="credentials" class="sub" hidden>
+          <h2 data-i18n="msgH">Zpráva pro majitele</h2>
+          <p class="hint" data-i18n="msgP">Heslo se zobrazí jen teď – uloží se jen jeho otisk. Nové přihlášení zneplatní staré heslo.</p>
+          <pre class="msg" id="message"></pre>
           <div class="row">
-            <button id="copy-message">Kopírovat zprávu</button>
-            <a class="btn" id="mail" href="#">Otevřít v e-mailu</a>
+            <button class="btn light" id="copy-message" data-i18n="copyMsg">Kopírovat zprávu</button>
+            <a class="btn light" id="mail" href="#" data-i18n="openMail">Otevřít v e-mailu</a>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="card">
-      <h2>Klienti</h2>
-      <p class="hint" id="month-hint">Využití za tento měsíc.</p>
+    <section class="pane card">
+      <h2 data-i18n="listH">Klienti</h2>
+      <p class="hint" id="month-hint"></p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Obchod</th><th>Tarif</th><th>Zprávy</th><th>Náklad AI</th><th>Katalog</th><th>Přihlášení</th><th></th></tr></thead>
-          <tbody id="rows"><tr><td colspan="7">Načítám…</td></tr></tbody>
+          <thead><tr><th data-i18n="thShop">Obchod</th><th data-i18n="thPlan">Tarif</th><th data-i18n="thMsgs">Zprávy</th><th data-i18n="thCost">Náklad AI</th><th data-i18n="thCat">Katalog</th><th data-i18n="thLogin">Přihlášení</th><th></th></tr></thead>
+          <tbody id="rows"><tr><td colspan="7" data-i18n="loading">Načítám…</td></tr></tbody>
         </table>
       </div>
-      <div class="row">
-        <label for="csv-month" style="margin:0">Export využití pro fakturaci</label>
-        <input id="csv-month" type="month" style="width:auto">
-        <a class="btn" id="csv" href="#">Stáhnout CSV</a>
+      <div class="export">
+        <label for="csv-month" data-i18n="export">Export využití pro fakturaci</label>
+        <input id="csv-month" type="month">
+        <a class="btn light" id="csv" href="#" data-i18n="csv">Stáhnout CSV</a>
       </div>
     </section>
-  </main>
 
+    <footer data-i18n="foot">Sella · jen pro provozovatele</footer>
+  </div>
+
+<script src="/sella/i18n.js"></script>
+<script src="/sella/sella.js"></script>
 <script>
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const nf = (n) => Number(n || 0).toLocaleString("cs-CZ");
   const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const I = SellaI18n;
+  const t = I.use({
+    cs: {
+      title: "Správa klientů – Sella", all: "Všichni klienti", back: "← Všichni klienti", new: "+ Nový klient", h1: "Správa <em>klientů</em>",
+      sub: "Nastavení obchodů, kód pro jejich web, přihlášení majitelů a export pro fakturaci.",
+      denied: 'Tahle stránka je jen pro provozovatele. <a href="/sella/prihlaseni.html?client=admin&amp;next=/admin/clients.html">Přihlaste se</a> jako <b>admin</b> s heslem ADMIN_TOKEN.',
+      nodb: "Bez databáze (SUPABASE_URL / SUPABASE_SECRET_KEY) nejde klienty ukládat – vidíte jen vestavěné ukázky.",
+      newClient: "Nový klient", edit: (n) => `Upravit: ${n}`, edHint: "Po uložení vytvořte majiteli přihlášení a pošlete mu ho i s kódem pro web.",
+      fId: "ID", fIdS: "– do vložení widgetu, nejde změnit", fName: "Název obchodu", fDom: "Domény", fDomS: "– oddělte čárkou; subdomény (www., m.) jsou povolené samy",
+      fFeed: "Produktový feed", fFeedS: "– Heureka / Zboží.cz nebo Google Merchant XML", fDesc: "Co je to za obchod", fDescS: "– AI podle toho mluví", fDescP: "e-shop s elektronikou a spotřebiči",
+      fAgent: "Jméno prodavačky", fAgentS: "– prázdné = odvodí se od názvu", fShip: "Doprava zdarma od (Kč)", fPlan: "Tarif", fLimit: "Vlastní limit zpráv / měsíc", fLimitS: "– prázdné = podle tarifu",
+      fEmail: "E-mail majitele", fActive: "Aktivní (widget běží)", fInfo: "Informace o obchodě", fInfoS: "– JSON téma → text; na doprava/vrácení/platbu AI odpovídá jen odsud",
+      fInteg: "Úpravy napojení", fIntegS: "– jen pro neobvyklé weby, JSON", fNotes: "Interní poznámky", save: "Uložit", close: "Zavřít",
+      embedH: "Kód pro web klienta", embedP: "Vloží se na všechny stránky obchodu – přímo, nebo přes Google Tag Manager.", copyCode: "Kopírovat kód", makeLogin: "Vytvořit nové přihlášení majitele",
+      msgH: "Zpráva pro majitele", msgP: "Heslo se zobrazí jen teď – uloží se jen jeho otisk. Nové přihlášení zneplatní staré heslo.", copyMsg: "Kopírovat zprávu", openMail: "Otevřít v e-mailu",
+      listH: "Klienti", thShop: "Obchod", thPlan: "Tarif", thMsgs: "Zprávy", thCost: "Náklad AI", thCat: "Katalog", thLogin: "Přihlášení", loading: "Načítám…",
+      export: "Export využití pro fakturaci", csv: "Stáhnout CSV", foot: "Sella · jen pro provozovatele",
+      monthHint: (m) => `Využití za ${m}. Náklad = cena volání Claude API (bez hlasu ElevenLabs).`, msgsN: (n) => `${n} zpráv`,
+      demoFeed: (n) => `ukázkový, ${n}`, builtIn: "vestavěný", noFeed: "bez feedu", notYet: "zatím nestaženo", feedErr: "chyba feedu", fromBefore: (n) => `${n} produktů z dřívějška`, products: (n) => `${n} produktů`,
+      inactive: "neaktivní", onlyDemos: "jen naše ukázky", voiceChars: (n) => `${n} znaků hlasem`, calls: (n) => `${n} volání`, pwSet: "nastaveno", pwMissing: "chybí",
+      editBtn: "Upravit", overview: "Přehled", badJson: (l) => `${l}: neplatný JSON.`, saveFail: "Uložení se nepodařilo.", saved: "Uloženo.", nowLogin: " Teď vytvořte přihlášení majitele.",
+      copied: "Zkopírováno ✓", relogin: (n) => `${n} už přihlášení má. Vytvořit nové heslo? Staré přestane platit.`, failed: "Nepodařilo se.",
+      mailSubject: (n) => `AI prodavačka pro ${n} – přístup`,
+      mail: (c, embed, url, pw) => `Dobrý den,\n\nAI prodavačka pro ${c.name} je připravená.\n\n1) Na všechny stránky obchodu vložte tento kód (přímo, nebo přes Google Tag Manager):\n${embed}\n\nPokud máte nástroj na souhlas s cookies, widget si souhlas s analytikou přečte sám (Google Consent Mode, Cookiebot, OneTrust).\n\n2) Přehled chování zákazníků a výkonu prodavačky najdete tady:\n${url}\nID obchodu: ${c.id}\nHeslo: ${pw}\n\nHeslo si prosím uložte do správce hesel a tento e-mail pak smažte.`,
+    },
+    en: {
+      title: "Manage clients – Sella", all: "All clients", back: "← All clients", new: "+ New client", h1: "Manage <em>clients</em>",
+      sub: "Shop settings, the code for their website, owner logins and the export for invoicing.",
+      denied: 'This page is for the operator only. <a href="/sella/prihlaseni.html?client=admin&amp;next=/admin/clients.html">Sign in</a> as <b>admin</b> with the ADMIN_TOKEN password.',
+      nodb: "Without a database (SUPABASE_URL / SUPABASE_SECRET_KEY) clients can't be saved – you only see the built-in demos.",
+      newClient: "New client", edit: (n) => `Edit: ${n}`, edHint: "After saving, create a login for the owner and send it together with the code for their website.",
+      fId: "ID", fIdS: "– used in the widget embed, can't be changed", fName: "Shop name", fDom: "Domains", fDomS: "– comma-separated; subdomains (www., m.) are allowed automatically",
+      fFeed: "Product feed", fFeedS: "– Heureka / Zboží.cz or Google Merchant XML", fDesc: "What kind of shop", fDescS: "– the AI talks accordingly", fDescP: "an electronics and appliances shop",
+      fAgent: "Assistant's name", fAgentS: "– empty = derived from the shop name", fShip: "Free delivery from (CZK)", fPlan: "Plan", fLimit: "Custom message limit / month", fLimitS: "– empty = by plan",
+      fEmail: "Owner's e-mail", fActive: "Active (widget runs)", fInfo: "Shop information", fInfoS: "– JSON topic → text; the AI answers delivery/returns/payment only from here",
+      fInteg: "Integration tweaks", fIntegS: "– only for unusual sites, JSON", fNotes: "Internal notes", save: "Save", close: "Close",
+      embedH: "Code for the client's website", embedP: "Goes on every page of the shop – directly or through Google Tag Manager.", copyCode: "Copy code", makeLogin: "Create a new owner login",
+      msgH: "Message for the owner", msgP: "The password is shown only now – only its hash is stored. A new login invalidates the old password.", copyMsg: "Copy message", openMail: "Open in e-mail",
+      listH: "Clients", thShop: "Shop", thPlan: "Plan", thMsgs: "Messages", thCost: "AI cost", thCat: "Catalogue", thLogin: "Login", loading: "Loading…",
+      export: "Usage export for invoicing", csv: "Download CSV", foot: "Sella · operator only",
+      monthHint: (m) => `Usage for ${m}. Cost = Claude API calls (without ElevenLabs voice).`, msgsN: (n) => `${n} messages`,
+      demoFeed: (n) => `demo, ${n}`, builtIn: "built-in", noFeed: "no feed", notYet: "not fetched yet", feedErr: "feed error", fromBefore: (n) => `${n} products from before`, products: (n) => `${n} products`,
+      inactive: "inactive", onlyDemos: "our demos only", voiceChars: (n) => `${n} voice characters`, calls: (n) => `${n} calls`, pwSet: "set", pwMissing: "missing",
+      editBtn: "Edit", overview: "Insights", badJson: (l) => `${l}: invalid JSON.`, saveFail: "Saving failed.", saved: "Saved.", nowLogin: " Now create a login for the owner.",
+      copied: "Copied ✓", relogin: (n) => `${n} already has a login. Create a new password? The old one will stop working.`, failed: "That didn't work.",
+      mailSubject: (n) => `AI shop assistant for ${n} – access`,
+      mail: (c, embed, url, pw) => `Hello,\n\nthe AI shop assistant for ${c.name} is ready.\n\n1) Put this code on every page of your shop (directly or through Google Tag Manager):\n${embed}\n\nIf you use a cookie consent tool, the widget reads the analytics consent by itself (Google Consent Mode, Cookiebot, OneTrust).\n\n2) You'll find the insights into customer behaviour and the assistant's performance here:\n${url}\nShop ID: ${c.id}\nPassword: ${pw}\n\nPlease keep the password in a password manager and then delete this e-mail.`,
+    },
+  });
+  I.switcher($("lang"));
+  const nf = (n) => Number(n || 0).toLocaleString(I.locale());
   let data = null, editing = null;
 
   $("csv-month").value = new Date().toISOString().slice(0, 7);
@@ -152,30 +225,41 @@
     const r = await fetch("/api/admin/clients");
     if (r.status === 401 || r.status === 403) { $("denied").hidden = false; $("rows").innerHTML = ""; $("new").disabled = true; return; }
     data = await r.json();
+    render();
+  }
+
+  function render() {
+    document.title = t("title");
+    if (!data) return;
     $("nodb").hidden = data.database;
     $("new").disabled = !data.database;
-    $("f-plan").innerHTML = Object.entries(data.plans).map(([id, p]) => `<option value="${id}">${esc(p.name)} (${nf(p.messages)} zpráv)</option>`).join("");
-    const month = new Date(data.month + "-01").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
-    $("month-hint").textContent = `Využití za ${month}. Náklad = cena volání Claude API (bez hlasu ElevenLabs).`;
+    const plan = $("f-plan").value;
+    $("f-plan").innerHTML = Object.entries(data.plans).map(([id, p]) => `<option value="${id}">${esc(I.plan(p.name))} (${t("msgsN", nf(p.messages))})</option>`).join("");
+    if (plan) $("f-plan").value = plan;
+    const month = new Date(data.month + "-01").toLocaleDateString(I.locale(), { month: "long", year: "numeric" });
+    $("month-hint").textContent = t("monthHint", month);
     $("rows").innerHTML = data.clients.map((c) => {
       const share = c.limits.messages ? c.usage.messages / c.limits.messages : 0;
-      const feed = c.feed?.demo ? `<span class="ok">ukázkový, ${nf(c.feed.products)}</span>`
-        : !c.feedUrl && c.builtIn ? `<span class="ok">vestavěný</span>`
-        : !c.feedUrl ? `<span class="warn">bez feedu</span>`
-        : !c.feed ? `<small>zatím nestaženo</small>`
-        : c.feed.error ? `<span class="bad" title="${esc(c.feed.error)}">chyba feedu</span><small>${nf(c.feed.products)} produktů z dřívějška</small>`
-        : `<span class="ok">${nf(c.feed.products)} produktů</span><small>${c.feed.updatedAt ? new Date(c.feed.updatedAt).toLocaleString("cs-CZ") : ""}</small>`;
+      const feed = c.feed?.demo ? `<span class="pill">${t("demoFeed", nf(c.feed.products))}</span>`
+        : !c.feedUrl && c.builtIn ? `<span class="pill">${t("builtIn")}</span>`
+        : !c.feedUrl ? `<span class="pill warn">${t("noFeed")}</span>`
+        : !c.feed ? `<small>${t("notYet")}</small>`
+        : c.feed.error ? `<span class="pill bad" title="${esc(c.feed.error)}">${t("feedErr")}</span><small>${t("fromBefore", nf(c.feed.products))}</small>`
+        : `<span class="pill">${t("products", nf(c.feed.products))}</span><small>${c.feed.updatedAt ? new Date(c.feed.updatedAt).toLocaleString(I.locale()) : ""}</small>`;
       return `<tr>
-        <td><b>${esc(c.name)}</b>${c.active ? "" : ` <span class="warn">neaktivní</span>`}<small>${esc(c.id)} · ${esc(c.domains.join(", ") || "jen naše ukázky")}</small></td>
-        <td>${esc(c.limits.planName)}</td>
-        <td class="num"><span class="${share >= 1 ? "bad" : share >= 0.8 ? "warn" : ""}">${nf(c.usage.messages)} / ${nf(c.limits.messages)}</span><small>${nf(c.usage.ttsChars)} znaků hlasem</small></td>
-        <td class="num">$${c.usage.costUsd.toFixed(2)}<small>${nf(c.usage.aiCalls)} volání</small></td>
+        <td><b>${esc(c.name)}</b>${c.active ? "" : ` <span class="pill warn">${t("inactive")}</span>`}<small>${esc(c.id)} · ${esc(c.domains.join(", ") || t("onlyDemos"))}</small></td>
+        <td>${esc(I.plan(c.limits.planName))}</td>
+        <td class="num"><span class="${share >= 1 ? "pill bad" : share >= 0.8 ? "pill warn" : ""}">${nf(c.usage.messages)} / ${nf(c.limits.messages)}</span><small>${t("voiceChars", nf(c.usage.ttsChars))}</small></td>
+        <td class="num">$${c.usage.costUsd.toFixed(2)}<small>${t("calls", nf(c.usage.aiCalls))}</small></td>
         <td>${feed}</td>
-        <td>${c.hasPassword ? `<span class="ok">nastaveno</span>` : `<span class="warn">chybí</span>`}</td>
-        <td><div class="actions"><button class="small" data-edit="${esc(c.id)}">Upravit</button><a class="btn small" href="/admin/?client=${encodeURIComponent(c.id)}">Přehled</a></div></td>
+        <td>${c.hasPassword ? `<span class="pill">${t("pwSet")}</span>` : `<span class="pill warn">${t("pwMissing")}</span>`}</td>
+        <td><div class="actions"><button class="mini" data-edit="${esc(c.id)}">${t("editBtn")}</button><a class="mini" href="/admin/?client=${encodeURIComponent(c.id)}">${t("overview")}</a></div></td>
       </tr>`;
     }).join("");
+    if (editing) $("editor-title").textContent = t("edit", editing.name);
+    else if (!$("editor").hidden) $("editor-title").textContent = t("newClient");
   }
+  I.onChange(render);
 
   $("rows").onclick = (e) => {
     const id = e.target.dataset?.edit;
@@ -187,7 +271,7 @@
   const json = (o) => (o && Object.keys(o).length ? JSON.stringify(o, null, 2) : "");
   function openEditor(c) {
     editing = c;
-    $("editor-title").textContent = c ? `Upravit: ${c.name}` : "Nový klient";
+    $("editor-title").textContent = c ? t("edit", c.name) : t("newClient");
     $("f-id").value = c?.id ?? ""; $("f-id").disabled = Boolean(c);
     $("f-name").value = c?.name ?? "";
     $("f-domains").value = c?.domains.join(", ") ?? "";
@@ -212,7 +296,7 @@
   function parseJson(field, label) {
     const v = $(field).value.trim();
     if (!v) return null;
-    try { return JSON.parse(v); } catch { throw new Error(`${label}: neplatný JSON.`); }
+    try { return JSON.parse(v); } catch { throw new Error(t("badJson", label)); }
   }
 
   $("save").onclick = async () => {
@@ -225,19 +309,19 @@
         feedUrl: $("f-feed").value, description: $("f-desc").value, agentName: $("f-agent").value,
         freeShippingFrom: $("f-ship").value, plan: $("f-plan").value, monthlyMessageLimit: $("f-limit").value,
         ownerEmail: $("f-email").value, active: $("f-active").checked, notes: $("f-notes").value,
-        info: parseJson("f-info", "Informace o obchodě"), integration: parseJson("f-integ", "Úpravy napojení"),
+        info: parseJson("f-info", t("fInfo")), integration: parseJson("f-integ", t("fInteg")),
       };
     } catch (err) { $("form-err").textContent = err.message; return; }
     $("save").disabled = true;
     const r = await post("/api/admin/clients", body);
     const d = await r.json().catch(() => ({}));
     $("save").disabled = false;
-    if (!r.ok) { $("form-err").textContent = d.error || "Uložení se nepodařilo."; return; }
+    if (!r.ok) { $("form-err").textContent = d.error || t("saveFail"); return; }
     await load();
     const saved = data.clients.find((c) => c.id === d.id);
     const wasNew = !editing;
     openEditor(saved);
-    $("form-err").innerHTML = `<span class="ok">Uloženo.</span>${wasNew ? " Teď vytvořte přihlášení majitele." : ""}`;
+    $("form-err").innerHTML = `<span class="ok">${t("saved")}</span>${wasNew ? t("nowLogin") : ""}`;
   };
 
   const embedFor = (id) => `<script src="${location.origin}/widget/prodavac.js" data-client="${id}" defer><\/script>`;
@@ -247,7 +331,7 @@
   }
   const copy = async (text, btn) => {
     await navigator.clipboard.writeText(text);
-    const was = btn.textContent; btn.textContent = "Zkopírováno ✓"; setTimeout(() => { btn.textContent = was; }, 1500);
+    const was = btn.textContent; btn.textContent = t("copied"); setTimeout(() => { btn.textContent = was; }, 1500);
   };
   $("copy-embed").onclick = (e) => copy($("embed").textContent, e.target);
   $("copy-message").onclick = (e) => copy($("message").textContent, e.target);
@@ -255,29 +339,16 @@
   $("make-login").onclick = async () => {
     const c = editing;
     if (!c) return;
-    if (c.hasPassword && !confirm(`${c.name} už přihlášení má. Vytvořit nové heslo? Staré přestane platit.`)) return;
+    if (c.hasPassword && !confirm(t("relogin", c.name))) return;
     $("login-err").textContent = "";
     const r = await post(`/api/admin/clients/${encodeURIComponent(c.id)}/password`, {});
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { $("login-err").textContent = d.error || "Nepodařilo se."; return; }
+    if (!r.ok) { $("login-err").textContent = d.error || t("failed"); return; }
     c.hasPassword = true;
-    const text = `Dobrý den,
-
-AI prodavačka pro ${c.name} je připravená.
-
-1) Na všechny stránky obchodu vložte tento kód (přímo, nebo přes Google Tag Manager):
-${embedFor(c.id)}
-
-Pokud máte nástroj na souhlas s cookies, widget si souhlas s analytikou přečte sám (Google Consent Mode, Cookiebot, OneTrust).
-
-2) Přehled chování zákazníků a výkonu prodavačky najdete tady:
-${location.origin}/admin/
-ID obchodu: ${c.id}
-Heslo: ${d.password}
-
-Heslo si prosím uložte do správce hesel a tento e-mail pak smažte.`;
+    // the login lives on the Sella site; the shop's ID is filled in already
+    const text = t("mail", c, embedFor(c.id), `${location.origin}/sella/prihlaseni.html?client=${encodeURIComponent(c.id)}`, d.password);
     $("message").textContent = text;
-    $("mail").href = `mailto:${encodeURIComponent(c.ownerEmail || "")}?subject=${encodeURIComponent(`AI prodavačka pro ${c.name} – přístup`)}&body=${encodeURIComponent(text)}`;
+    $("mail").href = `mailto:${encodeURIComponent(c.ownerEmail || "")}?subject=${encodeURIComponent(t("mailSubject", c.name))}&body=${encodeURIComponent(text)}`;
     $("credentials").hidden = false;
     load();
   };

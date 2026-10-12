@@ -16,7 +16,8 @@
     "@anthropic-ai/sdk": "^0.128.0",
     "@supabase/supabase-js": "^2.117.2",
     "express": "^5.2.1",
-    "fast-xml-parser": "^5.11.1"
+    "fast-xml-parser": "^5.11.1",
+    "stripe": "^23.0.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8"

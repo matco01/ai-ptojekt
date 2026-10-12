@@ -2097,8 +2097,15 @@
   api.open = (m = "chat") => openPanel(m);
 
   async function boot() {
-    // is the shop's assistant on? (off when its plan's messages for the month are used up)
-    const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}`).then((r) => (r.ok ? r.json() : { on: true })).then((d) => d.on !== false).catch(() => true);
+    // is the shop's assistant on? Off when its plan's messages for the month are used up, and when the
+    // server refuses the shop (not registered, not paid, or this website isn't one of its domains).
+    // A passing server error or a network hiccup doesn't switch it off.
+    const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}`).then(async (r) => {
+      if (r.ok) return (await r.json()).on !== false;
+      if (r.status >= 500 || r.status === 429) return true;
+      console.warn("[Sella]", (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+      return false;
+    }).catch(() => true);
     if (!on) { off = true; return; }
     theme = detectTheme();
     AV = detectPersona();

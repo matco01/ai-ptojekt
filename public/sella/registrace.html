@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chci Sellu</title>
+  <meta name="description" content="Registrace e-shopu do Selly – AI prodavačky pro e-shopy.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="sella.css">
+  <style>
+    body { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; }
+    .top { display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(16px, 4vw, 40px); }
+    .top a { text-decoration: none; font-size: 14.5px; color: var(--ink-2); }
+    .top a:hover { color: var(--ink); }
+    .top .wordmark { font-size: 30px; color: var(--ink); }
+    main { display: grid; place-items: center; padding: 10px 16px 40px; }
+    .stack { width: min(560px, 100%); }
+    .intro { text-align: center; margin-bottom: 26px; }
+    .intro h1 { font: 400 clamp(38px, 7vw, 54px)/1.08 var(--serif); margin: 0 0 10px; letter-spacing: -.01em; }
+    .intro h1 em { font-style: italic; }
+    .intro p { margin: 0 auto; max-width: 440px; color: var(--ink-2); }
+
+    form.pane { padding: 30px 28px 26px; animation: rise .9s .1s cubic-bezier(.2, .8, .2, 1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+    .step { font: 600 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 0 2px 12px; }
+    .step:not(:first-child) { margin-top: 22px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { position: relative; margin-bottom: 12px; }
+    .field input { width: 100%; height: 56px; padding: 20px 18px 4px; border: 0; border-radius: 16px; font: 400 16px var(--sans); color: var(--ink);
+      background: rgba(255, 255, 255, .62); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8); transition: box-shadow .2s, background .2s; }
+    .field input:focus { outline: none; background: rgba(255, 255, 255, .85); box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px rgba(78, 127, 180, .14); }
+    .field.bad input { box-shadow: inset 0 0 0 1.5px #c0675d; }
+    .field label { position: absolute; left: 18px; top: 18px; font-size: 16px; color: var(--ink-3); pointer-events: none; transform-origin: left top; transition: transform .2s, color .2s; white-space: nowrap; }
+    .field input:focus + label, .field input:not(:placeholder-shown) + label { transform: translateY(-11px) scale(.76); color: var(--ink-2); }
+    .field.pw input { padding-right: 84px; }
+    .field.pw label { max-width: calc(100% - 100px); overflow: hidden; text-overflow: ellipsis; }
+    .field .peek { position: absolute; right: 8px; top: 8px; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; background: none; color: var(--ink-3); font: 500 13px var(--sans); cursor: pointer; }
+    .field .peek:hover { color: var(--ink); background: rgba(255, 255, 255, .5); }
+    .hint { margin: -4px 4px 12px; font-size: 13px; color: var(--ink-3); }
+
+    .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .plans label { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 14px 14px 13px; border-radius: 16px; cursor: pointer;
+      background: rgba(255, 255, 255, .45); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8); transition: box-shadow .2s, background .2s; }
+    .plans label:hover { background: rgba(255, 255, 255, .65); }
+    .plans input { position: absolute; opacity: 0; pointer-events: none; }
+    .plans label:has(input:checked) { background: rgba(255, 255, 255, .85); box-shadow: inset 0 0 0 2px var(--accent); }
+    .plans label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .plans .nm { font: 400 21px/1.15 var(--serif); }
+    .plans .pr { font-size: 14.5px; font-weight: 500; white-space: nowrap; }
+    .plans .ms { font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
+
+    details { margin: 4px 0 0; }
+    summary { cursor: pointer; font-size: 14.5px; color: var(--ink-2); padding: 4px 2px; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+"; display: inline-block; width: 18px; color: var(--ink-3); }
+    details[open] summary::before { content: "–"; }
+    details .field { margin-top: 10px; }
+
+    .check { display: flex; gap: 10px; align-items: flex-start; margin: 20px 2px 0; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+    .check input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+    .check a { color: var(--ink); text-underline-offset: 3px; }
+    .trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    .err { min-height: 22px; margin: 14px 2px 8px; color: #a3433a; font-size: 14px; }
+    form.shake { animation: shake .45s; }
+    @keyframes shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+    form .btn { width: 100%; justify-content: center; }
+    form .btn[disabled] { opacity: .6; cursor: default; transform: none; }
+    .after { margin: 16px 0 0; text-align: center; font-size: 13.5px; color: var(--ink-3); }
+    .after a { color: var(--ink); text-underline-offset: 3px; }
+
+    .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 22px; }
+    .how div { font-size: 13.5px; color: var(--ink-2); padding: 0 4px; }
+    .how b { display: block; font: 400 24px var(--serif); color: var(--ink); }
+    footer { text-align: center; padding: 0 16px 26px; font-size: 13px; color: var(--ink-3); }
+    footer a { text-decoration: none; } footer a:hover { color: var(--ink); }
+    body.leaving main { transition: opacity .5s, transform .5s; opacity: 0; transform: scale(.98); }
+
+    @media (max-width: 560px) {
+      form.pane { padding: 24px 18px 20px; }
+      .row { grid-template-columns: 1fr; gap: 0; }
+      .plans { grid-template-columns: 1fr; }
+      .plans label { flex-direction: row; align-items: baseline; gap: 10px; }
+      .plans .ms { margin-left: auto; }
+      .how { grid-template-columns: 1fr; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <a class="wordmark" href="/" data-i18n-attr="aria-label=home">Sella</a>
+    <span id="lang"></span>
+  </div>
+
+  <main>
+    <div class="stack">
+      <div class="intro">
+        <h1 data-i18n-html="h1">Ať prodává i <em>u vás</em>.</h1>
+        <p data-i18n="lead">Založte si účet, zaplaťte tarif a vložte na web jeden řádek kódu. Sella pak radí vašim zákazníkům sama.</p>
+      </div>
+
+      <form class="pane" id="form" novalidate>
+        <p class="step" data-i18n="s1">Váš e-shop</p>
+        <div class="field" data-f="name">
+          <input id="name" autocomplete="organization" placeholder=" " maxlength="80" required>
+          <label for="name" data-i18n="name">Název obchodu</label>
+        </div>
+        <div class="field" data-f="domain">
+          <input id="domain" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder=" " inputmode="url" required>
+          <label for="domain" data-i18n="domain">Adresa e-shopu, např. mujobchod.cz</label>
+        </div>
+        <details id="feedBox">
+          <summary data-i18n="feedQ">Mám XML feed produktů (Heureka, Zboží.cz, Google)</summary>
+          <div class="field" data-f="feed">
+            <input id="feed" autocapitalize="none" spellcheck="false" placeholder=" " inputmode="url">
+            <label for="feed" data-i18n="feed">Adresa feedu – https://…</label>
+          </div>
+          <p class="hint" data-i18n="feedHint">Z feedu se Sella naučí vaše produkty. Doplnit ho můžete i později v přehledu.</p>
+        </details>
+
+        <p class="step" data-i18n="s2">Přihlášení do přehledu</p>
+        <div class="row">
+          <div class="field" data-f="email">
+            <input id="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder=" " required>
+            <label for="email" data-i18n="email">E-mail</label>
+          </div>
+          <div class="field pw" data-f="password">
+            <input id="password" type="password" autocomplete="new-password" placeholder=" " minlength="10" required>
+            <label for="password" data-i18n="pw">Heslo (min. 10 znaků)</label>
+            <button class="peek" type="button" id="peek" data-i18n="show">Ukázat</button>
+          </div>
+        </div>
+
+        <p class="step" data-i18n="s3">Tarif</p>
+        <div class="plans" id="plans" role="radiogroup" data-i18n-attr="aria-label=s3"></div>
+
+        <div class="trap" aria-hidden="true"><label>Website <input id="website" tabindex="-1" autocomplete="off"></label></div>
+        <label class="check" data-f="terms"><input type="checkbox" id="terms"> <span data-i18n-html="terms">Souhlasím s podmínkami služby a beru na vědomí <a href="/soukromi.html" target="_blank">zpracování osobních údajů</a>.</span></label>
+
+        <p class="err" id="err" role="alert"></p>
+        <button class="btn dark" type="submit" id="go"><span data-i18n="go">Založit účet</span> <span class="arr">→</span></button>
+        <p class="after" data-i18n-html="have">Už účet máte? <a href="/sella/prihlaseni.html">Přihlaste se</a></p>
+      </form>
+
+      <div class="how">
+        <div><b>1</b><span data-i18n="h1s">Založíte si účet – hned uvidíte svůj přehled.</span></div>
+        <div><b>2</b><span data-i18n="h2s">Zaplatíte tarif kartou. Faktura přijde e-mailem každý měsíc.</span></div>
+        <div><b>3</b><span data-i18n="h3s">Vložíte na web řádek kódu a Sella začne prodávat.</span></div>
+      </div>
+    </div>
+  </main>
+
+  <footer><a href="/soukromi.html" data-i18n="privacy">Ochrana soukromí</a> · © 2026 Sella</footer>
+
+  <script src="i18n.js"></script>
+  <script src="sella.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const I = SellaI18n;
+    const t = I.use({
+      cs: {
+        title: "Chci Sellu", home: "Sella – úvod", h1: "Ať prodává i <em>u vás</em>.",
+        lead: "Založte si účet, zaplaťte tarif a vložte na web jeden řádek kódu. Sella pak radí vašim zákazníkům sama.",
+        s1: "Váš e-shop", name: "Název obchodu", domain: "Adresa e-shopu, např. mujobchod.cz",
+        feedQ: "Mám XML feed produktů (Heureka, Zboží.cz, Google)", feed: "Adresa feedu – https://…",
+        feedHint: "Z feedu se Sella naučí vaše produkty. Doplnit ho můžete i později v přehledu.",
+        s2: "Přihlášení do přehledu", email: "E-mail", pw: "Heslo (min. 10 znaků)", show: "Ukázat", hide: "Skrýt",
+        s3: "Tarif", month: "/ měsíc", msgs: "zpráv",
+        terms: 'Souhlasím s podmínkami služby a beru na vědomí <a href="/soukromi.html" target="_blank">zpracování osobních údajů</a>.',
+        go: "Založit účet", have: 'Už účet máte? <a href="/sella/prihlaseni.html">Přihlaste se</a>',
+        h1s: "Založíte si účet – hned uvidíte svůj přehled.", h2s: "Zaplatíte tarif kartou. Faktura přijde e-mailem každý měsíc.", h3s: "Vložíte na web řádek kódu a Sella začne prodávat.",
+        privacy: "Ochrana soukromí",
+        e_name: "Vyplňte název obchodu.", e_domain: "Zadejte adresu e-shopu, např. mujobchod.cz.", e_email: "Zadejte platný e-mail.",
+        e_password: "Heslo musí mít aspoň 10 znaků.", e_feed: "Adresa feedu musí začínat https://", e_plan: "Vyberte tarif.", e_terms: "Potvrďte prosím podmínky.",
+        e_emailTaken: "S tímto e-mailem už účet existuje – přihlaste se.", e_domainTaken: "Tento e-shop už Sellu má. Ozvěte se nám, pokud jde o omyl.",
+        many: "Příliš mnoho registrací z této sítě, zkuste to prosím později.", failed: "Registrace se nepodařila, zkuste to prosím znovu.", offline: "Spojení se nezdařilo, zkuste to prosím znovu.",
+      },
+      en: {
+        title: "Get Sella", home: "Sella – home", h1: "Let it sell <em>for you</em> too.",
+        lead: "Create an account, pay for a plan and add one line of code to your website. Sella then helps your customers on its own.",
+        s1: "Your shop", name: "Shop name", domain: "Shop address, e.g. myshop.com",
+        feedQ: "I have an XML product feed (Heureka, Zboží.cz, Google)", feed: "Feed address – https://…",
+        feedHint: "Sella learns your products from the feed. You can also add it later in your insights.",
+        s2: "Signing in to your insights", email: "E-mail", pw: "Password (10+ characters)", show: "Show", hide: "Hide",
+        s3: "Plan", month: "/ month", msgs: "messages",
+        terms: 'I agree to the terms of service and acknowledge the <a href="/soukromi.html" target="_blank">processing of personal data</a>.',
+        go: "Create account", have: 'Already have an account? <a href="/sella/prihlaseni.html">Sign in</a>',
+        h1s: "Create an account – you see your insights right away.", h2s: "Pay for the plan by card. The invoice arrives by e-mail every month.", h3s: "Add a line of code to your website and Sella starts selling.",
+        privacy: "Privacy",
+        e_name: "Please fill in the shop name.", e_domain: "Enter your shop's address, e.g. myshop.com.", e_email: "Enter a valid e-mail.",
+        e_password: "The password needs at least 10 characters.", e_feed: "The feed address must start with https://", e_plan: "Choose a plan.", e_terms: "Please confirm the terms.",
+        e_emailTaken: "An account with this e-mail already exists – please sign in.", e_domainTaken: "This shop already has Sella. Get in touch if that's a mistake.",
+        many: "Too many sign-ups from this network, please try again later.", failed: "Signing up didn't work, please try again.", offline: "Couldn't connect, please try again.",
+      },
+    });
+    const retitle = () => { document.title = t("title"); };
+    retitle(); I.onChange(retitle);
+    I.switcher($("lang"));
+
+    // the plans, straight from the server; ?plan= from the price list is preselected
+    const wanted = new URLSearchParams(location.search).get("plan");
+    let plans = [];
+    function renderPlans() {
+      const chosen = document.querySelector("input[name=plan]:checked")?.value || wanted;
+      const nf = (n) => Number(n).toLocaleString(I.locale());
+      const money = (n) => (I.lang === "cs" ? nf(n) + " Kč" : "CZK " + nf(n));
+      $("plans").innerHTML = plans.map((p) => `
+        <label><input type="radio" name="plan" value="${p.id}">
+          <span class="nm">${I.lang === "en" ? p.nameEn : p.name}</span>
+          <span class="pr">${money(p.priceCzk)} ${t("month")}</span>
+          <span class="ms">${nf(p.messages)} ${t("msgs")}</span></label>`).join("");
+      const pick = plans.find((p) => p.id === chosen) || plans.find((p) => p.popular) || plans[0];
+      if (pick) document.querySelector(`input[name=plan][value="${pick.id}"]`).checked = true;
+    }
+    fetch("/api/plans").then((r) => r.json()).then((d) => { plans = d.plans || []; renderPlans(); }).catch(() => {});
+    I.onChange(renderPlans);
+    $("name").focus();
+
+    $("peek").onclick = () => {
+      const show = $("password").type === "password";
+      $("password").type = show ? "text" : "password";
+      $("peek").dataset.i18n = show ? "hide" : "show";
+      I.apply($("form"));
+    };
+
+    const FIELD = { name: "name", domain: "domain", email: "email", password: "password", feed: "feed" };
+    const fail = (code, msg) => {
+      document.querySelectorAll(".field.bad").forEach((f) => f.classList.remove("bad"));
+      const field = document.querySelector(`[data-f="${code}"]`);
+      if (field?.classList.contains("field")) field.classList.add("bad");
+      if (code === "feed") $("feedBox").open = true;
+      if (FIELD[code]) $(FIELD[code]).focus();
+      $("err").textContent = msg;
+      $("form").classList.remove("shake"); void $("form").offsetWidth; $("form").classList.add("shake");
+    };
+    document.querySelectorAll(".field input").forEach((i) => i.addEventListener("input", () => i.parentElement.classList.remove("bad")));
+
+    $("form").onsubmit = async (e) => {
+      e.preventDefault();
+      $("err").textContent = "";
+      const body = {
+        name: $("name").value.trim(), domain: $("domain").value.trim(), email: $("email").value.trim(),
+        password: $("password").value, feedUrl: $("feed").value.trim(), terms: $("terms").checked,
+        plan: document.querySelector("input[name=plan]:checked")?.value || "", website: $("website").value, lang: I.lang,
+      };
+      // the same checks as the server, so most mistakes show at once
+      if (body.name.length < 2) return fail("name", t("e_name"));
+      if (!/^(https?:\/\/)?[^\s/]+\.[a-z]{2,}/i.test(body.domain)) return fail("domain", t("e_domain"));
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) return fail("email", t("e_email"));
+      if (body.password.length < 10) return fail("password", t("e_password"));
+      if (body.feedUrl && !/^https?:\/\/\S+$/i.test(body.feedUrl)) return fail("feed", t("e_feed"));
+      if (!body.plan) return fail("plan", t("e_plan"));
+      if (!body.terms) return fail("terms", t("e_terms"));
+      $("go").disabled = true;
+      try {
+        const r = await fetch("/api/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        if (r.status === 409) throw { code: d.code, msg: t(d.code === "email" ? "e_emailTaken" : "e_domainTaken") };
+        if (r.status === 400) throw { code: d.code, msg: t(`e_${d.code}`) || d.error };
+        if (r.status === 429) throw { msg: t("many") };
+        if (!r.ok) throw { msg: d.error || t("failed") };
+        document.body.classList.add("leaving");
+        setTimeout(() => location.assign("/admin/?welcome=1"), Sella.reduced ? 0 : 420);
+      } catch (err) {
+        fail(err.code, err instanceof TypeError ? t("offline") : err.msg || t("failed"));
+        $("go").disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

@@ -101,7 +101,7 @@
     .plans-box .top { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 18px; }
     .plans-box h3 { font: 400 32px/1.1 var(--serif); margin: 0; }
     .plans-box .top p { margin: 6px 0 0; color: var(--ink-3); font-size: 14.5px; }
-    .plans-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .pl { position: relative; padding: 20px; border-radius: 20px; background: #fff; box-shadow: inset 0 0 0 1px rgba(47,49,51,.08); display: flex; flex-direction: column; gap: 6px; }
     .pl.popular { box-shadow: inset 0 0 0 2px #4e7fb4; }
     .pl .flag { position: absolute; top: -11px; left: 18px; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: #4e7fb4; color: #fff; padding: 4px 10px; border-radius: 99px; }
@@ -115,6 +115,39 @@
     .plans-err { color: #a3433a; font-size: 14px; margin-top: 12px; min-height: 20px; }
     @media (max-width: 900px) { .plans-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 560px) { .plans-grid { grid-template-columns: 1fr; } .plans-box { padding: 20px; } }
+
+    /* a shop that signed up and hasn't paid yet: pay first, then the assistant and the embed code work */
+    .activate { margin: 0 0 26px; padding: 30px 30px 26px; }
+    .activate h2 { font: 400 clamp(28px, 3.4vw, 38px)/1.1 var(--serif); margin: 0 0 8px; letter-spacing: -.01em; }
+    .activate > p { margin: 0 0 22px; color: var(--ink-2); max-width: 680px; }
+    .activate .note { margin: 16px 2px 0; font-size: 13.5px; color: var(--ink-3); }
+    .activate .note.dev { color: #8a5a12; }
+    .activate .plans-err { margin-top: 10px; min-height: 0; }
+    .activate .pl .btn.light { box-shadow: inset 0 0 0 1px rgba(47,49,51,.2); }
+    .activate .pl .btn.light:hover { box-shadow: inset 0 0 0 1px rgba(47,49,51,.4); }
+
+    /* on your website: embed code, settings, payments */
+    .site { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 14px; align-items: start; }
+    .code { margin: 4px 0 0; padding: 16px 18px; border-radius: 16px; background: #233044; color: #e6edf6; font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }
+    .code.locked { color: transparent; text-shadow: 0 0 9px rgba(230,237,246,.75); user-select: none; }
+    .lockmsg { margin: 12px 0 0; font-size: 14px; color: var(--ink-2); }
+    .site .btn { margin-top: 14px; height: 40px; font-size: 14px; }
+    .site .small { font-size: 13.5px; color: var(--ink-3); margin: 10px 0 0; }
+    .site .small b { color: var(--ink-2); font-weight: 500; }
+    .settings label { display: block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; margin: 0 0 6px; }
+    .settings input { width: 100%; height: 44px; padding: 0 14px; border: 0; border-radius: 12px; font: 400 15px var(--sans); color: var(--ink); background: rgba(255,255,255,.62); box-shadow: inset 0 0 0 1px rgba(255,255,255,.8); margin-bottom: 12px; }
+    .settings input:focus { outline: none; background: rgba(255,255,255,.85); box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px rgba(78,127,180,.14); }
+    .settings input:disabled { opacity: .7; }
+    .msg { font-size: 13.5px; min-height: 20px; margin: 8px 0 0; color: var(--ink-3); }
+    .msg.err { color: #a3433a; } .msg.ok { color: #2f7a52; }
+    .bstate { display: inline-block; padding: 3px 11px; border-radius: 99px; font-size: 12.5px; font-weight: 600; margin: 6px 0 2px; }
+    .bstate.ok { background: rgba(47,138,93,.14); color: #2b7552; }
+    .bstate.warn { background: rgba(183,122,29,.16); color: #8a5a12; }
+    .bstate.bad { background: rgba(192,84,75,.14); color: #8f3a32; }
+    .bstate.plain { background: rgba(47,49,51,.08); color: var(--ink-2); }
+    .toast { position: fixed; left: 50%; bottom: 26px; z-index: 60; transform: translate(-50%, 16px); opacity: 0; transition: opacity .35s, transform .35s; pointer-events: none;
+      background: rgba(28,32,40,.92); color: #f4f6f8; padding: 12px 20px; border-radius: 99px; font-size: 14.5px; max-width: calc(100% - 32px); text-align: center; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
     /* AI advice */
     .advice { margin-top: 14px; padding: 26px 28px; border-radius: 28px; color: #eef3f9; background: linear-gradient(150deg, #5a88bf, #2f4f80); box-shadow: 0 30px 70px -36px rgba(30,50,90,.7); }
@@ -152,9 +185,12 @@
     .tip { position: fixed; pointer-events: none; background: rgba(28,32,40,.86); color: #f4f6f8; font-size: 13px; padding: 7px 12px; border-radius: 99px; z-index: 9; display: none; max-width: 340px; }
     footer { padding: 46px 0 40px; color: var(--ink-3); font-size: 13px; text-align: center; }
 
-    @media (max-width: 1080px) { .kpis { grid-template-columns: repeat(2, 1fr); } .perf, .bottom { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 1080px) { .kpis { grid-template-columns: repeat(2, 1fr); } .perf, .bottom { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 1fr; }
+      .site { grid-template-columns: 1fr 1fr; } .site .embed { grid-column: 1 / -1; } .activate .plans-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 640px) {
       .wrap { width: calc(100% - 28px); }
+      .site, .activate .plans-grid { grid-template-columns: 1fr; }
+      .activate { padding: 22px 18px; }
       .bar .sep { display: none; }
       .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
       .kpi { padding: 16px; } .kpi .v { font-size: 34px; } .kpi .ring { display: none; }
@@ -189,6 +225,8 @@
       </div>
     </section>
 
+    <section class="pane activate" id="activate" hidden></section>
+
     <div class="kpis" id="kpis"></div>
 
     <h2 class="sec"><span data-i18n="perf.h">Jak prodavačka funguje</span><small data-i18n="perf.p">Co se změní, když zákazníkovi poradí – a co vás to stojí.</small></h2>
@@ -202,6 +240,13 @@
         </div>
       </section>
       <section class="pane card price" id="price"></section>
+    </div>
+
+    <h2 class="sec"><span data-i18n="site.h">Na vašem webu</span><small data-i18n="site.p">Kód pro vložení, kde prodavačka smí běžet, a vaše platby.</small></h2>
+    <div class="site">
+      <section class="pane card embed" id="embed"></section>
+      <section class="pane card settings" id="settings"></section>
+      <section class="pane card billing" id="billing"></section>
     </div>
 
     <section class="advice">
@@ -241,6 +286,7 @@
     <footer data-i18n="foot">Sella · data za posledních 90 dní, starší se automaticky mažou</footer>
   </div>
   <div class="tip" id="tip"></div>
+  <div class="toast" id="toast" role="status"></div>
 
   <script src="/sella/i18n.js"></script>
   <script src="/sella/sella.js"></script>
@@ -303,6 +349,24 @@
         now: "právě teď", minAgo: (m) => `před ${m} min`, hAgo: (h) => `před ${h} h`,
         notFound: "Tento obchod neexistuje.", loadErr: (s) => `Data se nepodařilo načíst (${s}).`, inactive: "neaktivní",
         foot: "Sella · data za posledních 90 dní, starší se automaticky mažou",
+        awaiting: "Čeká na platbu", ended: "Předplatné skončilo", pastDue: "Platba selhala – zkontrolujte kartu",
+        actWelcome: "Účet je založený. Zbývá zaplatit tarif.", actH: "Sella čeká na platbu", actEnded: "Předplatné skončilo",
+        actP: "Vyberte tarif a zaplaťte kartou. Hned po platbě se prodavačka na vašem webu zapne a níže se odemkne kód pro vložení.",
+        actEndedP: "Prodavačka je na vašem webu vypnutá. Obnovte tarif a zapne se znovu – kód na webu nemusíte měnit.",
+        pay: (p) => `Zaplatit ${p}`, paying: "Přesměrovávám na platbu…",
+        noteStripe: (e) => `Platbu bezpečně zpracuje Stripe. Každý měsíc se strhne sama a faktura přijde na ${e}. Zrušit můžete kdykoli.`,
+        noteSim: "Vývojový režim bez Stripe – platba se jen nasimuluje.", noteOff: "Platby zatím nejsou zapnuté – ozvěte se nám prosím.",
+        paid: "Děkujeme! Platba proběhla a Sella na vašem webu běží.", paidWait: "Děkujeme! Čekáme na potvrzení platby…", payErr: "Platbu se nepodařilo zahájit.",
+        plansPStripe: "Rozdíl v ceně se doúčtuje (nebo vrátí) hned. Když se vyčerpají zprávy tarifu, prodavačka se do konce měsíce vypne.",
+        "site.h": "Na vašem webu", "site.p": "Kód pro vložení, kde prodavačka smí běžet, a vaše platby.",
+        embedH: "Kód pro váš web", embedP: "Vložte ho na všechny stránky e-shopu, těsně před </body>.", copy: "Zkopírovat kód", copied: "Zkopírováno ✓",
+        embedOnly: (d) => `Funguje jen na: <b>${d}</b>`, embedLocked: "Kód se odemkne po zaplacení tarifu – bez platby prodavačka na webu nepoběží.",
+        setH: "Nastavení obchodu", setDomains: "Domény e-shopu", setFeed: "Produktový feed (XML)", setFeedPh: "https://…/feed.xml", save: "Uložit", saving: "Ukládám…",
+        saved: "Uloženo.", savedFeed: "Uloženo. Stahuji produkty z feedu…", setDemo: "Ukázkový obchod – nastavení spravujeme my.", setDomainsHint: "Víc domén oddělte čárkou.",
+        billH: "Platby", billManual: "Platíte na fakturu podle dohody s námi.", billUnpaid: "Zatím nezaplaceno.",
+        stOk: "Zaplaceno", stPast: "Platba selhala", stEnded: "Zrušeno", stManual: "Na fakturu", stUnpaid: "Nezaplaceno",
+        nextPay: (d) => `Další platba: <b>${d}</b>`, endsOn: (d) => `Zaplaceno do: <b>${d}</b>`, pastP: "Stripe platbu během pár dní zkusí znovu. Aktualizujte prosím kartu.",
+        portal: "Faktury a platební karta", portalP: "Stáhnete faktury, změníte kartu nebo předplatné zrušíte.", simNote: "Simulovaná platba (vývoj).",
       },
       en: {
         home: "Home", pick: "Shop", all: "All clients", logout: "Sign out", refresh: "↻ Refresh",
@@ -343,6 +407,24 @@
         now: "just now", minAgo: (m) => `${m} min ago`, hAgo: (h) => `${h} h ago`,
         notFound: "This shop doesn't exist.", loadErr: (s) => `Couldn't load the data (${s}).`, inactive: "inactive",
         foot: "Sella · data for the last 90 days, older data is deleted automatically",
+        awaiting: "Waiting for payment", ended: "Subscription ended", pastDue: "Payment failed – check your card",
+        actWelcome: "Your account is ready. Just pay for a plan.", actH: "Sella is waiting for payment", actEnded: "Your subscription has ended",
+        actP: "Choose a plan and pay by card. Right after the payment the assistant switches on on your site and the embed code below unlocks.",
+        actEndedP: "The assistant is off on your site. Renew a plan and it comes back – no need to change the code on your site.",
+        pay: (p) => `Pay ${p}`, paying: "Taking you to the payment…",
+        noteStripe: (e) => `The payment is handled securely by Stripe. It renews every month and the invoice goes to ${e}. Cancel any time.`,
+        noteSim: "Development mode without Stripe – the payment is only simulated.", noteOff: "Payments aren't switched on yet – please get in touch.",
+        paid: "Thank you! The payment went through and Sella runs on your site.", paidWait: "Thank you! Waiting for the payment to be confirmed…", payErr: "Couldn't start the payment.",
+        plansPStripe: "The price difference is charged (or refunded) right away. When the plan's messages run out, the assistant switches off until the month ends.",
+        "site.h": "On your website", "site.p": "The embed code, where the assistant may run, and your payments.",
+        embedH: "Code for your website", embedP: "Add it to every page of your shop, just before </body>.", copy: "Copy code", copied: "Copied ✓",
+        embedOnly: (d) => `Works only on: <b>${d}</b>`, embedLocked: "The code unlocks once you pay for a plan – without payment the assistant won't run on your site.",
+        setH: "Shop settings", setDomains: "Shop domains", setFeed: "Product feed (XML)", setFeedPh: "https://…/feed.xml", save: "Save", saving: "Saving…",
+        saved: "Saved.", savedFeed: "Saved. Fetching products from the feed…", setDemo: "Demo shop – we manage its settings.", setDomainsHint: "Separate more domains with commas.",
+        billH: "Payments", billManual: "You pay by invoice as agreed with us.", billUnpaid: "Not paid yet.",
+        stOk: "Paid", stPast: "Payment failed", stEnded: "Cancelled", stManual: "By invoice", stUnpaid: "Unpaid",
+        nextPay: (d) => `Next payment: <b>${d}</b>`, endsOn: (d) => `Paid until: <b>${d}</b>`, pastP: "Stripe will retry in a few days. Please update your card.",
+        portal: "Invoices and card", portalP: "Download invoices, change your card or cancel the subscription.", simNote: "Simulated payment (development).",
       },
     });
     I.switcher($("lang"));
@@ -424,9 +506,14 @@
         $("client-pick").innerHTML = d.clients.map((c) => `<option value="${esc(c.id)}"${c.id === d.client.id ? " selected" : ""}>${esc(c.name)}${c.active ? "" : ` (${t("inactive")})`}</option>`).join("");
         $("client-pick").hidden = false; $("shop-name").hidden = true;
       } else { $("shop-name").textContent = d.client.name; $("shop-name").hidden = false; }
+      const b = d.billing || {};
       const limited = u && !u.aiActive;
-      $("status").classList.toggle("off", Boolean(limited));
-      $("status").querySelector("span").textContent = limited ? t("limited") : t("running");
+      $("status").classList.toggle("off", Boolean(limited || b.needsPayment));
+      $("status").classList.toggle("limited", b.status === "past_due");
+      $("status").querySelector("span").textContent = b.needsPayment ? t(b.status === "canceled" ? "ended" : "awaiting")
+        : b.status === "past_due" ? t("pastDue") : limited ? t("limited") : t("running");
+      renderActivate(d);
+      renderSite(d, me);
 
       // the four main numbers
       const aiShare = tt.sessions ? tt.aiSessions / tt.sessions : 0;
@@ -507,23 +594,65 @@
         ${u.costUsd != null ? `<div class="ours"><span>${t("ours", u.costUsd.toFixed(2), nf(u.aiCalls))}</span><a href="/admin/klienti.html">${t("oursLink")}</a></div>` : ""}`;
     }
 
+    // ---- plans: one card per plan (the picker and the "pay first" panel share it)
+    const planName = (p) => (I.lang === "en" ? p.nameEn : p.name);
+    const planCard = (p, button) => `<div class="pl${p.popular ? " popular" : ""}">${p.popular ? `<span class="flag">${t("popular")}</span>` : ""}
+      <span class="nm">${esc(planName(p))}</span>
+      <span class="pr">${p.priceCzk ? kc(p.priceCzk) : t("free")} ${p.priceCzk ? `<small>${t("perMonth")}</small>` : ""}</span>
+      <ul><li>${t("plMsgs", nf(p.messages))}</li><li>${t("plVoice", nf(p.ttsChars))}</li><li>${t("plAll")}</li></ul>${button}</div>`;
+    const post = (url, body) => call(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, lang: I.lang }) });
+
+    // pays for a plan: off to Stripe's payment page, or done at once (simulated locally)
+    async function pay(plan) {
+      const r = await post("/api/billing/checkout", { plan });
+      const res = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(res.error || t("payErr"));
+      if (res.url) { toast(t("paying")); location.assign(res.url); return false; }
+      return true;
+    }
+
+    // a shop that signed up (or whose subscription ended) pays here before anything works
+    function renderActivate(d) {
+      const b = d.billing || {};
+      $("activate").hidden = !b.needsPayment;
+      if (!b.needsPayment) return;
+      const ended = b.status === "canceled";
+      const note = b.payments === "stripe" ? t("noteStripe", esc(d.client.ownerEmail || "e-mail")) : b.payments === "simulated" ? t("noteSim") : t("noteOff");
+      $("activate").innerHTML = `
+        <h2>${ended ? t("actEnded") : params.has("welcome") ? t("actWelcome") : t("actH")}</h2>
+        <p>${ended ? t("actEndedP") : t("actP")}</p>
+        <div class="plans-grid">${d.plans.map((p) => planCard(p,
+          `<button class="btn ${p.id === d.usage.planId ? "dark" : "light"}" data-pay="${p.id}"${b.payments === "off" ? " disabled" : ""}>${t("pay", kc(p.priceCzk))}</button>`)).join("")}</div>
+        <p class="plans-err" id="pay-err"></p>
+        <p class="note${b.payments === "simulated" ? " dev" : ""}">${note}</p>`;
+    }
+    $("activate").onclick = async (e) => {
+      const btn = e.target.closest("[data-pay]");
+      if (!btn || btn.disabled) return;
+      $("activate").querySelectorAll("[data-pay]").forEach((x) => { x.disabled = true; });
+      try {
+        if (await pay(btn.dataset.pay)) { toast(t("paid")); await load(); }
+      } catch (err) {
+        $("pay-err").textContent = err.message;
+        $("activate").querySelectorAll("[data-pay]").forEach((x) => { x.disabled = false; });
+      }
+    };
+
     // ---- choosing a plan: applies right away (a shop that ran out gets its assistant back)
     document.addEventListener("click", (e) => { if (e.target.closest("#change-plan")) openPlans(); });
     function openPlans() {
       const d = last?.d;
       if (!d?.plans) return;
-      const planName = (p) => (I.lang === "en" ? p.nameEn : p.name);
+      // not paid yet → the plan is chosen by paying for it, in the panel at the top
+      if (d.billing?.needsPayment && !last.me.master) { $("activate").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+      const stripe = d.billing && !["manual", "unpaid"].includes(d.billing.status) && d.billing.payments === "stripe";
       const bg = document.createElement("div");
       bg.className = "plans-bg";
       bg.innerHTML = `<div class="plans-box" role="dialog" aria-modal="true" aria-label="${t("plansH")}">
-        <div class="top"><div><h3>${t("plansH")}</h3><p>${t("plansP")}</p></div><button class="btn light" data-close>${t("closeP")}</button></div>
+        <div class="top"><div><h3>${t("plansH")}</h3><p>${stripe ? t("plansPStripe") : t("plansP")}</p></div><button class="btn light" data-close>${t("closeP")}</button></div>
         <div class="plans-grid">${d.plans.map((p) => {
           const mine = p.id === d.usage.planId;
-          return `<div class="pl${p.popular ? " popular" : ""}">${p.popular ? `<span class="flag">${t("popular")}</span>` : ""}
-            <span class="nm">${esc(planName(p))}</span>
-            <span class="pr">${p.priceCzk ? kc(p.priceCzk) : t("free")} ${p.priceCzk ? `<small>${t("perMonth")}</small>` : ""}</span>
-            <ul><li>${t("plMsgs", nf(p.messages))}</li><li>${t("plVoice", nf(p.ttsChars))}</li><li>${t("plAll")}</li></ul>
-            <button class="btn ${mine ? "light" : "dark"}" data-plan="${p.id}" ${mine ? "disabled" : ""}>${mine ? t("current") : t("choose")}</button></div>`;
+          return planCard(p, `<button class="btn ${mine ? "light" : "dark"}" data-plan="${p.id}" ${mine ? "disabled" : ""}>${mine ? t("current") : t("choose")}</button>`);
         }).join("")}</div>
         <p class="plans-err" id="plans-err"></p></div>`;
       document.body.append(bg);
@@ -533,13 +662,91 @@
         const b = e.target.closest("[data-plan]");
         if (!b || b.disabled) return;
         b.disabled = true;
-        const r = await call("/api/analytics/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: b.dataset.plan }) });
+        const r = await post("/api/analytics/plan", { plan: b.dataset.plan });
         const res = await r.json().catch(() => ({}));
         if (!r.ok) { b.disabled = false; bg.querySelector("#plans-err").textContent = res.error || "Error"; return; }
         close();
+        toast(t("chosen"));
         load();
       };
       addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); removeEventListener("keydown", esc); } });
+    }
+
+    // ---- on your website: the embed code (only once paid), domains + feed, payments
+    const fmtDate = (iso) => new Date(iso).toLocaleDateString(I.locale(), { day: "numeric", month: "long", year: "numeric" });
+    function renderSite(d, me) {
+      const c = d.client, b = d.billing || {};
+      const snippet = `<script src="${location.origin}/widget/prodavac.js" data-client="${c.id}" defer><\/script>`;
+      $("embed").innerHTML = `<h3>${t("embedH")}</h3><p class="hint">${esc(t("embedP"))}</p>
+        ${b.needsPayment
+          ? `<pre class="code locked" aria-hidden="true">&lt;script src="${location.origin}/widget/prodavac.js" data-client="••••••••" defer&gt;&lt;/script&gt;</pre><p class="lockmsg">${t("embedLocked")}</p>`
+          : `<pre class="code" id="snippet">${esc(snippet)}</pre>
+             <button class="btn dark" id="copy">${t("copy")}</button>
+             ${c.domains?.length ? `<p class="small">${t("embedOnly", c.domains.map(esc).join(", "))}</p>` : ""}`}`;
+
+      const locked = c.builtIn && !me.master;
+      // keep what the owner is typing when the page re-renders (e.g. a language switch)
+      const typed = { domains: $("set-domains")?.value, feed: $("set-feed")?.value };
+      $("settings").innerHTML = `<h3>${t("setH")}</h3><p class="hint">${locked ? t("setDemo") : t("setDomainsHint")}</p>
+        <label for="set-domains">${t("setDomains")}</label>
+        <input id="set-domains" value="${esc(typed.domains ?? c.domains.join(", "))}" autocapitalize="none" spellcheck="false"${locked ? " disabled" : ""}>
+        <label for="set-feed">${t("setFeed")}</label>
+        <input id="set-feed" value="${esc(typed.feed ?? c.feedUrl)}" placeholder="${t("setFeedPh")}" autocapitalize="none" spellcheck="false" inputmode="url"${locked ? " disabled" : ""}>
+        ${locked ? "" : `<button class="btn light" id="save-settings">${t("save")}</button>`}
+        <p class="msg" id="set-msg"></p>`;
+
+      const state = { active: ["ok", "stOk"], past_due: ["warn", "stPast"], canceled: ["bad", "stEnded"], manual: ["plain", "stManual"], unpaid: ["bad", "stUnpaid"] }[b.status] || ["plain", "stManual"];
+      $("billing").innerHTML = `<h3>${t("billH")}</h3>
+        <span class="bstate ${state[0]}">${t(state[1])}</span>
+        ${b.status === "manual" ? `<p class="small">${t("billManual")}</p>`
+          : b.status === "unpaid" ? `<p class="small">${t("billUnpaid")}</p>`
+          : `${b.paidUntil ? `<p class="small">${t(b.status === "active" ? "nextPay" : "endsOn", fmtDate(b.paidUntil))}</p>` : ""}
+             ${b.status === "past_due" ? `<p class="small">${t("pastP")}</p>` : ""}
+             ${b.canManage ? `<button class="btn ${b.status === "past_due" ? "dark" : "light"}" id="portal">${t("portal")}</button><p class="small">${t("portalP")}</p>`
+               : b.payments === "simulated" ? `<p class="small">${t("simNote")}</p>` : ""}`}`;
+    }
+    document.addEventListener("click", async (e) => {
+      const btn = e.target.closest("#copy, #save-settings, #portal");
+      if (!btn || btn.disabled) return;
+      if (btn.id === "copy") {
+        await navigator.clipboard.writeText($("snippet").textContent).catch(() => {
+          getSelection().selectAllChildren($("snippet")); document.execCommand("copy");
+        });
+        btn.textContent = t("copied");
+        setTimeout(() => { btn.textContent = t("copy"); }, 1800);
+      } else if (btn.id === "save-settings") {
+        btn.disabled = true; btn.textContent = t("saving");
+        const feedUrl = $("set-feed").value.trim(), oldFeed = last.d.client.feedUrl;
+        const r = await post("/api/analytics/settings", { domains: $("set-domains").value, feedUrl });
+        const res = await r.json().catch(() => ({}));
+        const msg = $("set-msg");
+        btn.disabled = false; btn.textContent = t("save");
+        if (!r.ok) { msg.className = "msg err"; msg.textContent = res.error || "Error"; return; }
+        msg.className = "msg ok";
+        if (feedUrl && feedUrl !== oldFeed) {
+          msg.textContent = t("savedFeed");
+          const cr = await call("/api/analytics/catalog", { method: "POST" });
+          if (cr.ok) renderCatalog(await cr.json());
+        }
+        msg.textContent = t("saved");
+        Object.assign(last.d.client, { domains: res.domains, feedUrl: res.feedUrl });
+        $("set-domains").value = res.domains.join(", ");
+      } else if (btn.id === "portal") {
+        btn.disabled = true;
+        const r = await post("/api/billing/portal", {});
+        const res = await r.json().catch(() => ({}));
+        if (r.ok && res.url) return location.assign(res.url);
+        btn.disabled = false;
+        toast(res.error || t("payErr"));
+      }
+    });
+
+    let toastTimer;
+    function toast(text) {
+      $("toast").textContent = text;
+      $("toast").classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => $("toast").classList.remove("show"), 4200);
     }
 
     function renderCatalog(c) {
@@ -576,7 +783,18 @@
       b.disabled = false; b.textContent = t("ins.again");
     };
     $("refresh").onclick = load;
-    load();
+    load().then(async () => {
+      // back from Stripe's payment page: Stripe confirms the payment to the server within moments
+      if (!params.has("paid")) return;
+      params.delete("paid");
+      history.replaceState(null, "", location.pathname + (params.size ? "?" + params : ""));
+      for (let i = 0; i < 10 && last?.d.billing?.needsPayment; i++) {
+        toast(t("paidWait"));
+        await new Promise((r) => setTimeout(r, 2000));
+        await load();
+      }
+      if (last && !last.d.billing?.needsPayment) toast(t("paid"));
+    });
   </script>
 </body>
 </html>

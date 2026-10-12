@@ -19,6 +19,28 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 - **Hesla ukázkových obchodů:** TechMarket a Bohème mají úvodní heslo odvozené z `ADMIN_TOKEN` (např. `k7mq-2xpt-9fhd`), takže fungují i bez databáze a hned po nasazení. Najdete je na stránce Všichni klienti (Ukázat / Kopírovat / Kopírovat přístup pro majitele). **Vytvořit nové heslo** vygeneruje nové a úvodní tím přestane platit; na serveru to potřebuje databázi, lokálně se uloží do `data/passwords.json`.
 - **Video znovu:** `public/sella/film.html?lang=cs` je animace, ze které je video nahrané (každý snímek je funkcí času). Po úpravě textů se dá znovu nahrát po snímcích do MP4 (puppeteer + ffmpeg).
 
+## Registrace a platby (Stripe)
+
+Obchod si Sellu založí sám, zaplatí kartou a teprve pak mu funguje kód pro web:
+
+1. **Registrace** `/sella/registrace.html` (tlačítko **Chci Sellu** na webu): název obchodu, adresa e-shopu, e-mail, heslo, tarif a volitelně XML feed. Vznikne klient s ID odvozeným z názvu (např. `kavarna-u-lipy`), stavem **čeká na platbu** a vypnutým asistentem; majitel je rovnou přihlášený. Přihlásit se pak může e-mailem i ID obchodu.
+2. **Přehled** `/admin/` ukáže nahoře „Zbývá zaplatit tarif“. Tlačítko **Zaplatit** otevře platební stránku Stripe (karta, fakturační adresa, IČO/DIČ).
+3. Po zaplacení Stripe pošle webhook, obchod se přepne na **zaplaceno**, asistent se zapne a v přehledu se odemkne **kód pro web**. Stripe pak strhává platbu každý měsíc sám a fakturu posílá e-mailem.
+4. **Faktury a platební karta** v přehledu otevře zákaznický portál Stripe: stažení faktur, změna karty, zrušení. Změna tarifu v přehledu změní předplatné hned a rozdíl doúčtuje.
+
+**Kdo smí widget používat:** jen aktivní klient a jen na svých doménách. Nezaplacený nebo zrušený obchod dostane od API 402 a widget se na webu vůbec neukáže. Když platba kartou selže, Stripe ji několik dní zkouší znovu a asistent mezitím běží (přehled ukazuje „Platba selhala“); když předplatné skončí, asistent se vypne. Domény a feed si majitel mění sám v přehledu (Nastavení obchodu).
+
+**Ruční klienti:** ukázkové obchody a klienti založení na stránce Klienti mají stav platby `manual` – fakturujete jim mimo aplikaci (export CSV), a fungují jako dřív.
+
+**Nastavení Stripe:**
+1. V Stripe → Developers → API keys zkopírujte Secret key do `STRIPE_SECRET_KEY`. Produkty a ceny tarifů (CZK měsíčně) se ve Stripe vytvoří samy při první platbě.
+2. Developers → Webhooks → Add endpoint: `https://VÁŠ-WEB/api/stripe/webhook`, události `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Signing secret uložte do `STRIPE_WEBHOOK_SECRET`.
+3. Settings → Billing → Customer portal: zapněte portál (faktury, změna karty, zrušení předplatného).
+4. Settings → Customer emails: zapněte posílání faktur a potvrzení o platbě.
+5. Spusťte znovu `supabase/schema.sql` (přidá sloupce pro platby).
+
+Volitelně `STRIPE_TRIAL_DAYS=14` dá novým obchodům zkušební dny zdarma (karta se zadá hned, strhne se až po nich). Lokálně bez `STRIPE_SECRET_KEY` se platba jen nasimuluje, takže jde celé proklikat; na serveru bez klíče platby nejdou a registrace bez databáze vrací 503.
+
 ## Klienti (více e-shopů)
 
 Každý e-shop, který prodavačku používá, je klient s vlastním ID. Ukázkové weby jsou klienti `techmarket` a `kavarna`.
@@ -37,7 +59,7 @@ Kód pro web klienta (přímo, nebo přes jeho Google Tag Manager):
 
 **Přihlášení do přehledu:** majitel se přihlásí na `/admin/` svým ID a heslem a vidí jen svůj obchod. Vy se přihlásíte ID `admin` a heslem `ADMIN_TOKEN` a přepínáte mezi všemi klienty. Přihlášení drží podepsaná HttpOnly cookie 14 dní; hesla nikdy nejsou v adrese. Staré odkazy s `?token=` už nefungují – klient se přihlásí formulářem; jeho staré heslo z `admin_token` platí a při prvním přihlášení se převede na otisk. Lokálně bez `ADMIN_TOKEN` je přehled otevřený jen z vašeho počítače.
 
-**Tarify a limity** (`lib/plans.js`): každý tarif má měsíční limit zpráv, které napíše AI (odpověď v chatu, nabídka pomoci napsaná na míru váhajícímu zákazníkovi i doporučení pro majitele se počítají každá jako jedna), a znaků přirozeného hlasu; u klienta jde nastavit vlastní limit. Server počítá každé volání Claude (tokeny → cena v USD) a hlas do tabulky `usage`. Po vyčerpání limitu obchod dál funguje: chat odpovídá zjednodušeně bez AI a hlas přejde na hlas prohlížeče. Při 80 % a 100 % limitu přijde upozornění. Majitel vidí čerpání v přehledu, vy u všech klientů na stránce Klienti, kde je i **export CSV za měsíc** pro fakturaci. Ceny tarifů doplňte v `lib/plans.js`; fakturace sama zatím běží mimo aplikaci.
+**Tarify a limity** (`lib/plans.js`): každý tarif má měsíční limit zpráv, které napíše AI (odpověď v chatu, nabídka pomoci napsaná na míru váhajícímu zákazníkovi i doporučení pro majitele se počítají každá jako jedna), a znaků přirozeného hlasu; u klienta jde nastavit vlastní limit. Server počítá každé volání Claude (tokeny → cena v USD) a hlas do tabulky `usage`. Po vyčerpání limitu zpráv se prodavačka na webu obchodu do konce měsíce vypne (nebo do vyššího tarifu); vyčerpaný hlas přejde na hlas prohlížeče. Při 80 % a 100 % limitu přijde upozornění. Majitel vidí čerpání v přehledu, vy u všech klientů na stránce Klienti, kde je i **export CSV za měsíc** pro fakturaci. Ceny tarifů jsou v `lib/plans.js`; obchody z registrace platí přes Stripe (viz výše), ručním klientům fakturujete podle exportu.
 
 **Produkty z feedu:** server feed stáhne při první návštěvě a pak každých 6 hodin (a každou noc v rámci údržby). Uloží ho zabalený (gzip) do Supabase Storage, takže nový server ho nemusí stahovat znovu, a AI doporučuje jen z něj. Feed větší než 60 MB se odmítne. Když stažení selže, jede se dál na posledním funkčním katalogu, chyba se ukáže v přehledu a přijde upozornění.
 
@@ -72,7 +94,7 @@ TechMarket má místo toho vlastní napojení přes JavaScript (`window.AIProdav
 Projekt běží na Vercelu bez dalšího nastavení (Express se detekuje sám ze `server.js`).
 
 1. **Import repozitáře:** ve Vercelu zvolte Add New → Project, vyberte repozitář a nechte výchozí nastavení (Framework Preset: Express / Other, žádný build command).
-2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN`, `CRON_SECRET` a doporučeně `ALERT_WEBHOOK_URL`; volitelně `ELEVENLABS_API_KEY` (vše viz `.env.example`). Soubor `.env.local` se na Vercel nenahrává.
+2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN`, `CRON_SECRET`, pro platby `STRIPE_SECRET_KEY` a `STRIPE_WEBHOOK_SECRET` a doporučeně `ALERT_WEBHOOK_URL`; volitelně `ELEVENLABS_API_KEY` (vše viz `.env.example`). Soubor `.env.local` se na Vercel nenahrává.
 3. **Databáze:** spusťte `supabase/schema.sql` v Supabase → SQL Editor – poprvé i po každé aktualizaci (přidá jen to, co chybí, a smaže dřívější simulovaná demo data).
 4. **Deploy.** Každý push na `main` nasadí novou verzi.
 
@@ -243,7 +265,7 @@ AIProdavac.track("search", { query, results });
 
 ## Další kroky
 
-- **Platby:** napojit fakturaci (např. Stripe nebo Fakturoid) na export využití; doplnit ceny tarifů.
+- **Platby:** e-mail s potvrzením registrace a obnova zapomenutého hesla; případně české faktury přes Fakturoid místo faktur ze Stripe.
 - **Právní dokumenty:** doplnit údaje a nechat zkontrolovat právníkem (`legal/`, `public/soukromi.html`).
 - **Měření přínosu:** kontrolní skupina návštěvníků bez prodavačky, aby šel přínos prokázat čistě.
 - **Velké katalogy:** vyhledávání přímo v databázi (Postgres full-text) místo načítání celého katalogu do paměti každé instance.

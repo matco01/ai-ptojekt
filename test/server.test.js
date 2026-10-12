@@ -80,7 +80,7 @@ test("login flow: wrong password, foreign site, operator login", async () => {
   const clients = await (await fetch(base + "/api/admin/clients", { headers: session })).json();
   assert.ok(clients.clients.some((c) => c.id === "techmarket"));
   const csv = await fetch(base + "/api/admin/usage.csv", { headers: session });
-  assert.match(await csv.text(), /client_id;name;plan/);
+  assert.match(await csv.text(), /client_id;name;billing;plan/);
 });
 
 test("the daily job needs the cron secret", async () => {

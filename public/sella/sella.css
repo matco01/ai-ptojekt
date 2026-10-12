@@ -75,3 +75,6 @@ h2.title em, .hero-line em { font-style: italic; color: var(--accent); }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .rv { opacity: 1; transform: none; }
 }
+
+/* Edge adds its own password "eye" – our forms have a Show button */
+input::-ms-reveal, input::-ms-clear { display: none; }
