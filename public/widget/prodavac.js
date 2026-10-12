@@ -65,7 +65,7 @@
       attach: "Přiložit fotku nebo soubor", attachTitle: "Přiložit fotku nebo PDF", placeholder: "Napište, co hledáte…", msgLabel: "Zpráva pro prodavačku",
       legal: "Odpovídá umělá inteligence a může se splést", privacy: "Ochrana soukromí", addCart: "Do košíku", inCart: "V košíku",
       thinking: (n) => `${n} přemýšlí…`, connFail: "Spojení se nezdařilo.", removed: (n) => `Odebráno z košíku: ${n}`, added: (n) => `Přidáno do košíku: ${n}`,
-      addOnPage: (n) => `${n} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`, simple: "Teď odpovídám ve zjednodušeném režimu.",
+      addOnPage: (n) => `${n} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`, removeOnPage: (n) => `${n} se mi z košíku odebrat nepodařilo – odeberte ho prosím přímo v košíku.`, simple: "Teď odpovídám ve zjednodušeném režimu.",
       vListening: "Poslouchám vás…", vThinking: "Přemýšlím…", vSpeakTouch: "Mluvím… (klepnutím mě přerušíte)", vSpeak: "Mluvím… (klidně mi skočte do řeči)", vIdle: "Klepněte na mě a mluvte",
       micDenied: "Mikrofon není povolen. Povolte ho v prohlížeči, nebo přepněte na psaní.",
       offNote: "Prodavačka je teď nedostupná. Děkujeme za pochopení.", attached: "přiloženo",
@@ -88,7 +88,7 @@
       attach: "Attach a photo or file", attachTitle: "Attach a photo or PDF", placeholder: "Type what you're looking for…", msgLabel: "Message to the assistant",
       legal: "Answers come from AI and may be wrong", privacy: "Privacy", addCart: "Add to cart", inCart: "In cart",
       thinking: (n) => `${n} is thinking…`, connFail: "Couldn't connect.", removed: (n) => `Removed from cart: ${n}`, added: (n) => `Added to cart: ${n}`,
-      addOnPage: (n) => `You can add ${n} to the cart on its product page – just click its card.`, simple: "I'm answering in a simple mode right now.",
+      addOnPage: (n) => `You can add ${n} to the cart on its product page – just click its card.`, removeOnPage: (n) => `I couldn't take ${n} out of the cart – please remove it in the cart itself.`, simple: "I'm answering in a simple mode right now.",
       vListening: "Listening…", vThinking: "Thinking…", vSpeakTouch: "Speaking… (tap to interrupt)", vSpeak: "Speaking… (feel free to interrupt)", vIdle: "Tap me and talk",
       micDenied: "The microphone isn't allowed. Allow it in your browser, or switch to typing.",
       offNote: "The shop assistant isn't available right now. Thanks for understanding.", attached: "attached",
@@ -436,6 +436,76 @@
     saveAutoCart();
     return true;
   }
+  // ---- the shop's own cart, read off its page (mini-cart, cart drawer or cart page) ----
+  // Shops without analytics events don't tell us what is in the cart, so its lines are read from the
+  // page, and a product is taken out by pressing the shop's own remove (bin, ×) or "−" button.
+  const CONTROLS = 'button, a, [role="button"], input[type="button"], input[type="submit"]';
+  const REMOVE_RE = /odebrat|odstranit|smazat|vymazat|vyjmout|remove|delete|trash|^\s*[×✕✖✗xX]\s*$/i;
+  const DEC_RE = /^\s*[−–-]\s*$|decrease|snizit|ubrat|minus|less/i;
+  const PRICE_RE = /\d[\d\s.,]*\s*(kč|czk|€|eur|\$|usd|,-)/i;
+  const hintsOf = (b) => [b.id, typeof b.className === "string" ? b.className : "", ...[...b.attributes].filter((a) => a.name.startsWith("data-")).map((a) => a.name)].join(" ");
+  const isRemove = (b) => REMOVE_RE.test(labelOf(b).trim()) || /remove|delete|trash|odebrat|smazat/i.test(hintsOf(b));
+  const isDecrease = (b) => DEC_RE.test(plainText(labelOf(b))) || /decrease|minus|\bdec\b|data-dec/i.test(hintsOf(b));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  /** Cart lines on the page: the smallest block around a remove button that holds a product link and a price. */
+  function readCartLines() {
+    const lines = [];
+    for (const c of [...document.querySelectorAll(CONTROLS)].filter(isRemove)) {
+      let box = c.parentElement;
+      for (let depth = 0; box && box !== document.body && depth < 8; depth++, box = box.parentElement) {
+        if ([...box.querySelectorAll(CONTROLS)].filter(isRemove).length > 1) break; // reached the whole cart
+        const link = [...box.querySelectorAll("a[href]")].find((a) => a !== c && plainText(a.textContent).length > 2);
+        if (link && PRICE_RE.test(box.textContent)) {
+          const qtyInput = box.querySelector('input[type="number"], input[inputmode="numeric"], input[name*="qty" i], input[name*="quantity" i], input[name*="mnozstvi" i], input[name*="amount" i]');
+          lines.push({ box, remove: c, qtyInput, name: link.textContent.trim().replace(/\s+/g, " ").slice(0, 200), url: link.href, quantity: Math.max(1, parseInt(qtyInput?.value, 10) || 1) });
+          break;
+        }
+      }
+    }
+    return lines;
+  }
+  const sameItem = (line, item) => {
+    const a = plainText(line.name), b = plainText(item.name);
+    return (item.url && line.url === item.url) || (a.length > 2 && (a === b || a.includes(b) || b.includes(a)));
+  };
+
+  /** What the cart on the page holds – it beats our own record, which misses what the customer added by hand. */
+  async function syncCartFromPage() {
+    if (hostIntegrated()) return;
+    const lines = readCartLines();
+    if (!lines.length) return;
+    const { ids = [] } = await resolveRefs(lines.map((l) => ({ name: l.name, url: l.url })));
+    const cart = [];
+    lines.forEach((l, n) => { if (ids[n] && !cart.some((c) => c.id === ids[n])) cart.push({ id: ids[n], quantity: l.quantity }); });
+    if (cart.length) { autoCart = cart; saveAutoCart(); }
+  }
+
+  /** Takes a product out of the shop's cart: its JS hook, or the "−" / remove button in its cart line. */
+  async function removeFromShopCart(item) {
+    if (api.onRemoveFromCart || hostIntegrated()) { api.onRemoveFromCart?.(item); return true; }
+    const find = () => readCartLines().find((l) => sameItem(l, item));
+    const line = find();
+    if (!line) return false;
+    const all = item.quantity >= line.quantity;
+    if (!all && [...line.box.querySelectorAll(CONTROLS)].some(isDecrease)) {
+      // one press per piece; the shop usually redraws the line after each one, so it is looked up again
+      for (let i = 0; i < item.quantity; i++) {
+        const dec = [...(find()?.box.querySelectorAll(CONTROLS) ?? [])].find(isDecrease);
+        if (!dec) break;
+        dec.click();
+        await sleep(300);
+      }
+    } else if (!all && line.qtyInput) {
+      line.qtyInput.value = String(line.quantity - item.quantity);
+      for (const type of ["input", "change"]) line.qtyInput.dispatchEvent(new Event(type, { bubbles: true }));
+    } else line.remove.click();
+    const mine = autoCart.find((c) => c.id === item.id);
+    if (mine) { mine.quantity -= item.quantity; if (mine.quantity <= 0) autoCart = autoCart.filter((c) => c !== mine); saveAutoCart(); }
+    api.track("cart_remove", { productId: item.id });
+    return true;
+  }
+
   /** Opens a product: through the shop's JS hook, or by going to its page (the chat comes along). */
   function openProduct(p) {
     if (api.onOpenProduct) { if (phone.matches) closePanel(); api.onOpenProduct(p.id); return; }
@@ -1647,6 +1717,8 @@
     };
 
     try {
+      // what is in the shop's cart right now (on shops we only watch, read off the page; at most 1.5 s)
+      if (!hostIntegrated()) await Promise.race([syncCartFromPage().catch(() => {}), sleep(1500)]);
       const res = await fetch(cfg.api + "/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         // the transcript so far (without this message) travels along, so the conversation survives
@@ -1694,10 +1766,11 @@
           } else if (ev.type === "close") {
             closeAfter = true;
           } else if (ev.type === "cart_remove") {
-            api.onRemoveFromCart?.(ev.item);
-            addNote(L("removed", ev.item.name));
-            const t = cartTarget()?.getBoundingClientRect();
-            if (t) burst(t.left + t.width / 2, t.top + t.height / 2, cartTarget());
+            removeFromShopCart(ev.item).then((ok) => {
+              addNote(L(ok ? "removed" : "removeOnPage", ev.item.name));
+              const t = ok && cartTarget()?.getBoundingClientRect();
+              if (t) burst(t.left + t.width / 2, t.top + t.height / 2, cartTarget());
+            });
           } else if (ev.type === "cart") {
             if (addToShopCart(ev.item)) {
               addNote(L("added", ev.item.name));

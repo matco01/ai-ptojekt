@@ -78,7 +78,7 @@ Web se nikdy nečte uprostřed dotazu zákazníka. Poprvé ho spustí přehled m
 - co dal do košíku, co odebral a kdy nakoupil (i s částkou) – z e-commerce událostí Google Analytics v `dataLayer` (GA4 i starší Universal Analytics); záložně pozná stránku „Děkujeme za objednávku“,
 - co hledal – z adresy stránky s výsledky hledání.
 
-Když AI přidává do košíku, widget stiskne tlačítko „Do košíku“ přímo na stránce obchodu. Když tam takové tlačítko není, kartička produktu místo toho otevře stránku produktu (chat se na počítači otevře znovu vedle něj). Z košíku obchodu AI odebírat neumí a zákazníkovi to řekne.
+Když AI přidává do košíku, widget stiskne tlačítko „Do košíku“ přímo na stránce obchodu. Když tam takové tlačítko není, kartička produktu místo toho otevře stránku produktu (chat se na počítači otevře znovu vedle něj). Odebírání funguje stejně: widget si obsah košíku přečte přímo ze stránky (minikošík, vysouvací košík nebo stránka košíku – i to, co zákazník přidal ručně), najde řádek produktu a stiskne tlačítko obchodu – „−“, když ubírá kusy, jinak koš / ×. Když řádek na stránce nenajde (košík se ukazuje jen na samostatné stránce), řekne zákazníkovi, ať produkt odebere v košíku.
 
 Neobvyklý web opravíte v nastavení klienta (pole „Úpravy napojení“), ne u klienta, např. `{"addToCart": "#buy-button", "cart": ".header-cart", "thankYou": "objednavka/hotovo"}` (tlačítko do košíku na stránce produktu, ikona košíku, adresa stránky po objednávce).
 
