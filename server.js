@@ -148,7 +148,8 @@ app.get("/api/health", async (req, res) => {
     const { error } = await db.from("clients").select("id", { head: true, count: "exact" }).limit(1);
     database = error ? "down" : "ok";
   }
-  res.status(database === "down" ? 503 : 200).json({ ok: database !== "down", tts: ttsProvider(), database });
+  const payments = paymentsEnabled() ? "stripe" : demoPayments() ? "demo" : simulated() ? "simulated" : "off";
+  res.status(database === "down" ? 503 : 200).json({ ok: database !== "down", tts: ttsProvider(), database, payments });
 });
 
 const agentName = (client) => client.agentName || personaName(client.name);
@@ -417,6 +418,11 @@ app.use("/api/analytics", sameOrigin);
 app.use("/api/billing", sameOrigin);
 app.get("/api/analytics", admin, async (req, res) => {
   try {
+    // PAYMENTS=demo: an account still waiting for its first payment (e.g. created before demo mode
+    // was switched on) counts as paid as soon as its overview opens
+    if (demoPayments() && req.client.billing !== "manual" && !req.client.active && await activateDemoAccount(req.client.id, req.client.plan)) {
+      req.client = await getClient(req.client.id, { includeInactive: true });
+    }
     const stats = await summarize(req.client.id, req.cat);
     const c = req.client;
     res.json({
