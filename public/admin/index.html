@@ -355,7 +355,7 @@
         actEndedP: "Prodavačka je na vašem webu vypnutá. Obnovte tarif a zapne se znovu – kód na webu nemusíte měnit.",
         pay: (p) => `Zaplatit ${p}`, paying: "Přesměrovávám na platbu…",
         noteStripe: (e) => `Platbu bezpečně zpracuje Stripe. Každý měsíc se strhne sama a faktura přijde na ${e}. Zrušit můžete kdykoli.`,
-        noteSim: "Vývojový režim bez Stripe – platba se jen nasimuluje.", noteOff: "Platby zatím nejsou zapnuté – ozvěte se nám prosím.",
+        noteSim: "Vývojový režim bez Stripe – platba se jen nasimuluje.", noteDemo: "Demo režim – platba se jen nasimuluje, kartu nezadáváte.", noteOff: "Platby zatím nejsou zapnuté – ozvěte se nám prosím.",
         paid: "Děkujeme! Platba proběhla a Sella na vašem webu běží.", paidWait: "Děkujeme! Čekáme na potvrzení platby…", payErr: "Platbu se nepodařilo zahájit.",
         plansPStripe: "Rozdíl v ceně se doúčtuje (nebo vrátí) hned. Když se vyčerpají zprávy tarifu, prodavačka se do konce měsíce vypne.",
         "site.h": "Na vašem webu", "site.p": "Kód pro vložení, kde prodavačka smí běžet, a vaše platby.",
@@ -366,7 +366,7 @@
         billH: "Platby", billManual: "Platíte na fakturu podle dohody s námi.", billUnpaid: "Zatím nezaplaceno.",
         stOk: "Zaplaceno", stPast: "Platba selhala", stEnded: "Zrušeno", stManual: "Na fakturu", stUnpaid: "Nezaplaceno",
         nextPay: (d) => `Další platba: <b>${d}</b>`, endsOn: (d) => `Zaplaceno do: <b>${d}</b>`, pastP: "Stripe platbu během pár dní zkusí znovu. Aktualizujte prosím kartu.",
-        portal: "Faktury a platební karta", portalP: "Stáhnete faktury, změníte kartu nebo předplatné zrušíte.", simNote: "Simulovaná platba (vývoj).",
+        portal: "Faktury a platební karta", portalP: "Stáhnete faktury, změníte kartu nebo předplatné zrušíte.", simNote: "Simulovaná platba (vývoj).", demoNote: "Demo režim – zaplaceno jen naoko.",
       },
       en: {
         home: "Home", pick: "Shop", all: "All clients", logout: "Sign out", refresh: "↻ Refresh",
@@ -413,7 +413,7 @@
         actEndedP: "The assistant is off on your site. Renew a plan and it comes back – no need to change the code on your site.",
         pay: (p) => `Pay ${p}`, paying: "Taking you to the payment…",
         noteStripe: (e) => `The payment is handled securely by Stripe. It renews every month and the invoice goes to ${e}. Cancel any time.`,
-        noteSim: "Development mode without Stripe – the payment is only simulated.", noteOff: "Payments aren't switched on yet – please get in touch.",
+        noteSim: "Development mode without Stripe – the payment is only simulated.", noteDemo: "Demo mode – the payment is only simulated, no card needed.", noteOff: "Payments aren't switched on yet – please get in touch.",
         paid: "Thank you! The payment went through and Sella runs on your site.", paidWait: "Thank you! Waiting for the payment to be confirmed…", payErr: "Couldn't start the payment.",
         plansPStripe: "The price difference is charged (or refunded) right away. When the plan's messages run out, the assistant switches off until the month ends.",
         "site.h": "On your website", "site.p": "The embed code, where the assistant may run, and your payments.",
@@ -424,7 +424,7 @@
         billH: "Payments", billManual: "You pay by invoice as agreed with us.", billUnpaid: "Not paid yet.",
         stOk: "Paid", stPast: "Payment failed", stEnded: "Cancelled", stManual: "By invoice", stUnpaid: "Unpaid",
         nextPay: (d) => `Next payment: <b>${d}</b>`, endsOn: (d) => `Paid until: <b>${d}</b>`, pastP: "Stripe will retry in a few days. Please update your card.",
-        portal: "Invoices and card", portalP: "Download invoices, change your card or cancel the subscription.", simNote: "Simulated payment (development).",
+        portal: "Invoices and card", portalP: "Download invoices, change your card or cancel the subscription.", simNote: "Simulated payment (development).", demoNote: "Demo mode – paid only for show.",
       },
     });
     I.switcher($("lang"));
@@ -617,14 +617,14 @@
       $("activate").hidden = !b.needsPayment;
       if (!b.needsPayment) return;
       const ended = b.status === "canceled";
-      const note = b.payments === "stripe" ? t("noteStripe", esc(d.client.ownerEmail || "e-mail")) : b.payments === "simulated" ? t("noteSim") : t("noteOff");
+      const note = b.payments === "stripe" ? t("noteStripe", esc(d.client.ownerEmail || "e-mail")) : b.payments === "simulated" ? t("noteSim") : b.payments === "demo" ? t("noteDemo") : t("noteOff");
       $("activate").innerHTML = `
         <h2>${ended ? t("actEnded") : params.has("welcome") ? t("actWelcome") : t("actH")}</h2>
         <p>${ended ? t("actEndedP") : t("actP")}</p>
         <div class="plans-grid">${d.plans.map((p) => planCard(p,
           `<button class="btn ${p.id === d.usage.planId ? "dark" : "light"}" data-pay="${p.id}"${b.payments === "off" ? " disabled" : ""}>${t("pay", kc(p.priceCzk))}</button>`)).join("")}</div>
         <p class="plans-err" id="pay-err"></p>
-        <p class="note${b.payments === "simulated" ? " dev" : ""}">${note}</p>`;
+        <p class="note${b.payments === "simulated" || b.payments === "demo" ? " dev" : ""}">${note}</p>`;
     }
     $("activate").onclick = async (e) => {
       const btn = e.target.closest("[data-pay]");
@@ -703,7 +703,7 @@
           : `${b.paidUntil ? `<p class="small">${t(b.status === "active" ? "nextPay" : "endsOn", fmtDate(b.paidUntil))}</p>` : ""}
              ${b.status === "past_due" ? `<p class="small">${t("pastP")}</p>` : ""}
              ${b.canManage ? `<button class="btn ${b.status === "past_due" ? "dark" : "light"}" id="portal">${t("portal")}</button><p class="small">${t("portalP")}</p>`
-               : b.payments === "simulated" ? `<p class="small">${t("simNote")}</p>` : ""}`}`;
+               : b.payments === "simulated" ? `<p class="small">${t("simNote")}</p>` : b.payments === "demo" ? `<p class="small">${t("demoNote")}</p>` : ""}`}`;
     }
     document.addEventListener("click", async (e) => {
       const btn = e.target.closest("#copy, #save-settings, #portal");

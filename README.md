@@ -41,6 +41,8 @@ Obchod si Sellu založí sám, zaplatí kartou a teprve pak mu funguje kód pro 
 
 Volitelně `STRIPE_TRIAL_DAYS=14` dá novým obchodům zkušební dny zdarma (karta se zadá hned, strhne se až po nich). Lokálně bez `STRIPE_SECRET_KEY` se platba jen nasimuluje, takže jde celé proklikat; na serveru bez klíče platby nejdou a registrace bez databáze vrací 503.
 
+**Demo režim pro testování:** s `PAYMENTS=demo` (proměnná prostředí na Vercelu) se nový účet hned po „Vytvořit účet“ počítá jako zaplacený na měsíc, bez karty a bez Stripe; stejně tak změna tarifu v přehledu. Přehled to označí „Demo režim“. Jen pro testování – s opravdovými zákazníky ho vypněte, jinak by Sellu měli zadarmo.
+
 ## Klienti (více e-shopů)
 
 Každý e-shop, který prodavačku používá, je klient s vlastním ID. Ukázkové weby jsou klienti `techmarket` a `kavarna`.

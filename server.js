@@ -14,7 +14,7 @@ import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
 } from "./lib/clients.js";
-import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated } from "./lib/billing.js";
+import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
 import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
@@ -410,7 +410,7 @@ const billingView = (c) => ({
   status: c.billing, paidUntil: c.paidUntil ?? null,
   needsPayment: c.billing !== "manual" && !c.active,
   canManage: Boolean(c.stripeCustomerId) && paymentsEnabled(), // Stripe portal: card, invoices, cancelling
-  payments: paymentsEnabled() ? "stripe" : simulated() ? "simulated" : "off",
+  payments: paymentsEnabled() ? "stripe" : demoPayments() ? "demo" : simulated() ? "simulated" : "off",
 });
 
 app.use("/api/analytics", sameOrigin);
@@ -511,6 +511,7 @@ app.post("/api/signup", sameOrigin, rateLimit("signup-form", 40, 10 * 60e3, { sh
     // at most a few new accounts per network and hour (checked only once the form is valid)
     if (!(await hit(`signup:${req.ip}`, 60 * 60e3, 5))) return res.status(429).json({ error: "Příliš mnoho registrací, zkuste to prosím později." });
     const id = await createSignedUpClient({ name, domain, email, passwordHash: hashPassword(password), plan, feedUrl });
+    await activateDemoAccount(id, plan); // PAYMENTS=demo: counts as paid right away
     alert(`signup:${id}`, `Nová registrace: ${name} (${domain}, ${email}), tarif ${PLANS[plan].name}.`);
     res.set("Set-Cookie", sessionCookie(createSession(id), { secure: req.secure }));
     res.json({ ok: true, id });
