@@ -111,3 +111,22 @@ test("page text for Claude keeps product links and pictures", () => {
 test("JSON-LD that isn't valid JSON is skipped", () => {
   assert.deepEqual(ldProducts(`<script type="application/ld+json">{ broken</script>`, "https://x.cz/"), []);
 });
+
+test("browser-drawn shops: their own scripts and embedded data are collected for Claude, libraries are not", async (t) => {
+  const { scriptData } = await import("../lib/crawl.js");
+  const base = await shop(t, {
+    "/products.js": ["text/javascript", 'const PRODUCTS = [{ id: "l1", name: "NovaBook", price: 42990 }];'],
+    "/app.js": ["text/javascript", 'location.hash = "#/p/" + id; // renders the shop'],
+    "/vendor/jquery.min.js": ["text/javascript", "jQuery library"],
+  });
+  const html = `<main id="app"></main><script src="/products.js"></script><script src="/app.js"></script>
+    <script src="/vendor/jquery.min.js"></script><script src="https://cdn.other.com/x.js"></script>
+    <script id="__NEXT_DATA__" type="application/json">{"props":{"items":[{"title":"Mýdlo","price":120}]}}</script>`;
+  const text = await scriptData(html, base + "/", "127.0.0.1", AbortSignal.timeout(5000));
+  assert.match(text, /NovaBook/);
+  assert.match(text, /#\/p\//);
+  assert.match(text, /Mýdlo/);
+  assert.doesNotMatch(text, /jQuery library/);
+  assert.doesNotMatch(text, /cdn\.other\.com/);
+  assert.ok(text.indexOf("NovaBook") < text.indexOf("renders the shop")); // the file with prices comes first
+});
