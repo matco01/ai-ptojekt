@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sella – AI prodavačka pro e-shopy</title>
   <meta name="description" content="Sella je AI prodavačka pro e-shopy. Zeptá se zákazníka, jestli chce poradit, doporučí z vašeho katalogu a vám ukáže, co lidé na webu hledají.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
   <link rel="stylesheet" href="/sella/sella.css">
   <style>
     .wrap { width: min(1180px, 100% - 48px); margin: 0 auto; }
@@ -109,6 +107,7 @@
     footer .wrap { display: flex; align-items: baseline; gap: 26px; flex-wrap: wrap; color: var(--ink-3); font-size: 14px; }
     footer .wordmark { font-size: 26px; margin-right: auto; }
     footer a { text-decoration: none; } footer a:hover { color: var(--ink); }
+    footer .op-line { flex-basis: 100%; font-size: 13px; }
 
     @media (max-width: 900px) {
       .nav nav { display: none; }
@@ -334,13 +333,17 @@
   <footer>
     <div class="wrap">
       <span class="wordmark">Sella</span>
+      <a href="/podminky.html" data-i18n="foot.terms">Obchodní podmínky</a>
+      <a href="/zpracovani-udaju.html" data-i18n="foot.dpa">Zpracování údajů</a>
       <a href="/soukromi.html" data-i18n="foot.privacy">Ochrana soukromí</a>
       <a href="/sella/prihlaseni.html" data-i18n="foot.login">Přihlášení</a>
       <span>© 2026 Sella</span>
+      <span class="op-line"><span data-op="line"></span> · <a data-op="mailto"></a></span>
     </div>
   </footer>
 
   <script src="/sella/i18n.js"></script>
+  <script src="/legal/provozovatel.js"></script>
   <script src="/sella/sella.js"></script>
   <script>
     const I = SellaI18n;
@@ -374,7 +377,7 @@
         "rules.r3": "Data zůstávají vaše", "rules.r3p": "Chování ukládá jen se souhlasem návštěvníka, e-maily a čísla v dotazech maskuje a stará data sama maže. Každý obchod vidí jen to svoje.",
         "close.title": "Ať i na vašem e-shopu <em>prodává</em> Sella.", "close.lead": "Registrace zabere minutu. Po zaplacení tarifu dostanete jeden řádek kódu pro svůj web – a Sella začne prodávat.", "close.btn": "Chci Sellu",
         "close.alt": 'Zatím ne? Vyzkoušejte si ji na <a href="/techmarket/">obchodě s elektronikou</a> nebo na <a href="/kavarna">pražírně kávy</a>.',
-        "foot.privacy": "Ochrana soukromí", "foot.login": "Přihlášení", "title": "Sella – AI prodavačka pro e-shopy", "play": "Přehrát video",
+        "foot.privacy": "Ochrana soukromí", "foot.terms": "Obchodní podmínky", "foot.dpa": "Zpracování údajů", "foot.login": "Přihlášení", "title": "Sella – AI prodavačka pro e-shopy", "play": "Přehrát video",
         "nav.pricing": "Ceník", "pr.eyebrow": "Ceník", "pr.title": "Platíte jen za to, <em>kolik</em> prodává.",
         "pr.lead": "Tarify se liší jen počtem zpráv a hlasu – všechno ostatní mají všechny. Když se zprávy tarifu vyčerpají, prodavačka se do konce měsíce sama vypne, takže nikdy nezaplatíte víc.",
         "pr.note": "Platíte kartou měsíčně, faktura vám přijde e-mailem. Tarif změníte nebo zrušíte kdykoli ve svém přehledu. Ceny jsou bez DPH.", "pr.cta": "Už máte účet? Přihlásit se", "pr.pick": "Vybrat tarif",
@@ -410,7 +413,7 @@
         "rules.r3": "Your data stays yours", "rules.r3p": "It records behaviour only with the visitor's consent, masks e-mails and numbers in questions and deletes old data by itself. Each shop sees only its own.",
         "close.title": "Let <em>Sella</em> sell on your shop too.", "close.lead": "Signing up takes a minute. Once you pay for a plan you get one line of code for your website – and Sella starts selling.", "close.btn": "Get Sella",
         "close.alt": 'Not yet? Try it on an <a href="/techmarket/">electronics store</a> or a <a href="/kavarna">coffee roastery</a>.',
-        "foot.privacy": "Privacy", "foot.login": "Sign in", "title": "Sella – an AI salesperson for online shops", "play": "Play video",
+        "foot.privacy": "Privacy", "foot.terms": "Terms", "foot.dpa": "Data processing", "foot.login": "Sign in", "title": "Sella – an AI salesperson for online shops", "play": "Play video",
         "nav.pricing": "Pricing", "pr.eyebrow": "Pricing", "pr.title": "You pay for <em>how much</em> it sells.",
         "pr.lead": "Plans differ only in messages and voice – everything else is in all of them. When a plan's messages run out, the assistant switches itself off until the month ends, so you never pay more.",
         "pr.note": "You pay monthly by card and the invoice arrives by e-mail. Change or cancel your plan any time in your insights. Prices exclude VAT.", "pr.cta": "Have an account? Sign in", "pr.pick": "Choose plan",

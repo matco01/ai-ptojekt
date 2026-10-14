@@ -106,6 +106,8 @@
       setTimeout(() => box.remove(), 450);
     };
   }
-  const start = () => { I.apply(); if (!I.chosen) chooser(); };
+  // pages people reach from elsewhere (the legal pages, linked from shops) skip the full-screen chooser:
+  // <html data-no-chooser> – the language is guessed and the small switch is there to change it
+  const start = () => { I.apply(); if (!I.chosen && !document.documentElement.hasAttribute("data-no-chooser")) chooser(); };
   document.readyState === "loading" ? addEventListener("DOMContentLoaded", start) : start();
 })();

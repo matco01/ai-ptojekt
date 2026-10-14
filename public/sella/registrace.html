@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chci Sellu</title>
   <meta name="description" content="Registrace e-shopu do Selly – AI prodavačky pro e-shopy.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
   <link rel="stylesheet" href="sella.css">
   <style>
     body { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; }
@@ -136,7 +134,7 @@
         <div class="plans" id="plans" role="radiogroup" data-i18n-attr="aria-label=s3"></div>
 
         <div class="trap" aria-hidden="true"><label>Website <input id="website" tabindex="-1" autocomplete="off"></label></div>
-        <label class="check" data-f="terms"><input type="checkbox" id="terms"> <span data-i18n-html="terms">Souhlasím s podmínkami služby a beru na vědomí <a href="/soukromi.html" target="_blank">zpracování osobních údajů</a>.</span></label>
+        <label class="check" data-f="terms"><input type="checkbox" id="terms"> <span data-i18n-html="terms">Jednám jako podnikatel a souhlasím s <a href="/podminky.html" target="_blank">obchodními podmínkami</a> a <a href="/zpracovani-udaju.html" target="_blank">smlouvou o zpracování osobních údajů</a>. Beru na vědomí <a href="/soukromi.html" target="_blank">zásady ochrany soukromí</a>.</span></label>
 
         <p class="err" id="err" role="alert"></p>
         <button class="btn dark" type="submit" id="go"><span data-i18n="go">Založit účet</span> <span class="arr">→</span></button>
@@ -151,9 +149,10 @@
     </div>
   </main>
 
-  <footer><a href="/soukromi.html" data-i18n="privacy">Ochrana soukromí</a> · © 2026 Sella</footer>
+  <footer><a href="/podminky.html" data-i18n="terms_link">Obchodní podmínky</a> · <a href="/zpracovani-udaju.html" data-i18n="dpa_link">Zpracování údajů</a> · <a href="/soukromi.html" data-i18n="privacy">Ochrana soukromí</a> · © 2026 Sella<br><span data-op="line"></span></footer>
 
   <script src="i18n.js"></script>
+  <script src="/legal/provozovatel.js"></script>
   <script src="sella.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
@@ -167,12 +166,12 @@
         feedHint: "Nepovinné. Bez feedu si Sella přečte produkty přímo z vašeho webu.",
         s2: "Přihlášení do přehledu", email: "E-mail", pw: "Heslo (min. 10 znaků)", show: "Ukázat", hide: "Skrýt",
         s3: "Tarif", month: "/ měsíc", msgs: "zpráv",
-        terms: 'Souhlasím s podmínkami služby a beru na vědomí <a href="/soukromi.html" target="_blank">zpracování osobních údajů</a>.',
+        terms: 'Jednám jako podnikatel a souhlasím s <a href="/podminky.html" target="_blank">obchodními podmínkami</a> a <a href="/zpracovani-udaju.html" target="_blank">smlouvou o zpracování osobních údajů</a>. Beru na vědomí <a href="/soukromi.html" target="_blank">zásady ochrany soukromí</a>.',
         go: "Založit účet", have: 'Už účet máte? <a href="/sella/prihlaseni.html">Přihlaste se</a>',
         h1s: "Založíte si účet – hned uvidíte svůj přehled.", h2s: "Zaplatíte tarif kartou. Faktura přijde e-mailem každý měsíc.", h3s: "Vložíte na web řádek kódu a Sella začne prodávat.",
-        privacy: "Ochrana soukromí",
+        privacy: "Ochrana soukromí", terms_link: "Obchodní podmínky", dpa_link: "Zpracování údajů",
         e_name: "Vyplňte název obchodu.", e_domain: "Zadejte adresu e-shopu, např. mujobchod.cz.", e_email: "Zadejte platný e-mail.",
-        e_password: "Heslo musí mít aspoň 10 znaků.", e_feed: "Adresa feedu musí začínat https://", e_plan: "Vyberte tarif.", e_terms: "Potvrďte prosím podmínky.",
+        e_password: "Heslo musí mít aspoň 10 znaků.", e_feed: "Adresa feedu musí začínat https://", e_plan: "Vyberte tarif.", e_terms: "Potvrďte prosím, že jednáte jako podnikatel a souhlasíte s podmínkami.",
         e_emailTaken: "S tímto e-mailem už účet existuje – přihlaste se.", e_domainTaken: "Tento e-shop už Sellu má. Ozvěte se nám, pokud jde o omyl.",
         many: "Příliš mnoho registrací z této sítě, zkuste to prosím později.", failed: "Registrace se nepodařila, zkuste to prosím znovu.", offline: "Spojení se nezdařilo, zkuste to prosím znovu.",
       },
@@ -184,12 +183,12 @@
         feedHint: "Optional. Without a feed, Sella reads your products straight from your website.",
         s2: "Signing in to your insights", email: "E-mail", pw: "Password (10+ characters)", show: "Show", hide: "Hide",
         s3: "Plan", month: "/ month", msgs: "messages",
-        terms: 'I agree to the terms of service and acknowledge the <a href="/soukromi.html" target="_blank">processing of personal data</a>.',
+        terms: 'I\'m signing up as a business and agree to the <a href="/podminky.html" target="_blank">terms of service</a> and the <a href="/zpracovani-udaju.html" target="_blank">data processing agreement</a>. I acknowledge the <a href="/soukromi.html" target="_blank">privacy policy</a>.',
         go: "Create account", have: 'Already have an account? <a href="/sella/prihlaseni.html">Sign in</a>',
         h1s: "Create an account – you see your insights right away.", h2s: "Pay for the plan by card. The invoice arrives by e-mail every month.", h3s: "Add a line of code to your website and Sella starts selling.",
-        privacy: "Privacy",
+        privacy: "Privacy", terms_link: "Terms", dpa_link: "Data processing",
         e_name: "Please fill in the shop name.", e_domain: "Enter your shop's address, e.g. myshop.com.", e_email: "Enter a valid e-mail.",
-        e_password: "The password needs at least 10 characters.", e_feed: "The feed address must start with https://", e_plan: "Choose a plan.", e_terms: "Please confirm the terms.",
+        e_password: "The password needs at least 10 characters.", e_feed: "The feed address must start with https://", e_plan: "Choose a plan.", e_terms: "Please confirm you're signing up as a business and agree to the terms.",
         e_emailTaken: "An account with this e-mail already exists – please sign in.", e_domainTaken: "This shop already has Sella. Get in touch if that's a mistake.",
         many: "Too many sign-ups from this network, please try again later.", failed: "Signing up didn't work, please try again.", offline: "Couldn't connect, please try again.",
       },

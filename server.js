@@ -22,6 +22,7 @@ import { rateLimit, hit } from "./lib/ratelimit.js";
 import { recordUsage, allowance, usageForMonth, monthKey } from "./lib/usage.js";
 import { limitsFor, PLANS, publicPlans } from "./lib/plans.js";
 import { alert } from "./lib/alerts.js";
+import { TERMS_VERSION } from "./lib/legal.js";
 import {
   MASTER, isProduction, hashPassword, verifyPassword, safeEqual, generatePassword, demoPassword,
   createSession, readSession, sessionCookie, readCookie,
@@ -509,6 +510,7 @@ app.post("/api/signup", sameOrigin, rateLimit("signup-form", 40, 10 * 60e3, { sh
   if (password.length < 10) return bad("password", "Heslo musí mít aspoň 10 znaků.");
   if (feedUrl && !/^https?:\/\/\S+$/i.test(feedUrl)) return bad("feed", "Adresa feedu musí začínat https://");
   if (!PLANS[plan]?.public || !PLANS[plan].priceCzk) return bad("plan", "Vyberte tarif.");
+  // one box: the terms, the data processing agreement and "I'm signing up as a business" (Sella is B2B only)
   if (b.terms !== true) return bad("terms", "Potvrďte prosím podmínky.");
   try {
     const clients = await listClients();
@@ -516,7 +518,8 @@ app.post("/api/signup", sameOrigin, rateLimit("signup-form", 40, 10 * 60e3, { sh
     if (clients.some((c) => c.domains.includes(domain))) return res.status(409).json({ code: "domain", error: "Tento e-shop už Sellu má. Ozvěte se nám, pokud jde o omyl." });
     // at most a few new accounts per network and hour (checked only once the form is valid)
     if (!(await hit(`signup:${req.ip}`, 60 * 60e3, 5))) return res.status(429).json({ error: "Příliš mnoho registrací, zkuste to prosím později." });
-    const id = await createSignedUpClient({ name, domain, email, passwordHash: hashPassword(password), plan, feedUrl });
+    const id = await createSignedUpClient({ name, domain, email, passwordHash: hashPassword(password), plan, feedUrl,
+      terms: { version: TERMS_VERSION, at: new Date().toISOString(), ip: str(req.ip, 64) } });
     await activateDemoAccount(id, plan); // PAYMENTS=demo: counts as paid right away
     alert(`signup:${id}`, `Nová registrace: ${name} (${domain}, ${email}), tarif ${PLANS[plan].name}.`);
     res.set("Set-Cookie", sessionCookie(createSession(id), { secure: req.secure }));

@@ -45,6 +45,11 @@ alter table clients add column if not exists stripe_subscription_id text;
 alter table clients add column if not exists paid_until timestamptz;     -- end of the period paid for
 create index if not exists clients_stripe_customer on clients (stripe_customer_id);
 
+-- Proof of agreeing to the terms at sign-up (v5): which version, when and from which IP address.
+alter table clients add column if not exists terms_version text;
+alter table clients add column if not exists terms_accepted_at timestamptz;
+alter table clients add column if not exists terms_accepted_ip text;
+
 -- The last downloaded product feed per client. The products themselves live gzipped in the
 -- private Storage bucket "catalogs" (<client_id>.json.gz); this row only describes them.
 create table if not exists catalogs (

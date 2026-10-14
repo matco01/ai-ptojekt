@@ -89,7 +89,9 @@ TechMarket má místo toho vlastní napojení přes JavaScript (`window.AIProdav
 - **Souhlas s analytikou:** chování návštěvníka (prohlížení, hledání, košík, objednávka), text jeho dotazů a „vracející se návštěvník“ (localStorage) se ukládají jen s jeho souhlasem. Widget ho čte sám z nástroje obchodu: Google Consent Mode (`analytics_storage`), Cookiebot, OneTrust. Jinak ho obchod předá sám: `data-consent="granted"` (když widget načítá až po souhlasu), `AIProdavac.setConsent(true|false)`, nebo `window.AIProdavac = { consent: true }` před načtením widgetu. Bez souhlasu widget dál zdraví, radí a chatuje, jen si nic neukládá. Ukázkové weby mají jednoduchou lištu (`public/consent-demo.js`).
 - **Maskování:** v uložených dotazech se e-maily, telefonní čísla a čísla karet nahradí `[e-mail]` / `[číslo]`.
 - **Mazání:** události a dotazy starší než `RETENTION_DAYS` (výchozí 90 dní) maže noční údržba. Přehled ukazuje stejné období.
-- **Dokumenty (návrhy, nechte zkontrolovat právníkem):** `public/soukromi.html` – informace pro návštěvníky, na které odkazuje widget (obchod může přes `data-privacy-url` odkázat na své zásady); `legal/zpracovatelska-smlouva.md` – smlouva o zpracování s každým e-shopem; `legal/obchodni-podminky.md` – podmínky služby.
+- **Právní dokumenty na webu (česky závazně, anglicky překlad):** `/podminky.html` – obchodní podmínky (jen pro podnikatele, předplatné přes Stripe, limity, AI, odpovědnost); `/zpracovani-udaju.html` – smlouva o zpracování osobních údajů (čl. 28 GDPR) s každým e-shopem; `/soukromi.html` – zásady ochrany soukromí pro e-shopy, pro návštěvníky e-shopů (na ně odkazuje widget, `#navstevnici`) a pro návštěvníky webu. Údaje provozovatele jsou na jednom místě v `public/legal/provozovatel.js` (doplňují se do všech stránek a patiček).
+- **Souhlas při registraci:** jedno zaškrtávací pole (jednám jako podnikatel + podmínky + smlouva o zpracování); server uloží verzi podmínek, čas a IP adresu (`terms_version`, `terms_accepted_at`, `terms_accepted_ip`). Při změně podmínek zvyšte verzi v `public/legal/provozovatel.js` i `lib/legal.js`.
+- **Písma** jsou na vlastním serveru (`public/vendor/fonts/`), žádná stránka nenačítá nic od Googlu ani jiných třetích stran.
 
 ## Provoz a hlídání
 
@@ -109,7 +111,7 @@ Projekt běží na Vercelu bez dalšího nastavení (Express se detekuje sám ze
 4. **Deploy.** Každý push na `main` nasadí novou verzi.
 
 **Co se na Vercelu chová jinak:**
-- Statické soubory servíruje Vercel přímo ze složky `public/` (`/` = e-shop, `/admin/`, `/admin/clients.html`, `/demo/kavarna.html`, `/widget/prodavac.js`, `/soukromi.html`).
+- Statické soubory servíruje Vercel přímo ze složky `public/` (`/` = e-shop, `/admin/`, `/admin/clients.html`, `/demo/kavarna.html`, `/widget/prodavac.js`, `/soukromi.html`, `/podminky.html`, `/zpracovani-udaju.html`).
 - Konverzace přežije i přeskočení mezi instancemi, protože widget posílá s každou zprávou i dosavadní přepis.
 - **Data dashboardu se ukládají do Supabase.** Bez `SUPABASE_URL` a `SUPABASE_SECRET_KEY` jdou jen do dočasné složky, jsou pro každou instanci zvlášť a po restartu zmizí.
 
@@ -217,11 +219,11 @@ lib/analytics.js     Sběr událostí, maskování, mazání starých dat, souhr
 lib/images.js        Ilustrace produktů pro demo
 catalog/store.js     Data demo obchodu
 public/widget/       prodavac.js – vložitelný widget (Shadow DOM, funguje na jakémkoli webu)
-public/              Web Selly (index.html; sella/ – přihlášení, styly, video), techmarket/ (demo e-shop: index.html, shop.js, shop.css), soukromi.html, consent-demo.js + vendor/ (ikony)
+public/              Web Selly (index.html; sella/ – přihlášení, styly, video), techmarket/ (demo e-shop: index.html, shop.js, shop.css), soukromi.html, podminky.html, zpracovani-udaju.html, legal/ (údaje provozovatele, styl právních stránek), consent-demo.js + vendor/ (ikony, písma)
 public/demo/         Ukázka jiného webu (kavárna Bohème)
 public/admin/        Přehled pro majitele (index.html) a správa klientů (clients.html)
 supabase/schema.sql  Databáze: tabulky a funkce pro limity, využití a souhrn přehledu
-legal/               Návrhy smlouvy o zpracování a obchodních podmínek
+lib/legal.js         Verze obchodních podmínek, se kterou obchod při registraci souhlasí
 test/                Testy (npm test)
 ```
 
@@ -276,7 +278,7 @@ AIProdavac.track("search", { query, results });
 ## Další kroky
 
 - **Platby:** e-mail s potvrzením registrace a obnova zapomenutého hesla; případně české faktury přes Fakturoid místo faktur ze Stripe.
-- **Právní dokumenty:** doplnit údaje a nechat zkontrolovat právníkem (`legal/`, `public/soukromi.html`).
+- **Právní dokumenty:** doplnit kontaktní e-mail v `public/legal/provozovatel.js` a nechat podmínky, smlouvu o zpracování a zásady zkontrolovat právníkem.
 - **Měření přínosu:** kontrolní skupina návštěvníků bez prodavačky, aby šel přínos prokázat čistě.
 - **Velké katalogy:** vyhledávání přímo v databázi (Postgres full-text) místo načítání celého katalogu do paměti každé instance.
 - **Testování kvality AI:** sada testovacích dotazů pro hlídání kvality odpovědí.

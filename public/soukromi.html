@@ -1,78 +1,183 @@
 <!doctype html>
-<html lang="cs">
+<html lang="cs" data-no-chooser>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ochrana soukromí – AI prodavačka</title>
-  <!-- NÁVRH – před zveřejněním doplňte údaje v [HRANATÝCH ZÁVORKÁCH] a nechte text zkontrolovat právníkem. -->
-  <style>
-    :root { color-scheme: light; --bg: #f6f7f9; --card: #fff; --text: #1d2433; --text-2: #4a5365; --line: #e3e7ed; --accent: #2f6fdb; }
-    @media (prefers-color-scheme: dark) {
-      :root { color-scheme: dark; --bg: #14171d; --card: #1d2129; --text: #eef1f6; --text-2: #c0c7d3; --line: #2d333f; --accent: #5b95f0; }
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-    main { max-width: 760px; margin: 0 auto; padding: 40px 16px 72px; }
-    article { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px clamp(18px, 4vw, 36px); }
-    h1 { font-size: 28px; line-height: 1.25; margin: 0 0 6px; }
-    h2 { font-size: 19px; margin: 30px 0 8px; }
-    p, li { color: var(--text-2); }
-    .lead { font-size: 17px; }
-    small { color: var(--text-2); }
-    a { color: var(--accent); }
-    table { width: 100%; border-collapse: collapse; font-size: 15px; }
-    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
-    th { color: var(--text); }
-  </style>
+  <title>Ochrana soukromí – Sella</title>
+  <meta name="description" content="Jak Sella zpracovává osobní údaje zákazníků, návštěvníků e-shopů a návštěvníků webu.">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="/sella/sella.css">
+  <link rel="stylesheet" href="/legal/legal.css">
 </head>
 <body>
-<main>
-<article>
-  <h1>Ochrana soukromí v AI prodavačce</h1>
-  <p><small>Platné od [DATUM]</small></p>
-  <p class="lead">Na tomto e-shopu vám může radit AI prodavačka – chatovací a hlasová asistentka, kterou pro e-shopy provozuje [NÁZEV PROVOZOVATELE, IČO, SÍDLO] („my“). Tady je, jaké údaje přitom zpracováváme a proč.</p>
+  <div class="top">
+    <a href="/"><span data-text="cs">← Zpět na Sellu</span><span data-text="en">← Back to Sella</span></a>
+    <span id="lang"></span>
+  </div>
 
-  <h2>Kdo za údaje odpovídá</h2>
-  <p>Správcem vašich osobních údajů je <b>provozovatel e-shopu</b>, na kterém prodavačku používáte. My údaje zpracováváme jeho jménem jako zpracovatel podle smlouvy s ním. S dotazy a žádostmi se proto obracejte hlavně na e-shop; napsat můžete i nám na [E-MAIL PROVOZOVATELE].</p>
+  <main class="doc pane">
+  <!-- ================================================================ ČESKY -->
+  <article data-text="cs">
+    <h1>Ochrana soukromí</h1>
+    <p class="meta">Verze <span data-op="version"></span> · platné od <span data-op="effective"></span></p>
+    <p class="lead">Sella je AI prodavačka pro e-shopy. Údaje zpracováváme jen k tomu, aby služba fungovala, neprodáváme je a nepoužíváme je k reklamě ani k trénování umělé inteligence.</p>
+    <p class="op"><b>Provozovatel:</b> <span data-op="name"></span>, IČO <span data-op="ico"></span>, se sídlem <span data-op="address"></span>, <span data-op="register"></span>. Kontakt pro ochranu údajů: <a data-op="mailto"></a></p>
 
-  <h2>Jde o umělou inteligenci</h2>
-  <p>Odpovědi píše umělá inteligence. Informace o produktech bere z katalogu e-shopu, přesto se může splést. Závazné jsou údaje na stránce produktu a v obchodních podmínkách e-shopu.</p>
+    <ol class="toc">
+      <li><a href="#zakaznici">A. Pro e-shopy, které Sellu používají</a></li>
+      <li><a href="#navstevnici">B. Pro návštěvníky e-shopů s prodavačkou</a></li>
+      <li><a href="#web">C. Pro návštěvníky webu Selly</a></li>
+      <li><a href="#prava">D. Vaše práva</a></li>
+    </ol>
 
-  <h2>Co zpracováváme</h2>
-  <table>
-    <tr><th>Údaje</th><th>Proč</th><th>Na jakém základě</th></tr>
-    <tr><td>Vaše zprávy a to, na jaké stránce e-shopu jste (produkt, kategorie, obsah košíku)</td><td>Abychom mohli na dotaz odpovědět a poradit s výběrem</td><td>Plnění vašeho požadavku a oprávněný zájem e-shopu na poskytování poradenství (čl. 6 odst. 1 písm. b) a f) GDPR)</td></tr>
-    <tr><td>Náhodný identifikátor návštěvy, prohlížené produkty, hledání, přidání do košíku, objednávka a její hodnota, text vašich dotazů</td><td>Statistiky pro e-shop: co zákazníci hledají, jak jim prodavačka pomáhá</td><td>Jen s vaším souhlasem s analytikou (čl. 6 odst. 1 písm. a) GDPR)</td></tr>
-  </table>
-  <p>Bez souhlasu s analytikou o vás nic neukládáme: zprávu zpracujeme jen pro odpověď a prodavačka si chování na stránce pamatuje jen do jejího opuštění. Souhlas dáváte a odvoláváte v nastavení cookies e-shopu.</p>
-  <p>E-mailové adresy, telefonní čísla a čísla karet v uložených dotazech automaticky skrýváme. Přesto prosíme: do chatu osobní údaje nepište. Prodavačka je k ničemu nepotřebuje – objednávky, platby a reklamace vyřizuje e-shop.</p>
-  <p>Nesnažíme se zjistit, kdo jste. Identifikátor návštěvy je náhodný a nespojujeme ho s vaším jménem ani účtem v e-shopu.</p>
+    <h2 id="zakaznici">A. Pro e-shopy, které Sellu používají</h2>
+    <p>Pro majitele e-shopů a jejich pracovníky jsme <b>správcem</b> osobních údajů.</p>
+    <div class="table"><table>
+      <tr><th>Údaje</th><th>Proč</th><th>Právní základ</th><th>Jak dlouho</th></tr>
+      <tr><td>Název obchodu, jméno, e-mail, domény, adresa feedu, nastavení obchodu, otisk hesla (heslo samotné nikdy)</td><td>Účet, přihlášení a poskytování služby</td><td>Plnění smlouvy (čl. 6 odst. 1 písm. b) GDPR)</td><td>Po dobu smlouvy, smazání do 30 dní po jejím konci</td></tr>
+      <tr><td>Tarif, stav předplatného, platby, fakturační údaje, identifikátory ve Stripe (číslo karty nevidíme – zpracovává ho jen Stripe)</td><td>Placení služby a účetnictví</td><td>Plnění smlouvy; právní povinnost (písm. c)</td><td>Po dobu smlouvy; doklady po dobu stanovenou daňovými a účetními předpisy (zpravidla 10 let)</td></tr>
+      <tr><td>Záznam souhlasu s obchodními podmínkami: verze, čas, IP adresa</td><td>Prokázání, s čím jste souhlasili</td><td>Oprávněný zájem (písm. f)</td><td>Po dobu smlouvy a 3 roky po jejím konci</td></tr>
+      <tr><td>Využití služby (počty zpráv, náklady), IP adresa při přihlášení a registraci</td><td>Limity tarifu, vyúčtování, ochrana před zneužitím</td><td>Plnění smlouvy; oprávněný zájem</td><td>Využití po dobu smlouvy; IP adresy nejvýše 32 dní</td></tr>
+      <tr><td>Komunikace s námi (e-maily)</td><td>Podpora a vyřízení vašich žádostí</td><td>Plnění smlouvy; oprávněný zájem</td><td>Po dobu smlouvy a 3 roky po jejím konci</td></tr>
+    </table></div>
+    <p><b>Příjemci:</b> Stripe Payments Europe, Ltd. (platby), Supabase Inc. (databáze), Vercel Inc. (provoz webu), poskytovatel e-mailu a nástroj pro naše interní upozornění (např. Slack nebo Discord). Při předání mimo EHP platí standardní smluvní doložky EU nebo rámec EU–USA pro ochranu osobních údajů. Úřadům jen pokud to vyžaduje zákon.</p>
 
-  <h2>Úložiště v prohlížeči</h2>
-  <ul>
-    <li><b>sessionStorage</b> (smaže se zavřením karty) – aby rozhovor pokračoval, když přejdete na jinou stránku. Je nezbytné pro fungování chatu.</li>
-    <li><b>localStorage</b> – pozná, že jste tu už byli, a pamatuje si prohlížené produkty. Jen se souhlasem s analytikou.</li>
-  </ul>
+    <h2 id="navstevnici">B. Pro návštěvníky e-shopů s prodavačkou</h2>
+    <p>Na e-shopu, kde vám radí AI prodavačka Sella, je <b>správcem</b> vašich osobních údajů <b>provozovatel daného e-shopu</b>. My údaje zpracováváme jeho jménem jako <b>zpracovatel</b> podle <a href="/zpracovani-udaju.html">smlouvy o zpracování</a>. S dotazy a žádostmi se proto obracejte hlavně na e-shop; napsat můžete i nám.</p>
+    <h3>Jde o umělou inteligenci</h3>
+    <p>Odpovědi píše umělá inteligence (model Claude od společnosti Anthropic). Informace bere z katalogu e-shopu, přesto se může splést. Závazné jsou údaje na stránce produktu a v obchodních podmínkách e-shopu.</p>
+    <h3>Co zpracováváme</h3>
+    <div class="table"><table>
+      <tr><th>Údaje</th><th>Proč</th><th>Právní základ</th></tr>
+      <tr><td>Vaše zprávy (a přílohy, pokud je pošlete), stránka, na které jste, obsah košíku</td><td>Odpovědět na váš dotaz, poradit a na vaši žádost upravit košík</td><td>Plnění vašeho požadavku a oprávněný zájem e-shopu na poradenství (čl. 6 odst. 1 písm. b) a f) GDPR)</td></tr>
+      <tr><td>Náhodný identifikátor návštěvy, prohlížené produkty, hledání, košík, objednávka a její hodnota, text vašich dotazů</td><td>Statistiky pro e-shop: co zákazníci hledají a jak jim prodavačka pomáhá</td><td>Jen s vaším souhlasem s analytikou (písm. a)</td></tr>
+    </table></div>
+    <p><b>Bez souhlasu s analytikou o vás nic neukládáme:</b> zprávu zpracujeme jen pro odpověď a prodavačka si chování na stránce pamatuje jen do jejího opuštění. Souhlas dáváte a odvoláváte v nastavení cookies e-shopu.</p>
+    <p>E-mailové adresy, telefonní čísla a čísla karet v uložených dotazech automaticky skrýváme. Do chatu ale osobní údaje prosím nepište – prodavačka je nepotřebuje; objednávky, platby a reklamace vyřizuje e-shop. Identifikátor návštěvy je náhodný a nespojujeme ho s vaším jménem ani účtem v e-shopu. Neděláme o vás žádná automatizovaná rozhodnutí s právními účinky.</p>
+    <h3>Úložiště v prohlížeči</h3>
+    <ul>
+      <li><b>sessionStorage</b> (smaže se zavřením karty) – aby rozhovor pokračoval, když přejdete na jinou stránku. Nezbytné pro fungování chatu.</li>
+      <li><b>localStorage</b> – pozná, že jste tu už byli, a pamatuje si prohlížené produkty. Jen se souhlasem s analytikou.</li>
+    </ul>
+    <h3>Hlasový režim</h3>
+    <p>Když s prodavačkou mluvíte, řeč na text převádí váš prohlížeč; některé prohlížeče (např. Google Chrome) k tomu posílají zvuk na servery svého výrobce. Hlas odpovědí vytváří služba ElevenLabs z textu odpovědi; vaši nahrávku nedostává.</p>
+    <h3>Komu údaje předáváme</h3>
+    <div class="table"><table>
+      <tr><th>Kdo</th><th>Co dělá</th><th>Kde</th></tr>
+      <tr><td>Anthropic PBC</td><td>AI model, který píše odpovědi</td><td>USA – standardní smluvní doložky / rámec EU–USA</td></tr>
+      <tr><td>Supabase Inc.</td><td>databáze (statistiky, nastavení)</td><td>EU nebo USA – standardní smluvní doložky</td></tr>
+      <tr><td>Vercel Inc.</td><td>provoz serveru</td><td>EU / USA – standardní smluvní doložky / rámec EU–USA</td></tr>
+      <tr><td>ElevenLabs Inc.</td><td>hlas odpovědí (jen hlasový režim)</td><td>USA – standardní smluvní doložky</td></tr>
+    </table></div>
+    <h3>Jak dlouho</h3>
+    <p>Statistiky a uložené dotazy mažeme automaticky po 90 dnech. Rozhovor bez souhlasu neukládáme vůbec. Když e-shop Sellu přestane používat, jeho data smažeme do 30 dní.</p>
 
-  <h2>Hlasový režim</h2>
-  <p>Když s prodavačkou mluvíte, řeč na text převádí váš prohlížeč. Některé prohlížeče (např. Google Chrome) k tomu posílají zvuk na servery svého výrobce. Hlas odpovědí vytváří služba ElevenLabs z textu odpovědi; vaši nahrávku nedostává.</p>
+    <h2 id="web">C. Pro návštěvníky webu Selly</h2>
+    <ul>
+      <li>Web Selly nepoužívá analytické, reklamní ani sledovací cookies a nenačítá obsah od třetích stran – i písma posíláme z vlastního serveru.</li>
+      <li>V prohlížeči si pamatujeme zvolený jazyk (localStorage). Po přihlášení do přehledu používáme nezbytnou přihlašovací cookie <code>aip_admin</code> (platí 14 dní nebo do odhlášení). Na ukázkových e-shopech se ptáme na souhlas s analytikou a volbu si pamatujeme v prohlížeči.</li>
+      <li>Server při každém požadavku zpracovává IP adresu a technické údaje (prohlížeč, čas) k doručení stránky, zabezpečení a ochraně před zneužitím – na základě oprávněného zájmu (čl. 6 odst. 1 písm. f) GDPR). Záznamy uchovává náš poskytovatel hostingu (Vercel) jen krátkodobě.</li>
+    </ul>
 
-  <h2>Komu údaje předáváme</h2>
-  <table>
-    <tr><th>Kdo</th><th>Co dělá</th><th>Kde</th></tr>
-    <tr><td>Anthropic PBC</td><td>AI model, který píše odpovědi</td><td>USA – na základě standardních smluvních doložek EU / rámce EU–USA pro ochranu údajů</td></tr>
-    <tr><td>Supabase Inc.</td><td>Databáze (statistiky, nastavení)</td><td>[REGION DATABÁZE, např. EU – Frankfurt]</td></tr>
-    <tr><td>Vercel Inc.</td><td>Provoz serveru</td><td>[REGION, např. EU]; USA na základě standardních smluvních doložek</td></tr>
-    <tr><td>ElevenLabs Inc.</td><td>Hlas odpovědí (jen v hlasovém režimu)</td><td>USA – na základě standardních smluvních doložek</td></tr>
-  </table>
-  <p>Údaje neprodáváme a nepoužíváme je k reklamě ani k trénování AI modelů.</p>
+    <h2 id="prava">D. Vaše práva</h2>
+    <p>Máte právo na přístup ke svým údajům, jejich opravu a výmaz, omezení zpracování, přenositelnost, právo vznést námitku proti zpracování na základě oprávněného zájmu a kdykoli odvolat souhlas (odvolání nemá vliv na zpracování před ním). Napište nám na <a data-op="mailto"></a>; odpovíme nejpozději do jednoho měsíce. Jste-li návštěvník e-shopu, uveďte prosím, kdy a na jakém e-shopu jste prodavačku používali – podle náhodného identifikátoru vás jinak nepoznáme.</p>
+    <p>Stížnost můžete podat u Úřadu pro ochranu osobních údajů, Pplk. Sochora 27, 170 00 Praha 7, <a href="https://uoou.gov.cz" rel="noopener">uoou.gov.cz</a>.</p>
+    <p>Tyto informace můžeme aktualizovat; podstatné změny oznámíme zákazníkům e-mailem a vždy uvedeme datum platnosti nahoře.</p>
+  </article>
 
-  <h2>Jak dlouho</h2>
-  <p>Statistiky a uložené dotazy mažeme automaticky po [90] dnech. Rozhovor bez souhlasu neukládáme vůbec.</p>
+  <!-- ================================================================ ENGLISH -->
+  <article data-text="en">
+    <h1>Privacy</h1>
+    <p class="meta">Version <span data-op="version"></span> · effective from <span data-op="effective"></span></p>
+    <p class="note">This is an English translation for convenience. The Czech version prevails.</p>
+    <p class="lead">Sella is an AI shop assistant for online shops. We process data only to make the service work; we don't sell it or use it for advertising or to train artificial intelligence.</p>
+    <p class="op"><b>Operator:</b> <span data-op="name"></span>, Company ID <span data-op="ico"></span>, registered address <span data-op="address"></span>, <span data-op="register"></span>. Data protection contact: <a data-op="mailto"></a></p>
 
-  <h2>Vaše práva</h2>
-  <p>Máte právo na přístup ke svým údajům, jejich opravu a výmaz, omezení zpracování, přenositelnost, vznést námitku a kdykoli odvolat souhlas. Protože vás podle náhodného identifikátoru neumíme poznat, uveďte prosím při žádosti, kdy a na jakém e-shopu jste prodavačku používali. Stížnost můžete podat u Úřadu pro ochranu osobních údajů (<a href="https://uoou.gov.cz" rel="noopener">uoou.gov.cz</a>).</p>
-</article>
-</main>
+    <ol class="toc">
+      <li><a href="#customers">A. For shops that use Sella</a></li>
+      <li><a href="#visitors">B. For visitors to shops with the assistant</a></li>
+      <li><a href="#site">C. For visitors to the Sella website</a></li>
+      <li><a href="#rights">D. Your rights</a></li>
+    </ol>
+
+    <h2 id="customers">A. For shops that use Sella</h2>
+    <p>For shop owners and their staff we are the <b>controller</b> of personal data.</p>
+    <div class="table"><table>
+      <tr><th>Data</th><th>Why</th><th>Legal basis</th><th>How long</th></tr>
+      <tr><td>Shop name, name, e-mail, domains, feed address, shop settings, password hash (never the password itself)</td><td>Account, sign-in and providing the service</td><td>Contract (Art. 6(1)(b) GDPR)</td><td>For the contract; deleted within 30 days after it ends</td></tr>
+      <tr><td>Plan, subscription status, payments, billing details, Stripe identifiers (we never see the card number – only Stripe processes it)</td><td>Paying for the service and accounting</td><td>Contract; legal obligation (c)</td><td>For the contract; records for the period required by tax and accounting law (usually 10 years)</td></tr>
+      <tr><td>Record of agreeing to the terms: version, time, IP address</td><td>Proving what you agreed to</td><td>Legitimate interest (f)</td><td>For the contract and 3 years after it ends</td></tr>
+      <tr><td>Service usage (message counts, costs), IP address at sign-in and sign-up</td><td>Plan limits, billing, preventing abuse</td><td>Contract; legitimate interest</td><td>Usage for the contract; IP addresses at most 32 days</td></tr>
+      <tr><td>Communication with us (e-mails)</td><td>Support and handling your requests</td><td>Contract; legitimate interest</td><td>For the contract and 3 years after it ends</td></tr>
+    </table></div>
+    <p><b>Recipients:</b> Stripe Payments Europe, Ltd. (payments), Supabase Inc. (database), Vercel Inc. (hosting), our e-mail provider and our internal notification tool (e.g. Slack or Discord). Transfers outside the EEA rely on the EU standard contractual clauses or the EU–US Data Privacy Framework. Authorities only where the law requires.</p>
+
+    <h2 id="visitors">B. For visitors to shops with the assistant</h2>
+    <p>On an online shop where the Sella AI assistant helps you, the <b>controller</b> of your personal data is <b>the operator of that shop</b>. We process the data on its behalf as a <b>processor</b> under the <a href="/zpracovani-udaju.html">data processing agreement</a>. Please direct questions and requests mainly to the shop; you can also write to us.</p>
+    <h3>It is artificial intelligence</h3>
+    <p>The answers are written by artificial intelligence (the Claude model by Anthropic). It takes information from the shop's catalogue but can still make mistakes. The information on the product page and in the shop's terms is binding.</p>
+    <h3>What we process</h3>
+    <div class="table"><table>
+      <tr><th>Data</th><th>Why</th><th>Legal basis</th></tr>
+      <tr><td>Your messages (and attachments if you send them), the page you're on, cart contents</td><td>To answer your question, advise you and change the cart at your request</td><td>Your request and the shop's legitimate interest in advising you (Art. 6(1)(b) and (f) GDPR)</td></tr>
+      <tr><td>Random visit identifier, products viewed, searches, cart, order and its value, the text of your questions</td><td>Statistics for the shop: what customers look for and how the assistant helps</td><td>Only with your consent to analytics (a)</td></tr>
+    </table></div>
+    <p><b>Without consent to analytics we store nothing about you:</b> your message is processed only to answer it, and the assistant remembers your behaviour on the page only until you leave it. You give and withdraw consent in the shop's cookie settings.</p>
+    <p>E-mail addresses, phone numbers and card numbers are masked automatically in stored questions. But please don't type personal data into the chat – the assistant doesn't need it; orders, payments and complaints are handled by the shop. The visit identifier is random and not linked to your name or shop account. We make no automated decisions about you with legal effects.</p>
+    <h3>Storage in your browser</h3>
+    <ul>
+      <li><b>sessionStorage</b> (deleted when you close the tab) – so the conversation continues when you go to another page. Necessary for the chat to work.</li>
+      <li><b>localStorage</b> – recognises a returning visitor and remembers viewed products. Only with consent to analytics.</li>
+    </ul>
+    <h3>Voice mode</h3>
+    <p>When you talk to the assistant, your browser turns speech into text; some browsers (e.g. Google Chrome) send the audio to their maker's servers for this. ElevenLabs creates the spoken answer from the answer's text; it does not receive your recording.</p>
+    <h3>Who receives the data</h3>
+    <div class="table"><table>
+      <tr><th>Who</th><th>What it does</th><th>Where</th></tr>
+      <tr><td>Anthropic PBC</td><td>AI model that writes the answers</td><td>USA – standard contractual clauses / EU–US framework</td></tr>
+      <tr><td>Supabase Inc.</td><td>database (statistics, settings)</td><td>EU or USA – standard contractual clauses</td></tr>
+      <tr><td>Vercel Inc.</td><td>hosting</td><td>EU / USA – standard contractual clauses / EU–US framework</td></tr>
+      <tr><td>ElevenLabs Inc.</td><td>spoken answers (voice mode only)</td><td>USA – standard contractual clauses</td></tr>
+    </table></div>
+    <h3>How long</h3>
+    <p>Statistics and stored questions are deleted automatically after 90 days. Conversations without consent are not stored at all. When a shop stops using Sella, its data is deleted within 30 days.</p>
+
+    <h2 id="site">C. For visitors to the Sella website</h2>
+    <ul>
+      <li>The Sella website uses no analytics, advertising or tracking cookies and loads no third-party content – even the fonts come from our own server.</li>
+      <li>Your browser remembers the chosen language (localStorage). After signing in to the dashboard we use the necessary sign-in cookie <code>aip_admin</code> (valid 14 days or until you sign out). The demo shops ask for consent to analytics and remember the choice in your browser.</li>
+      <li>For every request the server processes the IP address and technical data (browser, time) to deliver the page, keep it secure and prevent abuse – based on legitimate interest (Art. 6(1)(f) GDPR). Our hosting provider (Vercel) keeps these logs only briefly.</li>
+    </ul>
+
+    <h2 id="rights">D. Your rights</h2>
+    <p>You have the right to access your data, have it corrected or erased, restrict processing, data portability, to object to processing based on legitimate interest, and to withdraw consent at any time (withdrawal does not affect processing before it). Write to us at <a data-op="mailto"></a>; we reply within one month at the latest. If you're a shop visitor, please say when and on which shop you used the assistant – otherwise we can't recognise you by the random identifier.</p>
+    <p>You can lodge a complaint with the Czech Office for Personal Data Protection (ÚOOÚ), Pplk. Sochora 27, 170 00 Prague 7, <a href="https://uoou.gov.cz" rel="noopener">uoou.gov.cz</a>.</p>
+    <p>We may update this information; we announce material changes to customers by e-mail and always show the effective date at the top.</p>
+  </article>
+  </main>
+
+  <footer class="legal-foot">
+    <span><span data-op="line"></span></span>
+    <a href="/podminky.html"><span data-text="cs">Obchodní podmínky</span><span data-text="en">Terms</span></a>
+    <a href="/zpracovani-udaju.html"><span data-text="cs">Zpracování údajů</span><span data-text="en">Data processing</span></a>
+    <a href="/soukromi.html"><span data-text="cs">Ochrana soukromí</span><span data-text="en">Privacy</span></a>
+  </footer>
+
+  <script src="/sella/i18n.js"></script>
+  <script src="/sella/sella.js"></script>
+  <script src="/legal/provozovatel.js"></script>
+  <script>
+    SellaI18n.switcher(document.getElementById("lang"));
+    const titles = { cs: "Ochrana soukromí – Sella", en: "Privacy – Sella" };
+    const setTitle = () => { document.title = titles[SellaI18n.lang]; };
+    setTitle(); SellaI18n.onChange(setTitle);
+    // the widget links here from shops (#navstevnici); the English text has its own anchors
+    const alias = { navstevnici: "visitors", zakaznici: "customers", web: "site", prava: "rights" };
+    const jump = () => {
+      const id = location.hash.slice(1), target = SellaI18n.lang === "en" ? alias[id] : Object.keys(alias).find((k) => alias[k] === id);
+      if (target) document.getElementById(target)?.scrollIntoView();
+    };
+    jump(); SellaI18n.onChange(jump);
+  </script>
 </body>
 </html>
