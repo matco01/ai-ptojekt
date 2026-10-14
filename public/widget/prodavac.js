@@ -576,6 +576,7 @@
     if (look.theme) o.theme = look.theme;
     if (look.letter) { o.letter = look.letter; delete o.avatarImage; if (look.avatarColor) o.avatarColor = look.avatarColor; }
     if (look.image) { o.avatarImage = cfg.api + look.image; delete o.letter; delete o.avatarColor; }
+    for (const k of ["shape", "face", "faceY", "faceScale"]) if (look[k] != null) o[k] = String(look[k]);
     return o;
   };
 
@@ -703,6 +704,11 @@
     /* … or on every spoken word (browser voice) */
     .av.say .lip { opacity: 0; }
     .av.say .open { animation: word .26s ease-out; }
+    /* no mouth (just eyes, no face, or the shop's own character): the whole mascot bounces as it talks */
+    .av .mover { transform-box: fill-box; transform-origin: 50% 100%; }
+    .av.nomouth.talk .mover, .av.nomouth.say .mover { animation: natter .24s ease-in-out infinite alternate; }
+    .av.nomouth.amp .mover { transform: translateY(calc(var(--mouth, 0) * -5px)) scale(calc(1 + var(--mouth, 0) * .07), calc(1 + var(--mouth, 0) * .1)); }
+    @keyframes natter { from { transform: translateY(0) scale(1, 1); } to { transform: translateY(-3px) scale(1.03, 1.06); } }
     /* happy: a little hop – the mouth stays closed, it only opens when she speaks */
     .av.happy { animation: hop .5s ease; }
     .av.listen::before, .av.listen::after { content: ""; position: absolute; inset: 4%; border-radius: 30%; border: 2px solid var(--c); animation: ripple 1.5s ease-out infinite; }
@@ -1037,8 +1043,13 @@
 
     const { h, s, l } = toHsl(color);
     const dark = l < 0.55; // light tiles get dark eyebrows/letter, dark tiles white ones
+    const SHAPES = ["square", "circle", "triangle", "blob", "free"];
     return {
       brand, image, letter,
+      // outline: a picture stays uncut unless a shape is chosen; a tile is a rounded square by default
+      shape: SHAPES.includes(d.shape) && !(d.shape === "free" && !image) ? d.shape : image ? "free" : "square",
+      face: ["full", "eyes", "none"].includes(d.face) ? d.face : "full",
+      faceY: clamp(Number(d.faceY) || 0, -30, 30), faceScale: clamp((Number(d.faceScale) || 100) / 100, 0.5, 1.5),
       hi: hsl(h, s, clamp(l + 0.19, 0, 0.7)), mid: hsl(h, s, clamp(l + 0.05, 0, 0.8)), base: hex(color), lo: hsl(h, s, clamp(l - 0.07, 0.04, 1)),
       ink: dark || image ? hsl(h, s, clamp(Math.min(l, 0.3) - 0.08, 0.03, 0.2)) : "#1b1f3b",
       glyph: dark ? "#fff" : "#1b1f3b",
@@ -1047,10 +1058,18 @@
 
   const TEE = "M42.6 29.6 L52.2 24.9 L52.2 42 L57.4 42 Q58.6 42 58.6 43.2 L58.6 48.3 Q58.6 49.5 57.4 49.5 L52.2 49.5 L52.2 57.4 Q52.2 60.4 55.2 60.4 L57.6 60.4 Q58.8 60.4 58.8 61.6 L58.8 66 Q58.8 67.1 57.6 67.3 Q55 67.7 52.6 67.7 Q42.6 67.7 42.6 57.8 L42.6 49.5 L37.6 49.5 Q36.4 49.5 36.4 48.3 L36.4 43.2 Q36.4 42 37.6 42 L42.6 42 Z";
   const MOUTH = "M31 70.5 Q47 74 63.6 70.4 Q62.4 87.6 46.4 87.6 Q33.2 87.2 31 70.5 Z";
+  // the mascot's outlines (in a 100×100 drawing); the face is laid out per outline
+  const SHAPE = {
+    square: { d: "M29 4 H71 Q96 4 96 29 V71 Q96 96 71 96 H29 Q4 96 4 71 V29 Q4 4 29 4 Z", shine: "M11.5 27 Q12.5 11.5 28 9.6" },
+    circle: { d: "M50 4 A46 46 0 1 1 49.99 4 Z", shine: "M17 30 Q24 15 39 10" },
+    triangle: { d: "M50 6 C54 6 57 8 59 12 L94 80 C97 86 93 93 86 93 L14 93 C7 93 3 86 6 80 L41 12 C43 8 46 6 50 6 Z", shine: "M40 22 L47 11",
+      face: { scale: 0.66, dy: 13 }, letter: { y: 47, size: 24 } },
+    blob: { d: "M53 5 C77 5 96 21 95 48 C94 75 78 95 50 95 C23 95 5 79 5 53 C5 25 26 5 53 5 Z", shine: "M15 30 Q22 14 38 9" },
+  };
   const avatar = (size, { live = false, mood = "" } = {}, blink = (Math.random() * 4).toFixed(2)) => {
     AV ??= detectPersona();
-    const n = ++avatarSeq, pic = !!AV.image;
-    // on a logo picture the face sits a bit more to the centre and gets a light halo so it reads on any artwork
+    const n = ++avatarSeq, pic = !!AV.image, sh = SHAPE[AV.shape] || null; // null = a picture, uncut
+    // on a picture the face sits a bit more to the centre and gets a light halo so it reads on any artwork
     const [ex1, ex2, ey, er] = pic ? [33, 67, 42, 10.8] : [20, 80, 50, 12.6];
     const halo = (d, w) => pic ? `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${w + 2.4}" stroke-linecap="round"/>` : "";
     const eye = (side, cx, cy, px) => `
@@ -1064,28 +1083,23 @@
         </g>`;
     const browL = pic ? "M24 30 Q30 23 38 25.5" : "M13.3 27.6 Q20 17 28.4 20.5";
     const browR = pic ? "M62 25.5 Q70 23 76 30" : "M70 22 Q79 16 86.5 25.5";
+    const lt = sh?.letter || { y: 66, size: 42 };
+    const glyph = AV.letter === "t" && AV.shape === "square"
+      ? `<path d="${TEE}" fill="${AV.glyph}"/>`
+      : `<text x="48" y="${lt.y}" text-anchor="middle" style="font: 900 ${lt.size}px 'Arial Black', Arial, sans-serif" fill="${AV.glyph}">${esc(AV.letter)}</text>`;
     const body = pic
-      ? `<image href="${esc(AV.image)}" x="3" y="3" width="94" height="94" preserveAspectRatio="xMidYMid meet"/>`
-      : `<rect x="4" y="4" width="92" height="92" rx="25" fill="url(#avg${n})"/>
-          <rect x="4.6" y="4.6" width="90.8" height="90.8" rx="24.4" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="1.2"/>
-          <path d="M11.5 27 Q12.5 11.5 28 9.6" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.6" stroke-linecap="round"/>
-          ${AV.letter === "t" ? `<path d="${TEE}" fill="${AV.glyph}"/>` : `<text x="48" y="66" text-anchor="middle" style="font: 900 42px 'Arial Black', Arial, sans-serif" fill="${AV.glyph}">${esc(AV.letter)}</text>`}`;
+      ? (sh ? `<g clip-path="url(#avc${n})"><path d="${sh.d}" fill="#fff"/><image href="${esc(AV.image)}" x="4" y="4" width="92" height="92" preserveAspectRatio="xMidYMid slice"/></g>
+              <path d="${sh.d}" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>`
+            : `<image href="${esc(AV.image)}" x="3" y="3" width="94" height="94" preserveAspectRatio="xMidYMid meet"/>`)
+      : `<path d="${sh.d}" fill="url(#avg${n})"/>
+          <path d="${sh.d}" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="1.2"/>
+          <path d="${sh.shine}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.6" stroke-linecap="round"/>
+          ${glyph}`;
+    // the face: the outline's own placement × the owner's size and height
+    const k = (sh?.face?.scale ?? 1) * AV.faceScale, dy = (sh?.face?.dy ?? 0) + AV.faceY;
+    const faceAt = k === 1 && !dy ? "" : `transform="translate(${50 * (1 - k)} ${50 * (1 - k) + dy}) scale(${k})"`;
     const lipD = "M33.5 72.5 Q47 81 61.5 72";
-    return `
-    <span class="av ${mood}" style="--s:${size}px" aria-hidden="true">
-      <svg viewBox="0 0 100 100">
-        <defs>
-          <linearGradient id="avg${n}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${AV.hi}"/><stop offset=".38" stop-color="${AV.mid}"/><stop offset=".72" stop-color="${AV.base}"/><stop offset="1" stop-color="${AV.lo}"/></linearGradient>
-          <radialGradient id="avp${n}" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#2a3a8c"/><stop offset=".55" stop-color="#101850"/><stop offset="1" stop-color="#070a22"/></radialGradient>
-          <clipPath id="avm${n}"><path d="${MOUTH}"/></clipPath>
-        </defs>
-        <ellipse cx="52" cy="102" rx="38" ry="3.6" fill="rgba(15,24,73,.16)"/>
-        <g transform="rotate(-4.5 50 50)">
-          ${body}
-          <g class="brow">${halo(browL, 3.8)}<path d="${browL}" fill="none" stroke="${AV.ink}" stroke-width="3.8" stroke-linecap="round"/></g>
-          <g class="brow">${halo(browR, 3.8)}<path d="${browR}" fill="none" stroke="${AV.ink}" stroke-width="3.8" stroke-linecap="round"/></g>
-          ${eye("l", ex1, ey + (pic ? 0 : 0.4), ex1 + 3)}
-          ${eye("r", ex2, ey - (pic ? 0 : 0.7), ex2 - 3)}
+    const mouth = `
           <g ${pic ? 'transform="translate(3 -1)"' : ""}>
             <g class="lip">${halo(lipD, 3.2)}<path d="${lipD}" fill="none" stroke="${AV.ink}" stroke-width="3.2" stroke-linecap="round"/></g>
             <g class="open">
@@ -1096,8 +1110,30 @@
                 <ellipse cx="53.5" cy="82.3" rx="2.6" ry="1.3" fill="#fdabb6"/>
               </g>
             </g>
-          </g>
-        </g>
+          </g>`;
+    const face = AV.face === "none" ? "" : `
+          <g ${faceAt}>
+            <g class="brow">${halo(browL, 3.8)}<path d="${browL}" fill="none" stroke="${AV.ink}" stroke-width="3.8" stroke-linecap="round"/></g>
+            <g class="brow">${halo(browR, 3.8)}<path d="${browR}" fill="none" stroke="${AV.ink}" stroke-width="3.8" stroke-linecap="round"/></g>
+            ${eye("l", ex1, ey + (pic ? 0 : 0.4), ex1 + 3)}
+            ${eye("r", ex2, ey - (pic ? 0 : 0.7), ex2 - 3)}
+            ${AV.face === "full" ? mouth : ""}
+          </g>`;
+    // without a mouth the whole mascot moves when it talks (see .av.nomouth)
+    return `
+    <span class="av ${mood}${AV.face === "full" ? "" : " nomouth"}" style="--s:${size}px" aria-hidden="true">
+      <svg viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="avg${n}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${AV.hi}"/><stop offset=".38" stop-color="${AV.mid}"/><stop offset=".72" stop-color="${AV.base}"/><stop offset="1" stop-color="${AV.lo}"/></linearGradient>
+          <radialGradient id="avp${n}" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#2a3a8c"/><stop offset=".55" stop-color="#101850"/><stop offset="1" stop-color="#070a22"/></radialGradient>
+          <clipPath id="avm${n}"><path d="${MOUTH}"/></clipPath>
+          ${sh ? `<clipPath id="avc${n}"><path d="${sh.d}"/></clipPath>` : ""}
+        </defs>
+        <ellipse cx="52" cy="102" rx="38" ry="3.6" fill="rgba(15,24,73,.16)"/>
+        <g class="mover"><g transform="rotate(-4.5 50 50)">
+          ${body}
+          ${face}
+        </g></g>
       </svg>
       <span class="orbit"><b></b><b></b><b></b></span>
       ${live ? `<span class="live"></span>` : ""}

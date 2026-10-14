@@ -12,7 +12,11 @@ test("the owner's settings are checked and cleaned", () => {
     info: [{ topic: "Doprava", text: "Zdarma nad 1 000 Kč" }, { topic: "", text: "" }],
   });
   assert.equal(v.agentName, "Bára");
-  assert.deepEqual(v.appearance, { color: "#e0662f", theme: "dark", avatar: "letter", letter: "Bx", avatarColor: "#123456", image: "" });
+  assert.deepEqual(v.appearance, { color: "#e0662f", theme: "dark", avatar: "letter", letter: "Bx", avatarColor: "#123456", image: "", shape: "", face: "full", faceY: 0, faceScale: 100 });
+  const m = validateBot({ appearance: { shape: "triangle", face: "eyes", faceY: 99, faceScale: "10" } }).appearance;
+  assert.deepEqual([m.shape, m.face, m.faceY, m.faceScale], ["triangle", "eyes", 30, 50]);
+  const x = validateBot({ appearance: { shape: "star", face: "weird", faceY: "abc" } }).appearance;
+  assert.deepEqual([x.shape, x.face, x.faceY, x.faceScale], ["", "full", 0, 100]);
   assert.equal(v.persona.tone, "playful");
   assert.equal(v.persona.gender, "m");
   assert.equal(v.persona.instructions.length, 1500);
@@ -35,6 +39,8 @@ test("the widget gets only what was set; the picture travels by its own versione
   assert.equal(look.theme, "light");
   assert.match(look.image, /^\/api\/avatar\/shop-1\?v=\w+$/);
   assert.equal(widgetLook({ id: "s", name: "Kavárna", appearance: { avatar: "letter" } }).letter, "K"); // no letter → the shop's initial
+  assert.deepEqual(widgetLook({ id: "s", name: "A", appearance: { shape: "circle", face: "none", faceY: -5, faceScale: 120 } }), { shape: "circle", face: "none", faceY: -5, faceScale: 120 });
+  assert.deepEqual(widgetLook({ id: "s", name: "A", appearance: { face: "full", faceY: 0, faceScale: 100 } }), {}); // defaults aren't sent
   const img = avatarImage({ appearance: { image: PNG } });
   assert.equal(img.type, "image/png");
   assert.equal(img.body.subarray(1, 4).toString(), "PNG");

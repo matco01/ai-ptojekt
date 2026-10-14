@@ -50,6 +50,13 @@
     input[type="color"] { width: 48px; height: 40px; border: 0; padding: 0; background: none; cursor: pointer; }
     .check { display: inline-flex; gap: 8px; align-items: center; font-size: 14.5px; cursor: pointer; }
     .letter { width: 90px !important; text-align: center; font-size: 18px !important; }
+    .shapes { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
+    .shapes .choice { text-align: center; padding: 12px 8px; }
+    .shapes svg { width: 38px; height: 38px; display: block; margin: 0 auto 6px; }
+    .slider { display: grid; grid-template-columns: 150px 1fr 48px; gap: 12px; align-items: center; margin-top: 8px; font-size: 14px; color: var(--ink-2); }
+    .slider input { width: 100%; accent-color: var(--accent); }
+    .slider output { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+    .tip { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; background: rgba(78,127,180,.1); font-size: 14px; color: var(--ink-2); }
     .thumb { width: 72px; height: 72px; border-radius: 20px; object-fit: cover; background: rgba(255,255,255,.6); box-shadow: inset 0 0 0 1px var(--glass-edge); }
 
     .topics { display: grid; gap: 10px; }
@@ -154,6 +161,25 @@
             <div id="image-box" hidden>
               <label class="l" data-i18n-html="imageL">Obrázek <small>(PNG, JPG nebo WebP)</small></label>
               <div class="row"><img class="thumb" id="thumb" alt=""><button class="btn light" id="pick-image" data-i18n="pickImage">Vybrat obrázek</button><input type="file" id="image-file" accept="image/png,image/jpeg,image/webp" hidden></div>
+              <p class="tip" data-i18n="ownChar">Máte vlastní postavičku (maskota značky, zvířátko…)? Nahrajte ji jako PNG s průhledným pozadím, zvolte „Volný tvar“ a „Bez obličeje“ – Sella ji rozhýbe: houpe se a při mluvení poskakuje do rytmu hlasu. Když oči nemá, nechte jí naše a posuňte je na správné místo.</p>
+            </div>
+            <label class="l" data-i18n="shapeL">Tvar</label>
+            <div class="choices shapes" id="shape">
+              <button class="choice" data-v="square"><svg viewBox="0 0 100 100"><path d="M29 4 H71 Q96 4 96 29 V71 Q96 96 71 96 H29 Q4 96 4 71 V29 Q4 4 29 4 Z" fill="currentColor"/></svg><b data-i18n="shSquare">Dlaždice</b></button>
+              <button class="choice" data-v="circle"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="currentColor"/></svg><b data-i18n="shCircle">Koule</b></button>
+              <button class="choice" data-v="triangle"><svg viewBox="0 0 100 100"><path d="M50 6 C54 6 57 8 59 12 L94 80 C97 86 93 93 86 93 L14 93 C7 93 3 86 6 80 L41 12 C43 8 46 6 50 6 Z" fill="currentColor"/></svg><b data-i18n="shTriangle">Trojúhelník</b></button>
+              <button class="choice" data-v="blob"><svg viewBox="0 0 100 100"><path d="M53 5 C77 5 96 21 95 48 C94 75 78 95 50 95 C23 95 5 79 5 53 C5 25 26 5 53 5 Z" fill="currentColor"/></svg><b data-i18n="shBlob">Kapka</b></button>
+              <button class="choice" data-v="free" id="shape-free"><svg viewBox="0 0 100 100"><path d="M30 88 C14 70 18 40 34 30 C40 12 66 10 72 28 C90 34 92 62 76 76 C66 92 44 96 30 88 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-dasharray="10 9"/></svg><b data-i18n="shFree">Volný tvar</b></button>
+            </div>
+            <label class="l" data-i18n="faceL">Obličej</label>
+            <div class="choices" id="face">
+              <button class="choice" data-v="full"><b data-i18n="fFull">Celý</b><span data-i18n="fFullP">oči, obočí a pusa, která mluví</span></button>
+              <button class="choice" data-v="eyes"><b data-i18n="fEyes">Jen oči</b><span data-i18n="fEyesP">mrkají a sledují kurzor</span></button>
+              <button class="choice" data-v="none"><b data-i18n="fNone">Bez obličeje</b><span data-i18n="fNoneP">pro postavičky, které už oči mají</span></button>
+            </div>
+            <div id="face-adjust">
+              <div class="slider"><span data-i18n="faceYL">Výška obličeje</span><input type="range" id="face-y" min="-30" max="30" step="1"><output id="face-y-out"></output></div>
+              <div class="slider"><span data-i18n="faceSL">Velikost obličeje</span><input type="range" id="face-s" min="50" max="150" step="5"><output id="face-s-out"></output></div>
             </div>
           </div>
         </section>
@@ -242,7 +268,10 @@
         themeL: "Okno chatu", thAuto: "Podle webu", thAutoP: "světlé na světlém webu, tmavé na tmavém", thLight: "Světlé", thDark: "Tmavé",
         avH: "Maskot", avP: "Postavička s očima, která mrká, sleduje kurzor a mluví.", avAuto: "Z vašeho loga", avAutoP: "najdeme ho na webu sami",
         avLetter: "Písmeno", avLetterP: "dlaždice v barvě s písmenem", avImage: "Vlastní obrázek", avImageP: "logo nebo ikona, nejlépe čtvercová",
-        letterL: "Písmeno a barva dlaždice", imageL: "Obrázek <small>(PNG, JPG nebo WebP)</small>", pickImage: "Vybrat obrázek",
+        letterL: "Písmeno a barva dlaždice", shapeL: "Tvar", shSquare: "Dlaždice", shCircle: "Koule", shTriangle: "Trojúhelník", shBlob: "Kapka", shFree: "Volný tvar",
+        faceL: "Obličej", fFull: "Celý", fFullP: "oči, obočí a pusa, která mluví", fEyes: "Jen oči", fEyesP: "mrkají a sledují kurzor", fNone: "Bez obličeje", fNoneP: "pro postavičky, které už oči mají",
+        faceYL: "Výška obličeje", faceSL: "Velikost obličeje",
+        ownChar: "Máte vlastní postavičku (maskota značky, zvířátko…)? Nahrajte ji jako PNG s průhledným pozadím, zvolte „Volný tvar“ a „Bez obličeje“ – Sella ji rozhýbe: houpe se a při mluvení poskakuje do rytmu hlasu. Když oči nemá, nechte jí naše a posuňte je na správné místo.", imageL: "Obrázek <small>(PNG, JPG nebo WebP)</small>", pickImage: "Vybrat obrázek",
         toneH: "Jak mluví", toneP: "Platí pro odpovědi, které píše umělá inteligence.",
         tFriendly: "Přátelská", tFriendlyP: "„Jasně, s tím vám ráda pomůžu! Na co ho budete používat?“",
         tPro: "Profesionální", tProP: "„Doporučuji tyto dva modely. Liší se hlavně výdrží baterie.“",
@@ -274,7 +303,10 @@
         themeL: "Chat window", thAuto: "Like the website", thAutoP: "light on a light site, dark on a dark one", thLight: "Light", thDark: "Dark",
         avH: "Mascot", avP: "A little character with eyes that blinks, follows the cursor and talks.", avAuto: "From your logo", avAutoP: "we find it on your website",
         avLetter: "Letter", avLetterP: "a coloured tile with a letter", avImage: "Your own picture", avImageP: "a logo or icon, ideally square",
-        letterL: "Letter and tile colour", imageL: "Picture <small>(PNG, JPG or WebP)</small>", pickImage: "Choose a picture",
+        letterL: "Letter and tile colour", shapeL: "Shape", shSquare: "Tile", shCircle: "Ball", shTriangle: "Triangle", shBlob: "Drop", shFree: "Free shape",
+        faceL: "Face", fFull: "Full", fFullP: "eyes, brows and a talking mouth", fEyes: "Eyes only", fEyesP: "they blink and follow the cursor", fNone: "No face", fNoneP: "for characters that already have eyes",
+        faceYL: "Face height", faceSL: "Face size",
+        ownChar: "Have your own character (a brand mascot, an animal…)? Upload it as a PNG with a transparent background, choose \"Free shape\" and \"No face\" – Sella brings it to life: it bobs and bounces to the rhythm of its voice. If it has no eyes, keep ours and move them into place.", imageL: "Picture <small>(PNG, JPG or WebP)</small>", pickImage: "Choose a picture",
         toneH: "How it talks", toneP: "Applies to the answers artificial intelligence writes.",
         tFriendly: "Friendly", tFriendlyP: "“Sure, happy to help! What will you use it for?”",
         tPro: "Professional", tProP: "“I recommend these two models. They differ mainly in battery life.”",
@@ -325,11 +357,27 @@
     }
     const paintTheme = choice("theme", () => S.appearance.theme || "auto", (v) => { S.appearance.theme = v; });
     const paintAvatar = choice("avatar", () => S.appearance.avatar || "auto", (v) => { S.appearance.avatar = v; showAvatarBoxes(); });
+    const shapeOf = () => S.appearance.shape || (S.appearance.avatar === "image" ? "free" : "square");
+    const paintShape = choice("shape", shapeOf, (v) => { S.appearance.shape = v; });
+    const paintFace = choice("face", () => S.appearance.face || "full", (v) => { S.appearance.face = v; showAvatarBoxes(); });
+    const slider = (id, key, def, fmt) => {
+      const el = $(id), out = $(id + "-out");
+      const paint = () => { el.value = S.appearance[key] ?? def; out.textContent = fmt(+el.value); };
+      el.oninput = () => { S.appearance[key] = +el.value; out.textContent = fmt(+el.value); changed(); };
+      return paint;
+    };
+    const paintFaceY = slider("face-y", "faceY", 0, (v) => (v > 0 ? "↓" : v < 0 ? "↑" : "") + Math.abs(v));
+    const paintFaceS = slider("face-s", "faceScale", 100, (v) => v + " %");
     const paintTone = choice("tone", () => S.persona.tone || "friendly", (v) => { S.persona.tone = v; });
     const paintGender = choice("gender", () => S.persona.gender || "f", (v) => { S.persona.gender = v; });
     function showAvatarBoxes() {
       $("letter-box").hidden = S.appearance.avatar !== "letter";
       $("image-box").hidden = S.appearance.avatar !== "image";
+      // "free" = a picture uncut – only for a picture; a tile always has an outline
+      $("shape-free").hidden = S.appearance.avatar !== "image";
+      if (S.appearance.shape === "free" && S.appearance.avatar !== "image") S.appearance.shape = "";
+      $("face-adjust").hidden = (S.appearance.face || "full") === "none";
+      paintShape?.();
     }
 
     // ------------------------------------------------------------- fields
@@ -346,14 +394,15 @@
       catch { msg(t("imgErr"), "err"); }
       e.target.value = "";
     };
-    /** The picture cut to a centred square of at most 256 px (a few dozen kB), as a data URL. */
+    /** The picture fitted whole into a square of at most 320 px with transparent margins (a few dozen kB), as a data URL. */
     function squareImage(file) {
       return new Promise((ok, fail) => {
         const img = new Image();
         img.onload = () => {
-          const side = Math.min(img.width, img.height), out = Math.min(256, side);
+          const out = Math.min(320, Math.max(img.width, img.height)), k = out / Math.max(img.width, img.height);
+          const w = img.width * k, h = img.height * k;
           const c = document.createElement("canvas"); c.width = c.height = out;
-          c.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, out, out);
+          c.getContext("2d").drawImage(img, (out - w) / 2, (out - h) / 2, w, h);
           URL.revokeObjectURL(img.src);
           const webp = c.toDataURL("image/webp", 0.9);
           ok(webp.startsWith("data:image/webp") ? webp : c.toDataURL("image/png"));
@@ -439,6 +488,10 @@
       if (a.theme && a.theme !== "auto") attrs.theme = a.theme;
       if (a.avatar === "letter") { attrs.letter = a.letter || data.client.name[0]; if (a.avatarColor) attrs.avatarColor = a.avatarColor; }
       if (a.avatar === "image" && a.image) attrs.avatarImage = a.image;
+      if (a.shape) attrs.shape = a.shape;
+      if (a.face && a.face !== "full") attrs.face = a.face;
+      if (a.faceY) attrs.faceY = a.faceY;
+      if (a.faceScale && a.faceScale !== 100) attrs.faceScale = a.faceScale;
       const dataAttrs = Object.entries(attrs).map(([k, v]) => `data-${k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase())}="${esc(v)}"`).join(" ");
       $("pv").srcdoc = `<!doctype html><html lang="${I.lang}"><head><meta charset="utf-8"><style>
         body{margin:0;min-height:100vh;font:15px/1.5 system-ui,sans-serif;background:${dark ? "#14161a" : "#f6f7f9"};color:${dark ? "#e9ebef" : "#20242c"}}
@@ -481,7 +534,7 @@
       if (S.appearance.avatarColor) $("avatar-color").value = S.appearance.avatarColor;
       if (S.appearance.image) $("thumb").src = S.appearance.image;
       $("instructions").value = S.persona.instructions || ""; $("instr-count").textContent = $("instructions").value.length;
-      paintTheme(); paintAvatar(); paintTone(); paintGender(); showAvatarBoxes(); renderTopics(); renderDocs(data.docs);
+      paintTheme(); paintAvatar(); paintShape(); paintFace(); paintFaceY(); paintFaceS(); paintTone(); paintGender(); showAvatarBoxes(); renderTopics(); renderDocs(data.docs);
       $("locked").hidden = !data.locked;
       if (data.locked) document.querySelectorAll("input, textarea, #save, #pick-image, #add-text").forEach((x) => { x.disabled = true; });
       preview();
