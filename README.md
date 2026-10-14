@@ -84,6 +84,15 @@ Neobvyklý web opravíte v nastavení klienta (pole „Úpravy napojení“), ne
 
 TechMarket má místo toho vlastní napojení přes JavaScript (`window.AIProdavac.getContext`, `onAddToCart` – viz začátek `public/widget/prodavac.js`), které umí i odebírat z košíku.
 
+## Vaše prodavačka – úpravy pro majitele
+
+V přehledu je tlačítko **Upravit prodavačku** (`/admin/prodavacka.html`). Majitel si tam sám nastaví a hned vidí v živém náhledu (skutečný widget):
+- **Vzhled:** jméno, barvu (nebo podle webu), světlé/tmavé okno (nebo podle webu), maskota – z loga webu, písmeno v barevné dlaždici, nebo vlastní obrázek (v prohlížeči se ořízne na čtverec 256 px a uloží do `clients.appearance`; widget ho načítá z `/api/avatar/<id>`).
+- **Povahu:** přátelská / profesionální / hravá, prodavačka / prodavač (kvůli češtině) a vlastní pokyny (až 1 500 znaků; pravidla o pravdivosti mají vždy přednost). Uloženo v `clients.persona`.
+- **Co má vědět:** informace o obchodě po tématech (doprava, platba, vrácení… – `clients.info`) a **dokumenty** (PDF, Word .docx, TXT, Markdown, CSV, HTML; až 30 dokumentů a 300 000 znaků). Text se z nich vytáhne při nahrání (PDF přečte Claude, počítá se do využití) a uloží do tabulky `knowledge`. Krátké dokumenty (do 12 000 znaků) dostane prodavačka přímo do promptu, delší prohledává nástrojem `search_knowledge`.
+
+Vzhled dorazí do widgetu spolu se startovní kontrolou (`/api/status` → `look`), takže se ukáže hned bez probliknutí. Nastavení z přehledu má přednost před `data-*` atributy ve vložení a před tím, co widget vyčte z webu. Ukázkové obchody může měnit jen provozovatel. Logika je v `lib/bot.js`.
+
 ## GDPR a souhlas
 
 - **Souhlas s analytikou:** chování návštěvníka (prohlížení, hledání, košík, objednávka), text jeho dotazů a „vracející se návštěvník“ (localStorage) se ukládají jen s jeho souhlasem. Widget ho čte sám z nástroje obchodu: Google Consent Mode (`analytics_storage`), Cookiebot, OneTrust. Jinak ho obchod předá sám: `data-consent="granted"` (když widget načítá až po souhlasu), `AIProdavac.setConsent(true|false)`, nebo `window.AIProdavac = { consent: true }` před načtením widgetu. Bez souhlasu widget dál zdraví, radí a chatuje, jen si nic neukládá. Ukázkové weby mají jednoduchou lištu (`public/consent-demo.js`).

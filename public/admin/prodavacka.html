@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vaše prodavačka – Sella</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="/sella/sella.css">
+  <!-- The shop owner shapes their assistant: name and look, manner, and what it knows (documents).
+       Left the settings, right a live preview with the real widget. -->
+  <style>
+    .wrap { width: min(1240px, 100% - 48px); margin: 0 auto; }
+    [hidden] { display: none !important; }
+    .bar { display: flex; align-items: center; gap: 14px; padding: 20px 0 6px; flex-wrap: wrap; }
+    .bar .wordmark { font-size: 32px; text-decoration: none; }
+    .bar .sep { width: 1px; height: 26px; background: var(--line); }
+    .bar .shopname { font-weight: 600; font-size: 15px; }
+    .bar .tools { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+    .bar .btn { height: 40px; padding: 0 16px; font-size: 14px; }
+
+    .head { margin: 34px 0 22px; }
+    .head h1 { font: 400 clamp(34px, 5vw, 50px)/1.05 var(--serif); margin: 0 0 8px; }
+    .head p { margin: 0; color: var(--ink-2); max-width: 46em; }
+
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 22px; align-items: start; padding-bottom: 120px; }
+    .tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.45); box-shadow: inset 0 0 0 1px var(--glass-edge); margin-bottom: 16px; flex-wrap: wrap; }
+    .tabs button { border: 0; background: none; font: 500 14.5px var(--sans); color: var(--ink-2); padding: 9px 18px; border-radius: 999px; cursor: pointer; }
+    .tabs button[aria-selected="true"] { background: var(--ink); color: #f3f5f7; }
+
+    .card { padding: 24px 26px; margin-bottom: 16px; }
+    .card h2 { font: 400 23px/1.2 var(--serif); margin: 0 0 4px; }
+    .card .hint { margin: 0 0 16px; color: var(--ink-3); font-size: 14px; }
+    label.l { display: block; font-weight: 600; font-size: 14px; margin: 16px 0 6px; }
+    label.l small { font-weight: 400; color: var(--ink-3); }
+    input[type="text"], textarea { width: 100%; font: 400 15px var(--sans); color: var(--ink); background: rgba(255,255,255,.62); border: 0; border-radius: 14px; padding: 12px 14px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.85); }
+    textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
+    input:focus, textarea:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px rgba(78,127,180,.14); }
+    input:disabled, textarea:disabled, button:disabled { opacity: .55; cursor: not-allowed; }
+    .count { text-align: right; font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+
+    .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .choice { position: relative; text-align: left; border: 0; cursor: pointer; padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,.5); color: var(--ink);
+      box-shadow: inset 0 0 0 1px var(--glass-edge); font: inherit; transition: box-shadow .2s, background .2s; }
+    .choice:hover { background: rgba(255,255,255,.7); }
+    .choice[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); background: rgba(255,255,255,.78); }
+    .choice b { display: block; font-size: 15px; } .choice span { display: block; font-size: 13px; color: var(--ink-3); margin-top: 3px; line-height: 1.4; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    input[type="color"] { width: 48px; height: 40px; border: 0; padding: 0; background: none; cursor: pointer; }
+    .check { display: inline-flex; gap: 8px; align-items: center; font-size: 14.5px; cursor: pointer; }
+    .letter { width: 90px !important; text-align: center; font-size: 18px !important; }
+    .thumb { width: 72px; height: 72px; border-radius: 20px; object-fit: cover; background: rgba(255,255,255,.6); box-shadow: inset 0 0 0 1px var(--glass-edge); }
+
+    .topics { display: grid; gap: 10px; }
+    .topic { display: grid; grid-template-columns: 180px 1fr auto; gap: 10px; align-items: start; }
+    .topic textarea { min-height: 70px; }
+    .x { border: 0; background: rgba(255,255,255,.5); width: 40px; height: 40px; border-radius: 12px; cursor: pointer; color: var(--ink-2); font-size: 18px; }
+    .x:hover { color: #a3433a; background: rgba(255,255,255,.8); }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .chips button { border: 0; background: rgba(255,255,255,.5); border-radius: 999px; padding: 7px 13px; font: 500 13.5px var(--sans); cursor: pointer; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--glass-edge); }
+    .chips button:hover { color: var(--ink); background: rgba(255,255,255,.75); }
+
+    .drop { display: grid; place-items: center; text-align: center; padding: 26px; border-radius: 20px; border: 1.5px dashed rgba(78,127,180,.45); background: rgba(255,255,255,.35); cursor: pointer; color: var(--ink-2); }
+    .drop.over { background: rgba(255,255,255,.7); border-color: var(--accent); }
+    .drop b { display: block; color: var(--ink); font-size: 15.5px; margin-bottom: 4px; }
+    .docs { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 8px; }
+    .docs li { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: 14px; background: rgba(255,255,255,.5); }
+    .docs li div { flex: 1; min-width: 0; } .docs li b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .docs li small { color: var(--ink-3); }
+    .meter { height: 8px; border-radius: 99px; background: rgba(255,255,255,.6); overflow: hidden; margin: 14px 0 4px; } .meter i { display: block; height: 100%; background: var(--accent); }
+
+    .preview { position: sticky; top: 16px; padding: 14px; }
+    .preview .ph { display: flex; justify-content: space-between; align-items: center; margin: 2px 6px 10px; }
+    .preview .ph b { font: 400 20px var(--serif); }
+    .preview .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.5); }
+    .preview .seg button { border: 0; background: none; padding: 6px 10px; border-radius: 999px; font: 500 12.5px var(--sans); cursor: pointer; color: var(--ink-2); }
+    .preview .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+    .preview iframe { width: 100%; height: 600px; border: 0; border-radius: 20px; background: #fff; display: block; }
+    .preview .note { font-size: 12.5px; color: var(--ink-3); margin: 10px 6px 2px; }
+
+    .savebar { position: fixed; left: 0; right: 0; bottom: 0; padding: 14px 0 18px; background: linear-gradient(180deg, transparent, rgba(208,217,225,.92) 40%); }
+    .savebar .wrap { display: flex; gap: 14px; align-items: center; justify-content: flex-end; }
+    .msg { font-size: 14.5px; } .msg.ok { color: #2d7a52; } .msg.err { color: #a3433a; }
+    .locked { padding: 14px 18px; border-radius: 16px; background: rgba(78,127,180,.12); margin-bottom: 16px; }
+
+    @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } .preview { position: static; } .preview iframe { height: 520px; } }
+    @media (max-width: 600px) { .wrap { width: calc(100% - 32px); } .topic { grid-template-columns: 1fr auto; } .topic textarea { grid-column: 1 / -1; } .card { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="bar">
+      <a class="wordmark" id="home" href="/admin/">Sella</a>
+      <span class="sep"></span>
+      <span class="shopname" id="shop-name"></span>
+      <div class="tools">
+        <span id="lang"></span>
+        <a class="btn light" id="back" href="/admin/" data-i18n="back">← Zpět na přehled</a>
+      </div>
+    </header>
+
+    <div class="head">
+      <h1 data-i18n="h1">Vaše prodavačka</h1>
+      <p data-i18n="lead">Pojmenujte ji, oblečte do barev vašeho obchodu, nastavte, jak má mluvit, a dejte jí dokumenty, které má znát.</p>
+    </div>
+
+    <p class="locked" id="locked" hidden data-i18n="locked">Tohle je ukázkový obchod – jeho prodavačku nastavujeme my. Náhled si ale vyzkoušet můžete.</p>
+
+    <div class="layout">
+      <div>
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-tab="look" data-i18n="tLook">Vzhled</button>
+          <button role="tab" aria-selected="false" data-tab="manner" data-i18n="tManner">Povaha</button>
+          <button role="tab" aria-selected="false" data-tab="know" data-i18n="tKnow">Co má vědět</button>
+        </div>
+
+        <!-- ============================================================ look -->
+        <section data-panel="look">
+          <div class="pane card">
+            <h2 data-i18n="nameH">Jméno</h2>
+            <p class="hint" data-i18n="nameP">Zákazníci ji tak uvidí v okně chatu i v pozdravu.</p>
+            <input type="text" id="name" maxlength="30" autocomplete="off">
+            <p class="count" id="name-hint"></p>
+          </div>
+
+          <div class="pane card">
+            <h2 data-i18n="colorH">Barvy</h2>
+            <p class="hint" data-i18n="colorP">Bez nastavení si prodavačka barvu, písmo i světlý/tmavý vzhled vezme z vašeho webu.</p>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="color-auto" checked> <span data-i18n="colorAuto">Barvu převzít z webu</span></label>
+              <input type="color" id="color" value="#4e7fb4" aria-label="Barva" hidden>
+            </div>
+            <label class="l" data-i18n="themeL">Okno chatu</label>
+            <div class="choices" id="theme">
+              <button class="choice" data-v="auto"><b data-i18n="thAuto">Podle webu</b><span data-i18n="thAutoP">světlé na světlém webu, tmavé na tmavém</span></button>
+              <button class="choice" data-v="light"><b data-i18n="thLight">Světlé</b></button>
+              <button class="choice" data-v="dark"><b data-i18n="thDark">Tmavé</b></button>
+            </div>
+          </div>
+
+          <div class="pane card">
+            <h2 data-i18n="avH">Maskot</h2>
+            <p class="hint" data-i18n="avP">Postavička s očima, která mrká, sleduje kurzor a mluví.</p>
+            <div class="choices" id="avatar">
+              <button class="choice" data-v="auto"><b data-i18n="avAuto">Z vašeho loga</b><span data-i18n="avAutoP">najdeme ho na webu sami</span></button>
+              <button class="choice" data-v="letter"><b data-i18n="avLetter">Písmeno</b><span data-i18n="avLetterP">dlaždice v barvě s písmenem</span></button>
+              <button class="choice" data-v="image"><b data-i18n="avImage">Vlastní obrázek</b><span data-i18n="avImageP">logo nebo ikona, nejlépe čtvercová</span></button>
+            </div>
+            <div id="letter-box" hidden>
+              <label class="l" data-i18n="letterL">Písmeno a barva dlaždice</label>
+              <div class="row"><input type="text" id="letter" class="letter" maxlength="2"><input type="color" id="avatar-color" value="#2f3133" aria-label="Barva dlaždice"></div>
+            </div>
+            <div id="image-box" hidden>
+              <label class="l" data-i18n-html="imageL">Obrázek <small>(PNG, JPG nebo WebP)</small></label>
+              <div class="row"><img class="thumb" id="thumb" alt=""><button class="btn light" id="pick-image" data-i18n="pickImage">Vybrat obrázek</button><input type="file" id="image-file" accept="image/png,image/jpeg,image/webp" hidden></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================== manner -->
+        <section data-panel="manner" hidden>
+          <div class="pane card">
+            <h2 data-i18n="toneH">Jak mluví</h2>
+            <p class="hint" data-i18n="toneP">Platí pro odpovědi, které píše umělá inteligence.</p>
+            <div class="choices" id="tone">
+              <button class="choice" data-v="friendly"><b data-i18n="tFriendly">Přátelská</b><span data-i18n="tFriendlyP">„Jasně, s tím vám ráda pomůžu! Na co ho budete používat?“</span></button>
+              <button class="choice" data-v="professional"><b data-i18n="tPro">Profesionální</b><span data-i18n="tProP">„Doporučuji tyto dva modely. Liší se hlavně výdrží baterie.“</span></button>
+              <button class="choice" data-v="playful"><b data-i18n="tPlay">Hravá</b><span data-i18n="tPlayP">„Ooo, dobrá volba! 🎧 Tyhle vás nezklamou ani v letadle.“</span></button>
+            </div>
+            <label class="l" data-i18n="genderL">Prodavačka, nebo prodavač?</label>
+            <div class="choices" id="gender">
+              <button class="choice" data-v="f"><b data-i18n="gF">Prodavačka</b><span data-i18n="gFP">„Ráda vám poradím.“</span></button>
+              <button class="choice" data-v="m"><b data-i18n="gM">Prodavač</b><span data-i18n="gMP">„Rád vám poradím.“</span></button>
+            </div>
+          </div>
+          <div class="pane card">
+            <h2 data-i18n="instrH">Vaše pokyny</h2>
+            <p class="hint" data-i18n="instrP">Co má zdůrazňovat, doporučovat nebo jak se chovat. Pravidla o pravdivosti (žádné vymyšlené slevy ani ceny) platí vždy.</p>
+            <textarea id="instructions" maxlength="1500" data-i18n-attr="placeholder=instrPh"></textarea>
+            <p class="count"><span id="instr-count">0</span> / 1500</p>
+          </div>
+        </section>
+
+        <!-- ============================================================ know -->
+        <section data-panel="know" hidden>
+          <div class="pane card">
+            <h2 data-i18n="infoH">Informace o obchodě</h2>
+            <p class="hint" data-i18n="infoP">Na otázky k dopravě, platbě, vrácení a podobně odpovídá prodavačka jen odsud. Pište stručně a přesně.</p>
+            <div class="topics" id="topics"></div>
+            <div class="chips" id="topic-chips"></div>
+          </div>
+          <div class="pane card">
+            <h2 data-i18n="docsH">Dokumenty</h2>
+            <p class="hint" data-i18n="docsP">Návody, záruční podmínky, katalog služeb, často kladené otázky… Prodavačka v nich hledá, když se zákazník ptá. Ukládají se hned po nahrání.</p>
+            <label class="drop" id="drop" tabindex="0">
+              <input type="file" id="doc-file" accept=".pdf,.docx,.txt,.md,.csv,.html,.htm" multiple hidden>
+              <div><b data-i18n="dropB">Přetáhněte sem soubory, nebo klikněte</b><span data-i18n="dropS">PDF, Word (.docx), TXT, Markdown, CSV · nejvýš 3 MB</span></div>
+            </label>
+            <details style="margin-top:12px">
+              <summary data-i18n="writeS" style="cursor:pointer;font-weight:600;font-size:14.5px">…nebo napsat text</summary>
+              <label class="l" data-i18n="docTitle">Název</label><input type="text" id="doc-title" maxlength="120">
+              <label class="l" data-i18n="docText">Text</label><textarea id="doc-text" style="min-height:160px"></textarea>
+              <p style="margin:10px 0 0"><button class="btn light" id="add-text" data-i18n="addText">Přidat text</button></p>
+            </details>
+            <div class="meter"><i id="docs-meter" style="width:0"></i></div>
+            <p class="count" id="docs-count"></p>
+            <ul class="docs" id="docs"></ul>
+            <p class="msg" id="docs-msg" role="status"></p>
+          </div>
+        </section>
+      </div>
+
+      <aside class="pane preview">
+        <div class="ph"><b data-i18n="pvH">Náhled</b>
+          <div class="seg" id="pv-bg"><button data-v="light" aria-pressed="true" data-i18n="pvLight">Světlý web</button><button data-v="dark" aria-pressed="false" data-i18n="pvDark">Tmavý web</button></div>
+        </div>
+        <iframe id="pv" title="Náhled prodavačky"></iframe>
+        <p class="note" data-i18n="pvNote">Takhle ji uvidí zákazníci. Barvy „podle webu“ a maskot „z loga“ se v náhledu berou z ukázkové stránky – na vašem webu budou podle něj.</p>
+      </aside>
+    </div>
+  </div>
+
+  <div class="savebar"><div class="wrap">
+    <span class="msg" id="msg" role="status"></span>
+    <button class="btn dark" id="save"><span data-i18n="save">Uložit změny</span></button>
+  </div></div>
+
+  <script src="/sella/i18n.js"></script>
+  <script src="/sella/sella.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const I = SellaI18n;
+    const t = I.use({
+      cs: {
+        back: "← Zpět na přehled", h1: "Vaše prodavačka", lead: "Pojmenujte ji, oblečte do barev vašeho obchodu, nastavte, jak má mluvit, a dejte jí dokumenty, které má znát.",
+        locked: "Tohle je ukázkový obchod – jeho prodavačku nastavujeme my. Náhled si ale vyzkoušet můžete.",
+        tLook: "Vzhled", tManner: "Povaha", tKnow: "Co má vědět",
+        nameH: "Jméno", nameP: "Zákazníci ji tak uvidí v okně chatu i v pozdravu.", nameDefault: (n) => `Prázdné = „${n}“ (odvozené od názvu obchodu)`,
+        colorH: "Barvy", colorP: "Bez nastavení si prodavačka barvu, písmo i světlý/tmavý vzhled vezme z vašeho webu.", colorAuto: "Barvu převzít z webu",
+        themeL: "Okno chatu", thAuto: "Podle webu", thAutoP: "světlé na světlém webu, tmavé na tmavém", thLight: "Světlé", thDark: "Tmavé",
+        avH: "Maskot", avP: "Postavička s očima, která mrká, sleduje kurzor a mluví.", avAuto: "Z vašeho loga", avAutoP: "najdeme ho na webu sami",
+        avLetter: "Písmeno", avLetterP: "dlaždice v barvě s písmenem", avImage: "Vlastní obrázek", avImageP: "logo nebo ikona, nejlépe čtvercová",
+        letterL: "Písmeno a barva dlaždice", imageL: "Obrázek <small>(PNG, JPG nebo WebP)</small>", pickImage: "Vybrat obrázek",
+        toneH: "Jak mluví", toneP: "Platí pro odpovědi, které píše umělá inteligence.",
+        tFriendly: "Přátelská", tFriendlyP: "„Jasně, s tím vám ráda pomůžu! Na co ho budete používat?“",
+        tPro: "Profesionální", tProP: "„Doporučuji tyto dva modely. Liší se hlavně výdrží baterie.“",
+        tPlay: "Hravá", tPlayP: "„Ooo, dobrá volba! 🎧 Tyhle vás nezklamou ani v letadle.“",
+        genderL: "Prodavačka, nebo prodavač?", gF: "Prodavačka", gFP: "„Ráda vám poradím.“", gM: "Prodavač", gMP: "„Rád vám poradím.“",
+        instrH: "Vaše pokyny", instrP: "Co má zdůrazňovat, doporučovat nebo jak se chovat. Pravidla o pravdivosti (žádné vymyšlené slevy ani ceny) platí vždy.",
+        instrPh: "Např.: Zmiňuj, že máme kamennou prodejnu v Brně, kde si zboží můžete vyzkoušet. U kávovarů vždy doporuč i odvápňovač.",
+        infoH: "Informace o obchodě", infoP: "Na otázky k dopravě, platbě, vrácení a podobně odpovídá prodavačka jen odsud. Pište stručně a přesně.",
+        topicPh: "Téma", textPh: "Co má prodavačka zákazníkovi říct…", addTopic: "+ Vlastní téma",
+        topicsSuggest: ["Doprava", "Platba", "Vrácení zboží", "Reklamace", "Kontakt", "Otevírací doba"],
+        docsH: "Dokumenty", docsP: "Návody, záruční podmínky, katalog služeb, často kladené otázky… Prodavačka v nich hledá, když se zákazník ptá. Ukládají se hned po nahrání.",
+        dropB: "Přetáhněte sem soubory, nebo klikněte", dropS: "PDF, Word (.docx), TXT, Markdown, CSV · nejvýš 3 MB",
+        writeS: "…nebo napsat text", docTitle: "Název", docText: "Text", addText: "Přidat text",
+        docsCount: (n, max) => `${n.toLocaleString("cs-CZ")} / ${max.toLocaleString("cs-CZ")} znaků`, chars: (n) => `${n.toLocaleString("cs-CZ")} znaků`,
+        uploading: (f) => `Čtu ${f}…`, uploaded: "Uloženo – prodavačka ho zná do minuty.", delConfirm: (n) => `Smazat dokument „${n}“?`, noDocs: "Zatím žádné dokumenty.",
+        noAiPdf: "PDF umíme přečíst jen se zapnutou AI – pošlete prosím .docx nebo .txt.",
+        pvH: "Náhled", pvLight: "Světlý web", pvDark: "Tmavý web",
+        pvNote: "Takhle ji uvidí zákazníci. Barvy „podle webu“ a maskot „z loga“ se v náhledu berou z ukázkové stránky – na vašem webu budou podle něj.",
+        save: "Uložit změny", saving: "Ukládám…", saved: "Uloženo. Na vašem webu se změny projeví do minuty.", unsaved: "Máte neuložené změny.",
+        err: "Uložení se nepodařilo.", imgErr: "Obrázek se nepodařilo načíst.",
+        pvShop: "Váš obchod", pvHello: "Tady bude váš web", title: "Vaše prodavačka – Sella",
+      },
+      en: {
+        back: "← Back to insights", h1: "Your assistant", lead: "Name it, dress it in your shop's colours, choose how it talks and give it the documents it should know.",
+        locked: "This is a demo shop – we set up its assistant. You can still try the preview.",
+        tLook: "Look", tManner: "Manner", tKnow: "What it knows",
+        nameH: "Name", nameP: "Customers see it in the chat window and in the greeting.", nameDefault: (n) => `Empty = "${n}" (derived from the shop's name)`,
+        colorH: "Colours", colorP: "Without settings the assistant takes its colour, font and light/dark look from your website.", colorAuto: "Take the colour from the website",
+        themeL: "Chat window", thAuto: "Like the website", thAutoP: "light on a light site, dark on a dark one", thLight: "Light", thDark: "Dark",
+        avH: "Mascot", avP: "A little character with eyes that blinks, follows the cursor and talks.", avAuto: "From your logo", avAutoP: "we find it on your website",
+        avLetter: "Letter", avLetterP: "a coloured tile with a letter", avImage: "Your own picture", avImageP: "a logo or icon, ideally square",
+        letterL: "Letter and tile colour", imageL: "Picture <small>(PNG, JPG or WebP)</small>", pickImage: "Choose a picture",
+        toneH: "How it talks", toneP: "Applies to the answers artificial intelligence writes.",
+        tFriendly: "Friendly", tFriendlyP: "“Sure, happy to help! What will you use it for?”",
+        tPro: "Professional", tProP: "“I recommend these two models. They differ mainly in battery life.”",
+        tPlay: "Playful", tPlayP: "“Ooh, great pick! 🎧 These won't let you down even on a plane.”",
+        genderL: "Female or male (matters in Czech)", gF: "Female", gFP: "“Ráda vám poradím.”", gM: "Male", gMP: "“Rád vám poradím.”",
+        instrH: "Your instructions", instrP: "What it should stress, recommend or how to behave. The truthfulness rules (no made-up discounts or prices) always apply.",
+        instrPh: "E.g.: Mention we have a shop in Brno where customers can try things out. With coffee machines always suggest a descaler.",
+        infoH: "Shop information", infoP: "The assistant answers questions about delivery, payment, returns and the like only from here. Keep it short and precise.",
+        topicPh: "Topic", textPh: "What the assistant should tell the customer…", addTopic: "+ Own topic",
+        topicsSuggest: ["Delivery", "Payment", "Returns", "Complaints", "Contact", "Opening hours"],
+        docsH: "Documents", docsP: "Manuals, warranty terms, service list, FAQs… The assistant searches them when a customer asks. They're saved as soon as they're uploaded.",
+        dropB: "Drop files here, or click", dropS: "PDF, Word (.docx), TXT, Markdown, CSV · up to 3 MB",
+        writeS: "…or write a text", docTitle: "Title", docText: "Text", addText: "Add text",
+        docsCount: (n, max) => `${n.toLocaleString("en-GB")} / ${max.toLocaleString("en-GB")} characters`, chars: (n) => `${n.toLocaleString("en-GB")} characters`,
+        uploading: (f) => `Reading ${f}…`, uploaded: "Saved – the assistant knows it within a minute.", delConfirm: (n) => `Delete the document "${n}"?`, noDocs: "No documents yet.",
+        noAiPdf: "PDFs can only be read with AI switched on – please send a .docx or .txt.",
+        pvH: "Preview", pvLight: "Light site", pvDark: "Dark site",
+        pvNote: "This is how customers will see it. Colours \"like the website\" and the mascot \"from your logo\" come from a sample page here – on your website they'll follow it.",
+        save: "Save changes", saving: "Saving…", saved: "Saved. Your website shows the changes within a minute.", unsaved: "You have unsaved changes.",
+        err: "Saving failed.", imgErr: "Couldn't load the picture.",
+        pvShop: "Your shop", pvHello: "Your website goes here", title: "Your assistant – Sella",
+      },
+    });
+    I.switcher($("lang"));
+
+    const params = new URLSearchParams(location.search);
+    const clientQ = params.get("client") ? `?client=${encodeURIComponent(params.get("client"))}` : "";
+    $("home").href = $("back").href = "/admin/" + clientQ;
+    const api = (path, opts = {}) => fetch(path + clientQ, opts);
+    const post = (path, body) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+    let data = null, dirty = false;
+    const S = { name: "", appearance: {}, persona: {}, info: [] }; // what the form holds
+
+    // ---------------------------------------------------------------- tabs
+    document.querySelector(".tabs").onclick = (e) => {
+      const b = e.target.closest("[data-tab]"); if (!b) return;
+      document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      document.querySelectorAll("[data-panel]").forEach((p) => { p.hidden = p.dataset.panel !== b.dataset.tab; });
+    };
+
+    // ------------------------------------------------------------ choices
+    function choice(id, get, set) {
+      const box = $(id);
+      const paint = () => box.querySelectorAll(".choice").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === get()));
+      box.onclick = (e) => { const b = e.target.closest(".choice"); if (!b || data?.locked) return; set(b.dataset.v); paint(); changed(); };
+      return paint;
+    }
+    const paintTheme = choice("theme", () => S.appearance.theme || "auto", (v) => { S.appearance.theme = v; });
+    const paintAvatar = choice("avatar", () => S.appearance.avatar || "auto", (v) => { S.appearance.avatar = v; showAvatarBoxes(); });
+    const paintTone = choice("tone", () => S.persona.tone || "friendly", (v) => { S.persona.tone = v; });
+    const paintGender = choice("gender", () => S.persona.gender || "f", (v) => { S.persona.gender = v; });
+    function showAvatarBoxes() {
+      $("letter-box").hidden = S.appearance.avatar !== "letter";
+      $("image-box").hidden = S.appearance.avatar !== "image";
+    }
+
+    // ------------------------------------------------------------- fields
+    $("name").oninput = (e) => { S.name = e.target.value; changed(); };
+    $("color-auto").onchange = (e) => { $("color").hidden = e.target.checked; S.appearance.color = e.target.checked ? "" : $("color").value; changed(); };
+    $("color").oninput = (e) => { S.appearance.color = e.target.value; changed(); };
+    $("letter").oninput = (e) => { S.appearance.letter = e.target.value; changed(); };
+    $("avatar-color").oninput = (e) => { S.appearance.avatarColor = e.target.value; changed(); };
+    $("instructions").oninput = (e) => { S.persona.instructions = e.target.value; $("instr-count").textContent = e.target.value.length; changed(false); };
+    $("pick-image").onclick = () => $("image-file").click();
+    $("image-file").onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      try { S.appearance.image = await squareImage(f); $("thumb").src = S.appearance.image; changed(); }
+      catch { msg(t("imgErr"), "err"); }
+      e.target.value = "";
+    };
+    /** The picture cut to a centred square of at most 256 px (a few dozen kB), as a data URL. */
+    function squareImage(file) {
+      return new Promise((ok, fail) => {
+        const img = new Image();
+        img.onload = () => {
+          const side = Math.min(img.width, img.height), out = Math.min(256, side);
+          const c = document.createElement("canvas"); c.width = c.height = out;
+          c.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, out, out);
+          URL.revokeObjectURL(img.src);
+          const webp = c.toDataURL("image/webp", 0.9);
+          ok(webp.startsWith("data:image/webp") ? webp : c.toDataURL("image/png"));
+        };
+        img.onerror = fail;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    // ------------------------------------------------------ shop information
+    function renderTopics() {
+      $("topics").innerHTML = S.info.map((r, i) => `<div class="topic">
+        <input type="text" data-i="${i}" data-k="topic" maxlength="40" value="${esc(r.topic)}" placeholder="${esc(t("topicPh"))}">
+        <textarea data-i="${i}" data-k="text" maxlength="3000" placeholder="${esc(t("textPh"))}">${esc(r.text)}</textarea>
+        <button class="x" data-del="${i}" aria-label="×">×</button></div>`).join("");
+      const have = new Set(S.info.map((r) => r.topic.toLowerCase()));
+      $("topic-chips").innerHTML = t("topicsSuggest").filter((x) => !have.has(x.toLowerCase())).map((x) => `<button data-add="${esc(x)}">+ ${esc(x)}</button>`).join("")
+        + `<button data-add="">${esc(t("addTopic"))}</button>`;
+      if (data?.locked) document.querySelectorAll("#topics input, #topics textarea, #topics button, #topic-chips button").forEach((x) => { x.disabled = true; });
+    }
+    $("topics").oninput = (e) => { const i = e.target.dataset.i; if (i == null) return; S.info[i][e.target.dataset.k] = e.target.value; changed(false); };
+    $("topics").onclick = (e) => { const d = e.target.dataset.del; if (d == null) return; S.info.splice(+d, 1); renderTopics(); changed(false); };
+    $("topic-chips").onclick = (e) => {
+      const a = e.target.dataset.add; if (a == null) return;
+      S.info.push({ topic: a, text: "" }); renderTopics(); changed(false);
+      $("topics").querySelectorAll("textarea, input")[a ? (S.info.length - 1) * 2 + 1 : (S.info.length - 1) * 2]?.focus();
+    };
+
+    // ---------------------------------------------------------- documents
+    function renderDocs(docs) {
+      const total = docs.reduce((n, d) => n + d.chars, 0), max = data.limits.totalChars;
+      $("docs-meter").style.width = Math.min(100, (total / max) * 100) + "%";
+      $("docs-count").textContent = t("docsCount", total, max);
+      $("docs").innerHTML = docs.length ? docs.map((d) => `<li><div><b>${esc(d.title)}</b><small>${esc(d.filename || "")}${d.filename ? " · " : ""}${t("chars", d.chars)}</small></div>
+        ${data.locked ? "" : `<button class="x" data-doc="${esc(d.id)}" data-title="${esc(d.title)}" aria-label="×">×</button>`}</li>`).join("") : `<li><small>${t("noDocs")}</small></li>`;
+    }
+    async function upload(body, label) {
+      $("docs-msg").className = "msg"; $("docs-msg").textContent = t("uploading", label);
+      const r = await post("/api/bot/docs", body);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { $("docs-msg").className = "msg err"; $("docs-msg").textContent = d.error || t("err"); return false; }
+      renderDocs(d.docs); $("docs-msg").className = "msg ok"; $("docs-msg").textContent = t("uploaded");
+      return true;
+    }
+    const toBase64 = (file) => new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = fail; r.readAsDataURL(file); });
+    async function uploadFiles(files) {
+      if (data.locked) return;
+      for (const f of files) {
+        if (f.size > data.limits.uploadBytes) { $("docs-msg").className = "msg err"; $("docs-msg").textContent = `${f.name}: max 3 MB`; continue; }
+        if (/\.pdf$/i.test(f.name) && !data.ai) { $("docs-msg").className = "msg err"; $("docs-msg").textContent = t("noAiPdf"); continue; }
+        await upload({ filename: f.name, data: await toBase64(f) }, f.name);
+      }
+    }
+    $("doc-file").onchange = (e) => { uploadFiles([...e.target.files]); e.target.value = ""; };
+    const drop = $("drop");
+    drop.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("doc-file").click(); } };
+    drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+    drop.ondragleave = () => drop.classList.remove("over");
+    drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); uploadFiles([...e.dataTransfer.files]); };
+    $("add-text").onclick = async () => {
+      const title = $("doc-title").value.trim(), text = $("doc-text").value.trim();
+      if (!text) return $("doc-text").focus();
+      if (await upload({ title, text }, title || "text")) { $("doc-title").value = ""; $("doc-text").value = ""; }
+    };
+    $("docs").onclick = async (e) => {
+      const b = e.target.closest("[data-doc]"); if (!b || !confirm(t("delConfirm", b.dataset.title))) return;
+      const r = await post(`/api/bot/docs/${encodeURIComponent(b.dataset.doc)}/delete`, {});
+      if (r.ok) renderDocs((await r.json()).docs);
+    };
+
+    // ------------------------------------------------------------ preview
+    let pvBg = "light", pvTimer = 0;
+    $("pv-bg").onclick = (e) => {
+      const b = e.target.closest("[data-v]"); if (!b) return;
+      pvBg = b.dataset.v; $("pv-bg").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); preview();
+    };
+    /** The real widget on a sample page, with the unsaved look as data-* attributes (data-preview skips the saved one). */
+    function preview() {
+      if (!data) return;
+      const a = S.appearance, dark = pvBg === "dark";
+      const attrs = { client: data.client.id, preview: "1", greetDelay: "0.3", name: S.name.trim() || data.defaultName, brand: data.client.name };
+      if (a.color) attrs.color = a.color;
+      if (a.theme && a.theme !== "auto") attrs.theme = a.theme;
+      if (a.avatar === "letter") { attrs.letter = a.letter || data.client.name[0]; if (a.avatarColor) attrs.avatarColor = a.avatarColor; }
+      if (a.avatar === "image" && a.image) attrs.avatarImage = a.image;
+      const dataAttrs = Object.entries(attrs).map(([k, v]) => `data-${k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase())}="${esc(v)}"`).join(" ");
+      $("pv").srcdoc = `<!doctype html><html lang="${I.lang}"><head><meta charset="utf-8"><style>
+        body{margin:0;min-height:100vh;font:15px/1.5 system-ui,sans-serif;background:${dark ? "#14161a" : "#f6f7f9"};color:${dark ? "#e9ebef" : "#20242c"}}
+        header{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid ${dark ? "#2a2e36" : "#e3e6ea"}}
+        .logo{width:34px;height:34px;border-radius:10px;background:${dark ? "#e0a54b" : "#3a5ccc"};color:#fff;display:grid;place-items:center;font-weight:700}
+        main{padding:28px 20px;opacity:.55} .bar{height:12px;border-radius:6px;background:currentColor;opacity:.12;margin:10px 0} .btn{display:inline-block;margin-top:14px;padding:10px 18px;border-radius:10px;background:${dark ? "#e0a54b" : "#3a5ccc"};color:#fff}
+      </style></head><body><header><span class="logo">${esc(data.client.name[0] || "S")}</span><b>${esc(data.client.name)}</b></header>
+      <main><h2>${esc(t("pvHello"))}</h2><div class="bar" style="width:80%"></div><div class="bar" style="width:62%"></div><div class="bar" style="width:70%"></div><span class="btn">${esc(t("pvShop"))}</span></main>
+      <script src="${location.origin}/widget/prodavac.js" ${dataAttrs} defer><\/script></body></html>`;
+    }
+    const schedulePreview = () => { clearTimeout(pvTimer); pvTimer = setTimeout(preview, 450); };
+
+    // --------------------------------------------------------- save state
+    function changed(look = true) {
+      dirty = true; msg(t("unsaved"));
+      if (look) schedulePreview();
+    }
+    function msg(text, kind = "") { $("msg").className = "msg " + kind; $("msg").textContent = text; }
+    addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+    $("save").onclick = async () => {
+      if (!data || data.locked) return;
+      const b = $("save"); b.disabled = true; msg(t("saving"));
+      const r = await post("/api/bot", { name: S.name, appearance: S.appearance, persona: S.persona, info: S.info });
+      const d = await r.json().catch(() => ({}));
+      b.disabled = false;
+      if (!r.ok) return msg(d.error || t("err"), "err");
+      dirty = false; msg(t("saved"), "ok");
+    };
+
+    // --------------------------------------------------------------- load
+    function fill() {
+      $("shop-name").textContent = data.client.name;
+      $("name").value = S.name;
+      $("name").placeholder = data.defaultName;
+      $("name-hint").textContent = t("nameDefault", data.defaultName);
+      $("color-auto").checked = !S.appearance.color; $("color").hidden = !S.appearance.color;
+      if (S.appearance.color) $("color").value = S.appearance.color;
+      $("letter").value = S.appearance.letter || "";
+      if (S.appearance.avatarColor) $("avatar-color").value = S.appearance.avatarColor;
+      if (S.appearance.image) $("thumb").src = S.appearance.image;
+      $("instructions").value = S.persona.instructions || ""; $("instr-count").textContent = $("instructions").value.length;
+      paintTheme(); paintAvatar(); paintTone(); paintGender(); showAvatarBoxes(); renderTopics(); renderDocs(data.docs);
+      $("locked").hidden = !data.locked;
+      if (data.locked) document.querySelectorAll("input, textarea, #save, #pick-image, #add-text").forEach((x) => { x.disabled = true; });
+      preview();
+    }
+    async function load() {
+      const r = await api("/api/bot");
+      if (r.status === 401) return location.replace("/sella/prihlaseni.html?next=" + encodeURIComponent(location.pathname + location.search));
+      if (!r.ok) return msg(t("err"), "err");
+      data = await r.json();
+      Object.assign(S, { name: data.name, appearance: { ...data.appearance }, persona: { ...data.persona }, info: data.info.map((x) => ({ ...x })) });
+      fill();
+    }
+    I.onChange(() => { document.title = t("title"); if (data) { renderTopics(); renderDocs(data.docs); $("name-hint").textContent = t("nameDefault", data.defaultName); preview(); } });
+    document.title = t("title");
+    load();
+  </script>
+</body>
+</html>

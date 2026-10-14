@@ -13,6 +13,7 @@ import { personaName } from "./lib/persona.js";
 import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
+  setBotSettings,
 } from "./lib/clients.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
 import { db } from "./lib/db.js";
@@ -23,6 +24,7 @@ import { recordUsage, allowance, usageForMonth, monthKey } from "./lib/usage.js"
 import { limitsFor, PLANS, publicPlans } from "./lib/plans.js";
 import { alert } from "./lib/alerts.js";
 import { TERMS_VERSION } from "./lib/legal.js";
+import { validateBot, widgetLook, avatarImage, listDocs, addDoc, deleteDoc, fileText, LIMITS as BOT_LIMITS } from "./lib/bot.js";
 import {
   MASTER, isProduction, hashPassword, verifyPassword, safeEqual, generatePassword, demoPassword,
   createSession, readSession, sessionCookie, readCookie,
@@ -47,8 +49,10 @@ app.post("/api/stripe/webhook", express.raw({ type: "*/*", limit: "1mb" }), asyn
 });
 
 // small bodies everywhere – except the chat, which can carry photos/PDFs (Vercel allows ≈ 4.5 MB per request)
-const smallJson = express.json({ limit: "20kb" }), chatJson = express.json({ limit: "4500kb" });
-app.use((req, res, next) => (req.path === "/api/chat" ? chatJson : smallJson)(req, res, next));
+const smallJson = express.json({ limit: "20kb" }), chatJson = express.json({ limit: "4500kb" }), botJson = express.json({ limit: "400kb" });
+// the chat and an uploaded document can be large; the assistant's settings carry its picture
+const parserFor = (path) => (path === "/api/chat" || path === "/api/bot/docs" ? chatJson : path === "/api/bot" ? botJson : smallJson);
+app.use((req, res, next) => parserFor(req.path)(req, res, next));
 // the widget's analytics beacons arrive as text/plain (see flush() in the widget) – JSON inside
 app.use("/api/events", express.text({ type: "text/plain", limit: "20kb" }), (req, res, next) => {
   if (typeof req.body === "string") { try { req.body = JSON.parse(req.body); } catch { req.body = {}; } }
@@ -218,7 +222,7 @@ app.post("/api/cart/price", rateLimit("cart", 60, 60e3), withClient(), (req, res
 // is the shop's assistant switched on? (off once the plan's messages for the month are used up)
 app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req, res) => {
   const a = await allowance(req.client);
-  res.json({ on: a.chat && req.client.active !== false });
+  res.json({ on: a.chat && req.client.active !== false, look: widgetLook(req.client) });
 });
 
 // the plans shops can choose (Sella price list)
@@ -469,6 +473,62 @@ app.post("/api/analytics/settings", admin, rateLimit("settings", 20, 10 * 60e3, 
     await setOwnerSettings(req.client.id, { domains, feedUrl });
     res.json({ ok: true, domains, feedUrl });
   } catch (err) { fail(res, err); }
+});
+
+// --- the assistant's look, manner and knowledge ("Vaše prodavačka", lib/bot.js) ---
+app.use("/api/bot", sameOrigin);
+const botLocked = (req) => isBuiltIn(req.client.id) && !req.isMaster; // the demo shops are ours to change
+
+app.get("/api/bot", admin, async (req, res) => {
+  try {
+    const c = req.client;
+    res.json({
+      client: { id: c.id, name: c.name }, locked: botLocked(req),
+      name: c.agentName ?? "", defaultName: personaName(c.name),
+      appearance: c.appearance ?? {}, persona: c.persona ?? {},
+      info: Object.entries(c.info ?? {}).map(([topic, text]) => ({ topic, text })),
+      docs: await listDocs(c.id), limits: BOT_LIMITS, ai: hasApiKey(),
+    });
+  } catch (err) { fail(res, err); }
+});
+
+app.post("/api/bot", admin, rateLimit("bot-save", 30, 10 * 60e3, { shared: true }), async (req, res) => {
+  if (botLocked(req)) return res.status(403).json({ error: "Ukázkový obchod nelze měnit." });
+  try {
+    const v = validateBot(req.body ?? {});
+    await setBotSettings(req.client.id, v);
+    res.json({ ok: true });
+  } catch (err) { fail(res, err); }
+});
+
+// a document the assistant should know: an uploaded file ({ filename, data: base64 }) or typed text ({ title, text })
+app.post("/api/bot/docs", admin, rateLimit("bot-docs", 20, 10 * 60e3, { shared: true }), async (req, res) => {
+  if (botLocked(req)) return res.status(403).json({ error: "Ukázkový obchod nelze měnit." });
+  const used = [];
+  try {
+    const b = req.body ?? {};
+    const text = b.data ? await fileText({ filename: b.filename, data: b.data }, { model: MODEL, meter: (u) => used.push(u) }) : str(b.text, BOT_LIMITS.docChars + 1);
+    await addDoc(req.client.id, { title: str(b.title, 120) || String(b.filename ?? "").replace(/\.[a-z0-9]+$/i, ""), filename: b.filename, text });
+    res.json({ ok: true, docs: await listDocs(req.client.id) });
+  } catch (err) { fail(res, err); }
+  finally { await recordUsage(req.client, { claude: used, model: MODEL }); }
+});
+
+app.post("/api/bot/docs/:id/delete", admin, async (req, res) => {
+  if (botLocked(req)) return res.status(403).json({ error: "Ukázkový obchod nelze měnit." });
+  try {
+    await deleteDoc(req.client.id, req.params.id);
+    res.json({ ok: true, docs: await listDocs(req.client.id) });
+  } catch (err) { fail(res, err); }
+});
+
+// the owner's picture of the assistant (the widget loads it; the address changes with the picture)
+app.get("/api/avatar/:id", async (req, res) => {
+  const client = await getClient(req.params.id);
+  const img = client && avatarImage(client);
+  if (!img) return res.sendStatus(404);
+  res.set({ "Content-Type": img.type, "Cache-Control": "public, max-age=31536000, immutable", "Access-Control-Allow-Origin": "*", "Cross-Origin-Resource-Policy": "cross-origin" });
+  res.send(img.body);
 });
 
 // --- payments (lib/billing.js) ----------------------------------------------

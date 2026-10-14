@@ -86,3 +86,23 @@ test("login flow: wrong password, foreign site, operator login", async () => {
 test("the daily job needs the cron secret", async () => {
   assert.equal((await fetch(base + "/api/cron/daily")).status, 401);
 });
+
+test("the assistant's settings page: login required, checked input, look reaches the widget", async () => {
+  assert.equal((await fetch(base + "/api/bot?client=kavarna")).status, 401);
+  const r = await post("/api/admin/login", { client: "admin", password: "test-master-password" }, own);
+  const session = { Cookie: r.headers.get("set-cookie").split(";")[0] };
+  const bot = await (await fetch(base + "/api/bot?client=kavarna", { headers: session })).json();
+  assert.equal(bot.client.id, "kavarna");
+  assert.equal(bot.locked, false); // we (the operator) may change the demo shops
+  assert.ok(bot.defaultName && Array.isArray(bot.docs) && bot.limits.docs > 0);
+  // invalid settings are refused before anything is written
+  const bad = await post("/api/bot?client=kavarna", { appearance: { avatar: "image" } }, { ...own, ...session });
+  assert.equal(bad.status, 400);
+  assert.match((await bad.json()).error, /obrázek/);
+  // a foreign site can't change them
+  assert.equal((await post("/api/bot?client=kavarna", { name: "X" }, { Origin: "https://evil.example", ...session })).status, 403);
+  // the widget's start-up check carries the look (nothing set for the demo café → empty)
+  const status = await (await fetch(base + "/api/status?client=kavarna", { headers: own })).json();
+  assert.deepEqual(status.look, {});
+  assert.equal((await fetch(base + "/api/avatar/kavarna")).status, 404);
+});

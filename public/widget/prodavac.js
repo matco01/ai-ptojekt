@@ -563,9 +563,25 @@
   const hex = ({ r, g, b }) => "#" + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
   const luminance = ({ r, g, b }) => (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 
+  // The look the owner set in the Sella dashboard ("Vaše prodavačka") – it comes with the start-up check
+  // and wins over the embed's data-* attributes and over what is read off the page.
+  // data-preview = the owner's live preview on the settings page: it shows the unsaved look from the
+  // data-* attributes, skips the on/off check and – with no consent – records no statistics.
+  const preview = script?.dataset.preview === "1";
+  let look = {};
+  const opts = () => {
+    if (preview) return { ...(script?.dataset || {}) };
+    const o = { ...(script?.dataset || {}) };
+    if (look.color) o.color = look.color;
+    if (look.theme) o.theme = look.theme;
+    if (look.letter) { o.letter = look.letter; delete o.avatarImage; if (look.avatarColor) o.avatarColor = look.avatarColor; }
+    if (look.image) { o.avatarImage = cfg.api + look.image; delete o.letter; delete o.avatarColor; }
+    return o;
+  };
+
   /** Reads the shop's brand colour, font, button roundness and light/dark look. data-* attributes override. */
   function detectTheme() {
-    const d = script?.dataset || {};
+    const d = opts();
     const bg = [document.body, document.documentElement].map((e) => parseColor(getComputedStyle(e).backgroundColor)).find((c) => c && c.a > 0.5) || { r: 255, g: 255, b: 255 };
     const font = d.font || getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
     // remembered for the visit, so Klára doesn't change colour from page to page
@@ -986,7 +1002,7 @@
   }
 
   function detectPersona() {
-    const d = script?.dataset || {};
+    const d = opts();
     const meta = (n) => document.querySelector(`meta[property="${n}"], meta[name="${n}"]`)?.content?.trim();
     const logo = document.querySelector('[class*="logo" i], [id*="logo" i], a[rel="home"], header a[href="/"], header a[href="#/"], header a[href="./"]');
     const pic = logo?.matches("img, svg") ? logo : logo?.querySelector("img, svg");
@@ -1095,12 +1111,12 @@
     AV ??= detectPersona();
     fetch(cfg.api + "/api/health").then((r) => r.json()).then((h) => { ttsServer = h.tts === "elevenlabs"; }).catch(() => {});
     const key = "agent-name:" + cfg.client;
-    const cached = script.dataset.name || ls.get(key);
+    const cached = look.name || script.dataset.name || ls.get(key);
     if (cached) cfg.name = cached;
     const fresh = post("/api/persona", { brand: AV.brand })
       .then((r) => {
         integ = r?.integration || {};
-        if (r?.name && !script.dataset.name) { ls.set(key, r.name); cfg.name = r.name; }
+        if (r?.name && !script.dataset.name && !look.name) { ls.set(key, r.name); cfg.name = r.name; }
       })
       .catch(() => {});
     if (!cached) await fresh;
@@ -2173,8 +2189,8 @@
     // is the shop's assistant on? Off when its plan's messages for the month are used up, and when the
     // server refuses the shop (not registered, not paid, or this website isn't one of its domains).
     // A passing server error or a network hiccup doesn't switch it off.
-    const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}`).then(async (r) => {
-      if (r.ok) return (await r.json()).on !== false;
+    const on = preview || await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}`).then(async (r) => {
+      if (r.ok) { const st = await r.json(); look = st.look || {}; if (look.name) cfg.name = look.name; return st.on !== false; }
       if (r.status >= 500 || r.status === 429) return true;
       console.warn("[Sella]", (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
       return false;

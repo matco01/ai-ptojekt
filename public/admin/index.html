@@ -219,6 +219,7 @@
       </div>
       <div class="side">
         <span class="status" id="status"><i></i><span></span></span>
+        <a class="btn dark" id="edit-bot" href="/admin/prodavacka.html" data-i18n="editBot">Upravit prodavačku</a>
         <button class="btn light" id="refresh" data-i18n="refresh">↻ Obnovit</button>
       </div>
     </section>
@@ -296,6 +297,7 @@
     if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "")); }
     const clientId = params.get("client") || "";
     const call = (url, opts = {}) => fetch(url + (clientId ? `?client=${encodeURIComponent(clientId)}` : ""), opts);
+    document.getElementById("edit-bot").href = "/admin/prodavacka.html" + (clientId ? `?client=${encodeURIComponent(clientId)}` : "");
 
     // ---- the two languages (chosen on the Sella site, or here with the switch)
     const I = SellaI18n;
@@ -309,7 +311,7 @@
     };
     const t = I.use({
       cs: {
-        home: "Domů", pick: "Obchod", all: "Všichni klienti", logout: "Odhlásit", refresh: "↻ Obnovit",
+        home: "Domů", pick: "Obchod", all: "Všichni klienti", logout: "Odhlásit", refresh: "↻ Obnovit", editBot: "Upravit prodavačku",
         morning: "Dobré ráno", day: "Dobrý den", evening: "Dobrý večer", period: (d) => `Přehled AI prodavačky · posledních ${d} dní`,
         running: "Prodavačka běží s AI", limited: "Prodavačka je vypnutá – limit tarifu vyčerpán",
         change: "Změnit tarif", upgrade: "Zvýšit tarif a zapnout prodavačku", offNote: (m) => `Tento měsíc jste vyčerpali všech ${m} zpráv, takže se prodavačka na vašem webu vypnula. Zapne se znovu 1. dne dalšího měsíce – nebo hned, když zvolíte vyšší tarif.`,
@@ -370,7 +372,7 @@
         portal: "Faktury a platební karta", portalP: "Stáhnete faktury, změníte kartu nebo předplatné zrušíte.", simNote: "Simulovaná platba (vývoj).", demoNote: "Demo režim – zaplaceno jen naoko.",
       },
       en: {
-        home: "Home", pick: "Shop", all: "All clients", logout: "Sign out", refresh: "↻ Refresh",
+        home: "Home", pick: "Shop", all: "All clients", logout: "Sign out", refresh: "↻ Refresh", editBot: "Customise assistant",
         morning: "Good morning", day: "Hello", evening: "Good evening", period: (d) => `AI assistant insights · last ${d} days`,
         running: "The assistant runs with AI", limited: "The assistant is off – plan limit reached",
         change: "Change plan", upgrade: "Upgrade and switch the assistant on", offNote: (m) => `You've used all ${m} messages this month, so the assistant switched off on your site. It comes back on the 1st of next month – or right away when you pick a bigger plan.`,

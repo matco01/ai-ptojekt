@@ -50,6 +50,22 @@ alter table clients add column if not exists terms_version text;
 alter table clients add column if not exists terms_accepted_at timestamptz;
 alter table clients add column if not exists terms_accepted_ip text;
 
+-- The shop owner customises the assistant (v6): its look and its manner. See lib/bot.js.
+alter table clients add column if not exists appearance jsonb;  -- {"color","theme","avatar":"auto|letter|image","letter","avatarColor","image"(data URL)}
+alter table clients add column if not exists persona jsonb;     -- {"tone":"friendly|professional|playful","gender":"f|m","instructions":"…"}
+
+-- What the owner wants the assistant to know beyond the catalogue: texts and uploaded documents.
+create table if not exists knowledge (
+  id          bigint generated always as identity primary key,
+  client_id   text not null references clients(id) on delete cascade,
+  title       text not null,
+  filename    text,
+  text        text not null,
+  chars       integer not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists knowledge_client on knowledge (client_id);
+
 -- The last downloaded product feed per client. The products themselves live gzipped in the
 -- private Storage bucket "catalogs" (<client_id>.json.gz); this row only describes them.
 create table if not exists catalogs (
@@ -197,6 +213,7 @@ alter table events enable row level security;
 alter table catalogs enable row level security;
 alter table usage enable row level security;
 alter table rate_limits enable row level security;
+alter table knowledge enable row level security;
 revoke execute on function add_usage, hit_rate_limit, dashboard_summary from public, anon, authenticated;
 
 -- The simulated "demo data" is gone from the app – remove what was generated earlier.
