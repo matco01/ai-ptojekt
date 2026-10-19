@@ -13,7 +13,7 @@ import { personaName } from "./lib/persona.js";
 import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
-  setBotSettings, setInstallRequest, setWidgetSeen,
+  setBotSettings, setInstallRequest, setWidgetSeen, setSiteLook,
 } from "./lib/clients.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
 import { db } from "./lib/db.js";
@@ -226,9 +226,18 @@ app.post("/api/cart/price", rateLimit("cart", 60, 60e3), withClient(), (req, res
 // is the shop's assistant switched on? (off once the plan's messages for the month are used up)
 app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req, res) => {
   const a = await allowance(req.client);
-  res.json({ on: a.chat && req.client.active !== false, look: widgetLook(req.client) });
+  res.json({ on: a.chat && req.client.active !== false, look: widgetLook(req.client), starters: openingChips(req.cat, req.lang) });
   noteInstalled(req.client, req.get("Origin"), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
 });
+
+// The buttons under the assistant's first message: written for the shop's website when it was read;
+// until then a site with nothing to buy (accommodation, a restaurant, services) gets neutral ones,
+// and a shop with products the widget's own (gift, deals, delivery).
+const NEUTRAL_CHIPS = {
+  cs: [{ label: "💬 Co nabízíte?", ask: "Co všechno nabízíte?" }, { label: "💰 Ceny", ask: "Jaké máte ceny?" }, { label: "📞 Kontakt", ask: "Jak vás můžu kontaktovat?" }],
+  en: [{ label: "💬 What do you offer?", ask: "What do you offer?" }, { label: "💰 Prices", ask: "What are your prices?" }, { label: "📞 Contact", ask: "How can I contact you?" }],
+};
+const openingChips = (cat, lang) => cat.store.starters?.chips ?? (cat.products.length ? null : NEUTRAL_CHIPS[lang]);
 
 // The widget started on the shop's own website: the code is in place. Shown in the owner's
 // step-by-step setup ("Sella běží na vašem webu"); written at most once an hour per shop.
@@ -241,6 +250,41 @@ async function noteInstalled(client, origin, ownHost) {
   if (!(await once(`seen:${client.id}`, 3600e3))) return;
   await setWidgetSeen(client.id, { host, at: new Date().toISOString(), first: seen?.first ?? new Date().toISOString() });
 }
+
+// How the widget looks on the shop's own website: the page's colours, font and button style, its logo
+// and the assistant's name, as the widget worked them out there. The settings page's preview builds its
+// sample page from them, so the owner sees the assistant as customers do. Kept only in a checked shape.
+const COLOR = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d.,%\s/]+\))$/i;
+const color = (v) => (typeof v === "string" && COLOR.test(v.trim()) ? v.trim() : null);
+const cssText = (v, max = 200) => (typeof v === "string" && !/[<>{};\\]/.test(v) ? v.trim().slice(0, max) || null : null);
+const image = (v) => (typeof v === "string" && (/^https:\/\/[^\s"'<>]{1,1000}$/.test(v) || (/^data:image\/svg\+xml[;,]/.test(v) && v.length <= 60000)) ? v : null);
+function cleanSiteLook(raw = {}, host) {
+  const n = (v, lo, hi) => (Number.isFinite(Number(v)) ? Math.min(hi, Math.max(lo, Number(v))) : null);
+  return {
+    host, at: new Date().toISOString(),
+    mode: raw.mode === "dark" ? "dark" : "light",
+    bg: color(raw.bg), text: color(raw.text), brand: color(raw.brand),
+    font: cssText(raw.font), bfont: cssText(raw.bfont), btt: raw.btt === "uppercase" ? "uppercase" : null,
+    bls: /^(\d(\.\d{1,3})?em)$/.test(raw.bls ?? "") ? raw.bls : null, radius: n(raw.radius, 0, 60),
+    fonts: (Array.isArray(raw.fonts) ? raw.fonts : []).filter((u) => typeof u === "string" && /^https:\/\/fonts\.googleapis\.com\/[^\s"'<>]{1,500}$/.test(u)).slice(0, 3),
+    logo: { image: image(raw.logo?.image), letter: str(raw.logo?.letter, 2) || null, color: color(raw.logo?.color) },
+    siteName: str(raw.siteName, 40) || null, name: str(raw.name, 40) || null,
+  };
+}
+app.post("/api/site-look", rateLimit("site-look", 10, 60e3), withClient(), async (req, res) => {
+  res.json({ ok: true });
+  let host;
+  try { host = new URL(req.get("Origin")).hostname; } catch { return; }
+  if (host === req.get("Host")?.split(":")[0] || host === "localhost" || host === "127.0.0.1") return;
+  const look = cleanSiteLook(req.body?.look, host);
+  const was = req.client.siteLook;
+  // field by field: the database may hand the stored object back with its keys in another order
+  const sig = (l) => JSON.stringify([l.host, l.mode, l.bg, l.text, l.brand, l.font, l.bfont, l.btt, l.bls, l.radius, l.fonts, l.logo?.image, l.logo?.letter, l.logo?.color, l.siteName, l.name]);
+  // unchanged: refreshed once a day at most
+  if (was && sig(was) === sig(look) && Date.now() - Date.parse(was.at) < 24 * 3600e3) return;
+  if (!(await once(`site-look:${req.client.id}`, 10 * 60e3))) return;
+  await setSiteLook(req.client.id, look).catch((err) => console.error("site look:", err.message));
+});
 
 // the plans shops can choose (Sella price list)
 app.get("/api/plans", (req, res) => res.json({ plans: publicPlans() }));
@@ -524,7 +568,7 @@ app.get("/api/bot", admin, async (req, res) => {
       name: c.agentName ?? "", defaultName: personaName(c.name),
       appearance: c.appearance ?? {}, persona: c.persona ?? {},
       info: Object.entries(c.info ?? {}).map(([topic, text]) => ({ topic, text })),
-      docs: await listDocs(c.id), limits: BOT_LIMITS, ai: hasApiKey(),
+      docs: await listDocs(c.id), limits: BOT_LIMITS, ai: hasApiKey(), siteLook: c.siteLook ?? null,
     });
   } catch (err) { fail(res, err); }
 });

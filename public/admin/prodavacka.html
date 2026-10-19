@@ -239,10 +239,10 @@
 
       <aside class="pane preview">
         <div class="ph"><b data-i18n="pvH">Náhled</b>
-          <div class="seg" id="pv-bg"><button data-v="light" aria-pressed="true" data-i18n="pvLight">Světlý web</button><button data-v="dark" aria-pressed="false" data-i18n="pvDark">Tmavý web</button></div>
+          <div class="seg" id="pv-bg"><button data-v="site" aria-pressed="false" data-i18n="pvSite" hidden>Váš web</button><button data-v="light" aria-pressed="true" data-i18n="pvLight">Světlý web</button><button data-v="dark" aria-pressed="false" data-i18n="pvDark">Tmavý web</button></div>
         </div>
         <iframe id="pv" title="Náhled prodavačky"></iframe>
-        <p class="note" data-i18n="pvNote">Takhle ji uvidí zákazníci. Barvy „podle webu“ a maskot „z loga“ se v náhledu berou z ukázkové stránky – na vašem webu budou podle něj.</p>
+        <p class="note" id="pv-note">Takhle ji uvidí zákazníci. Barvy „podle webu“ a maskot „z loga“ se v náhledu berou z ukázkové stránky – na vašem webu budou podle něj.</p>
       </aside>
     </div>
   </div>
@@ -288,7 +288,8 @@
         docsCount: (n, max) => `${n.toLocaleString("cs-CZ")} / ${max.toLocaleString("cs-CZ")} znaků`, chars: (n) => `${n.toLocaleString("cs-CZ")} znaků`,
         uploading: (f) => `Čtu ${f}…`, uploaded: "Uloženo – prodavačka ho zná do minuty.", delConfirm: (n) => `Smazat dokument „${n}“?`, noDocs: "Zatím žádné dokumenty.",
         noAiPdf: "PDF umíme přečíst jen se zapnutou AI – pošlete prosím .docx nebo .txt.",
-        pvH: "Náhled", pvLight: "Světlý web", pvDark: "Tmavý web",
+        pvH: "Náhled", pvLight: "Světlý web", pvDark: "Tmavý web", pvSite: "Váš web",
+        pvNoteSite: (host) => `Takhle ji uvidí zákazníci na ${host}: barvy, písmo, tlačítka a logo jsou z vašeho webu. Neuložené změny se projeví hned.`,
         pvNote: "Takhle ji uvidí zákazníci. Barvy „podle webu“ a maskot „z loga“ se v náhledu berou z ukázkové stránky – na vašem webu budou podle něj.",
         save: "Uložit změny", saving: "Ukládám…", saved: "Uloženo. Na vašem webu se změny projeví do minuty.", unsaved: "Máte neuložené změny.",
         err: "Uložení se nepodařilo.", imgErr: "Obrázek se nepodařilo načíst.",
@@ -323,7 +324,8 @@
         docsCount: (n, max) => `${n.toLocaleString("en-GB")} / ${max.toLocaleString("en-GB")} characters`, chars: (n) => `${n.toLocaleString("en-GB")} characters`,
         uploading: (f) => `Reading ${f}…`, uploaded: "Saved – the assistant knows it within a minute.", delConfirm: (n) => `Delete the document "${n}"?`, noDocs: "No documents yet.",
         noAiPdf: "PDFs can only be read with AI switched on – please send a .docx or .txt.",
-        pvH: "Preview", pvLight: "Light site", pvDark: "Dark site",
+        pvH: "Preview", pvLight: "Light site", pvDark: "Dark site", pvSite: "Your site",
+        pvNoteSite: (host) => `This is how customers see her on ${host}: the colours, font, buttons and logo come from your website. Unsaved changes show straight away.`,
         pvNote: "This is how customers will see it. Colours \"like the website\" and the mascot \"from your logo\" come from a sample page here – on your website they'll follow it.",
         save: "Save changes", saving: "Saving…", saved: "Saved. Your website shows the changes within a minute.", unsaved: "You have unsaved changes.",
         err: "Saving failed.", imgErr: "Couldn't load the picture.",
@@ -479,26 +481,51 @@
       const b = e.target.closest("[data-v]"); if (!b) return;
       pvBg = b.dataset.v; $("pv-bg").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); preview();
     };
-    /** The real widget on a sample page, with the unsaved look as data-* attributes (data-preview skips the saved one). */
+    /**
+     * The real widget on a sample page, with the unsaved look as data-* attributes (data-preview skips the saved one).
+     * Once the widget has run on the shop's website it reports that site's look (/api/site-look): the sample page
+     * then takes the site's background, text, font and button style, and what is "automatic" in the settings
+     * (colour, light/dark, mascot from the logo, her name) is what the widget worked out there.
+     */
     function preview() {
       if (!data) return;
-      const a = S.appearance, dark = pvBg === "dark";
-      const attrs = { client: data.client.id, preview: "1", greetDelay: "0.3", name: S.name.trim() || data.defaultName, brand: data.client.name };
-      if (a.color) attrs.color = a.color;
+      const site = pvBg === "site" ? data.siteLook : null;
+      $("pv-bg").querySelector('[data-v="site"]').hidden = !data.siteLook;
+      $("pv-note").textContent = site ? t("pvNoteSite", site.host) : t("pvNote");
+      const a = S.appearance, dark = site ? site.mode === "dark" : pvBg === "dark";
+      // her name on the website: the one set here, else the one the website got (made from the shop's name)
+      const name = S.name.trim() || (!data.name && site?.name) || data.defaultName;
+      const attrs = { client: data.client.id, preview: "1", greetDelay: "0.3", name, brand: site?.siteName || data.client.name };
+      if (a.color) attrs.color = a.color; else if (site?.brand) attrs.color = site.brand;
       if (a.theme && a.theme !== "auto") attrs.theme = a.theme;
       if (a.avatar === "letter") { attrs.letter = a.letter || data.client.name[0]; if (a.avatarColor) attrs.avatarColor = a.avatarColor; }
       if (a.avatar === "image" && a.image) attrs.avatarImage = a.image;
+      if (site && a.avatar !== "letter" && !(a.avatar === "image" && a.image)) {
+        // the mascot made from the website's logo, as customers see it
+        if (site.logo?.image) attrs.avatarImage = site.logo.image;
+        else { if (site.logo?.letter) attrs.letter = site.logo.letter; if (site.logo?.color) attrs.avatarColor = site.logo.color; }
+      }
       if (a.shape) attrs.shape = a.shape;
       if (a.face && a.face !== "full") attrs.face = a.face;
       if (a.faceY) attrs.faceY = a.faceY;
       if (a.faceScale && a.faceScale !== 100) attrs.faceScale = a.faceScale;
       const dataAttrs = Object.entries(attrs).map(([k, v]) => `data-${k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase())}="${esc(v)}"`).join(" ");
-      $("pv").srcdoc = `<!doctype html><html lang="${I.lang}"><head><meta charset="utf-8"><style>
-        body{margin:0;min-height:100vh;font:15px/1.5 system-ui,sans-serif;background:${dark ? "#14161a" : "#f6f7f9"};color:${dark ? "#e9ebef" : "#20242c"}}
-        header{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid ${dark ? "#2a2e36" : "#e3e6ea"}}
-        .logo{width:34px;height:34px;border-radius:10px;background:${dark ? "#e0a54b" : "#3a5ccc"};color:#fff;display:grid;place-items:center;font-weight:700}
-        main{padding:28px 20px;opacity:.55} .bar{height:12px;border-radius:6px;background:currentColor;opacity:.12;margin:10px 0} .btn{display:inline-block;margin-top:14px;padding:10px 18px;border-radius:10px;background:${dark ? "#e0a54b" : "#3a5ccc"};color:#fff}
-      </style></head><body><header><span class="logo">${esc(data.client.name[0] || "S")}</span><b>${esc(data.client.name)}</b></header>
+      // the website's own values go into the page's CSS (the server only keeps plain values; this is a second guard)
+      const css = (v, or) => (v == null || v === "" ? or : String(v).replace(/[<>{};\\]/g, ""));
+      const brand = css(site?.brand, dark ? "#e0a54b" : "#3a5ccc");
+      const btn = site
+        ? `border-radius:${css(site.radius, 10)}px;font-family:${css(site.bfont, "inherit")};text-transform:${css(site.btt, "none")};letter-spacing:${css(site.bls, "normal")}`
+        : "border-radius:10px";
+      const logo = site?.logo?.image
+        ? `<span class="logo pic"><img src="${esc(site.logo.image)}" alt=""></span>`
+        : `<span class="logo" style="background:${css(site?.logo?.color, brand)}">${esc(site?.logo?.letter || data.client.name[0] || "S")}</span>`;
+      $("pv").srcdoc = `<!doctype html><html lang="${I.lang}"><head><meta charset="utf-8">
+        ${(site?.fonts ?? []).map((u) => `<link rel="stylesheet" href="${esc(u)}">`).join("")}<style>
+        body{margin:0;min-height:100vh;font:15px/1.5 ${css(site?.font, "system-ui,sans-serif")};background:${css(site?.bg, dark ? "#14161a" : "#f6f7f9")};color:${css(site?.text, dark ? "#e9ebef" : "#20242c")}}
+        header{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid color-mix(in srgb,currentColor 12%,transparent)}
+        .logo{width:34px;height:34px;border-radius:10px;color:#fff;display:grid;place-items:center;font-weight:700} .logo.pic img{width:100%;height:100%;object-fit:contain}
+        main{padding:28px 20px;opacity:.55} .bar{height:12px;border-radius:6px;background:currentColor;opacity:.12;margin:10px 0} .btn{display:inline-block;margin-top:14px;padding:10px 18px;background:${brand};color:#fff;${btn}}
+      </style></head><body><header>${logo}<b>${esc(site?.siteName || data.client.name)}</b></header>
       <main><h2>${esc(t("pvHello"))}</h2><div class="bar" style="width:80%"></div><div class="bar" style="width:62%"></div><div class="bar" style="width:70%"></div><span class="btn">${esc(t("pvShop"))}</span></main>
       <script src="${location.origin}/widget/prodavac.js" ${dataAttrs} defer><\/script></body></html>`;
     }
@@ -544,6 +571,8 @@
       if (r.status === 401) return location.replace("/sella/prihlaseni.html?next=" + encodeURIComponent(location.pathname + location.search));
       if (!r.ok) return msg(t("err"), "err");
       data = await r.json();
+      // the website's own look, when the widget has reported it from there, is what the preview starts with
+      if (data.siteLook) { pvBg = "site"; $("pv-bg").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === "site")); }
       Object.assign(S, { name: data.name, appearance: { ...data.appearance }, persona: { ...data.persona }, info: data.info.map((x) => ({ ...x })) });
       fill();
     }

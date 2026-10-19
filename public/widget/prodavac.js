@@ -56,6 +56,7 @@
       noVoice: "Váš prohlížeč nepodporuje hlasové ovládání (zkuste Chrome nebo Edge). Můžeme si ale psát.",
       openVoice: "Výborně, poslouchám. Řekněte mi, co hledáte, nebo k čemu to budete potřebovat.",
       openChat: "Výborně! 🙂 Co hledáte?\n\nKlidně popište, k čemu to potřebujete – nebo vyberte:",
+      openChatAny: "Výborně! 🙂 S čím vám můžu pomoct?\n\nZeptejte se na cokoli – nebo vyberte:",
       chipGift: "🎁 Hledám dárek", askGift: "Hledám dárek. Co byste doporučila?", chipDeals: "🏷️ Jaké máte akce?", askDeals: "Jaké teď máte výhodné akce?",
       chipShip: "🚚 Doprava a vrácení", askShip: "Jak funguje doprava a vrácení zboží?", listening: "Poslouchám.",
       panel: (n) => `Prodavačka ${n}`, switchMode: "Přepnout hlas / psaní",
@@ -80,6 +81,7 @@
       noVoice: "Your browser doesn't support voice (try Chrome or Edge). We can chat instead.",
       openVoice: "Great, I'm listening. Tell me what you're looking for, or what you need it for.",
       openChat: "Great! 🙂 What are you looking for?\n\nTell me what you need it for – or pick one:",
+      openChatAny: "Great! 🙂 How can I help?\n\nAsk me anything – or pick one:",
       chipGift: "🎁 Looking for a gift", askGift: "I'm looking for a gift. What would you recommend?", chipDeals: "🏷️ Any deals?", askDeals: "What good deals do you have right now?",
       chipShip: "🚚 Delivery & returns", askShip: "How do delivery and returns work?", listening: "I'm listening.",
       panel: (n) => `Shop assistant ${n}`, switchMode: "Switch voice / typing",
@@ -588,8 +590,10 @@
   // data-* attributes, skips the on/off check and – with no consent – records no statistics.
   const preview = script?.dataset.preview === "1";
   let look = {};
+  let starters = null; // the opening buttons written for this website (null = the shop's usual ones below)
+  let siteOnly = false; // true while reading the website's own look for the settings preview (reportLook)
   const opts = () => {
-    if (preview) return { ...(script?.dataset || {}) };
+    if (preview || siteOnly) return { ...(script?.dataset || {}) };
     const o = { ...(script?.dataset || {}) };
     if (look.color) o.color = look.color;
     if (look.theme) o.theme = look.theme;
@@ -650,7 +654,7 @@
     // remembered for the visit, so the assistant doesn't change colour from page to page
     // (keyed by the site's look, so two different sites never share it)
     const key = "theme3:" + hex(bg) + "|" + font.slice(0, 40);
-    const cached = !d.color && !d.theme && ss.get(key);
+    const cached = !siteOnly && !d.color && !d.theme && ss.get(key);
     if (cached) return applyTheme(cached);
     let brand = d.color ? parseColor(d.color) : null, radius = null, btn = null;
     {
@@ -722,6 +726,7 @@
     }
 
     const t = { mode, c1, c2, c3, font, r, ...surf, ...style };
+    if (siteOnly) return { ...t, bg: hex(bg), text: text ? hex(text) : null };
     if (!d.color && !d.theme) ss.set(key, t);
     return applyTheme(t);
   }
@@ -1573,12 +1578,13 @@
     if (!history.length && !fromTip) { // from a tip the customer's question goes straight in
       const opening = m === "voice"
         ? L("openVoice")
-        : L("openChat");
+        : L(starters ? "openChatAny" : "openChat");
       addBubble("bot", opening);
       if (m === "chat") {
         const chips = [];
         if (fromGreeting && greetingData?.ask) chips.push({ label: greetingData.ask.replace(/\..*$/, ""), ask: greetingData.ask });
-        chips.push({ label: L("chipGift"), ask: L("askGift") }, { label: L("chipDeals"), ask: L("askDeals") }, { label: L("chipShip"), ask: L("askShip") });
+        if (starters) chips.push(...starters.slice(0, 3));
+        else chips.push({ label: L("chipGift"), ask: L("askGift") }, { label: L("chipDeals"), ask: L("askDeals") }, { label: L("chipShip"), ask: L("askShip") });
         addChips(chips);
       }
     }
@@ -2396,12 +2402,31 @@
     });
   }
 
+  // The settings page's preview shows the assistant on a page built from this website's own look
+  // (colours, font, buttons, logo, her name), so the owner sees her as customers do. Read without
+  // the dashboard's settings – the preview adds the unsaved ones – and sent at most once a day.
+  function reportLook() {
+    const key = "site-look:" + cfg.client;
+    // without cookie consent localStorage lasts only for the page – then once per visit
+    if (preview || ss.get(key) || Date.now() - (ls.get(key) || 0) < 24 * 3600e3) return;
+    let t, p;
+    siteOnly = true;
+    try { t = detectTheme(); p = detectPersona(); } catch { return; } finally { siteOnly = false; }
+    const fonts = [...document.querySelectorAll('link[rel="stylesheet"][href*="fonts.googleapis.com"]')].map((l) => l.href);
+    const look = {
+      mode: t.mode, bg: t.bg, text: t.text, brand: t.c1, font: t.font, bfont: t.bfont, btt: t.btt, bls: t.bls, radius: t.r, fonts,
+      logo: { image: p.image, letter: p.letter, color: p.base }, siteName: p.brand, name: cfg.name,
+    };
+    ls.set(key, Date.now()); ss.set(key, true);
+    post("/api/site-look", { look }).catch(() => {});
+  }
+
   async function boot() {
     // is the shop's assistant on? Off when its plan's messages for the month are used up, and when the
     // server refuses the shop (not registered, not paid, or this website isn't one of its domains).
     // A passing server error or a network hiccup doesn't switch it off.
     const on = preview || await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}`).then(async (r) => {
-      if (r.ok) { const st = await r.json(); look = st.look || {}; if (look.name) cfg.name = look.name; return st.on !== false; }
+      if (r.ok) { const st = await r.json(); look = st.look || {}; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return st.on !== false; }
       if (r.status >= 500 || r.status === 429) return true;
       console.warn("[Sella]", (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
       return false;
@@ -2413,7 +2438,7 @@
     nameReady = loadName();
     const pageReady = autoInit().catch(() => {});
     launcher.innerHTML = avatar(60) + `<span class="launch-label">${L("launch")}</span>`;
-    nameReady.then(() => launcher.setAttribute("aria-label", L("openNamed", cfg.name)));
+    nameReady.then(() => { launcher.setAttribute("aria-label", L("openNamed", cfg.name)); reportLook(); });
     document.body.append(host);
     wrap.append(launcher);
     updateEyes();
