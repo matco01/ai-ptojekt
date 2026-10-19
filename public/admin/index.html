@@ -143,6 +143,30 @@
     .bstate.warn { background: rgba(183,122,29,.16); color: #8a5a12; }
     .bstate.bad { background: rgba(192,84,75,.14); color: #8f3a32; }
     .bstate.plain { background: rgba(47,49,51,.08); color: var(--ink-2); }
+    /* step by step: code → on the website → running → website read → name and look */
+    .setup { margin: 0 0 26px; padding: 28px 30px 24px; }
+    .setup .top { display: flex; align-items: start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+    .setup h2 { font: 400 clamp(26px, 3.2vw, 34px)/1.1 var(--serif); margin: 0 0 6px; }
+    .setup .top p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
+    .setup .progress { font-size: 13px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+    .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .step { display: grid; grid-template-columns: 34px 1fr; gap: 4px 14px; padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,.5); box-shadow: inset 0 0 0 1px rgba(255,255,255,.8); }
+    .step .n { grid-row: span 2; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 600 14px var(--sans); background: rgba(47,49,51,.08); color: var(--ink-2); }
+    .step.done .n { background: #2f8a5d; color: #fff; }
+    .step.now { background: #fff; box-shadow: inset 0 0 0 1.5px var(--accent), 0 16px 40px -24px rgba(30,50,90,.45); }
+    .step.now .n { background: var(--accent); color: #fff; }
+    .step > b { font-size: 15.5px; font-weight: 600; align-self: center; }
+    .step p b { font-weight: 600; }
+    .step p { margin: 0; font-size: 14px; color: var(--ink-2); }
+    .step .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .step .btn { height: 38px; font-size: 14px; }
+    .step .state { color: #2f7a52; font-weight: 500; }
+    .step .wait { color: #8a5a12; }
+    .setup .hide { border: 0; background: none; color: var(--ink-3); font: 500 13px var(--sans); cursor: pointer; padding: 4px 0; }
+    .setup.compact { padding: 16px 22px; }
+    .setup.compact .top { margin: 0; align-items: center; }
+    .setup.compact h2 { font-size: 22px; margin: 0; }
+
     /* help with the embed code: the how-to video and "do it for me" */
     .howto { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
     .howto p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
@@ -249,6 +273,8 @@
     </section>
 
     <section class="pane activate" id="activate" hidden></section>
+
+    <section class="pane setup" id="setup" hidden></section>
 
     <div class="kpis" id="kpis"></div>
 
@@ -366,7 +392,7 @@
         "tipsList.h": "Které tipy fungují", "tipsList.p": "Kdy se prodavačka sama ozvala a jak často zákazník tip využil.",
         "cat.k": "Katalog produktů", "cat.refresh": "↻ Stáhnout feed znovu", "cat.busy": "Stahuji feed…",
         catDemo: (n) => `Ukázkový katalog, ${n} produktů.`, catNone: "Zatím neznáme adresu vašeho webu, prodavačka tak nezná žádné produkty. Doplňte doménu v nastavení obchodu.",
-        catWeb: (n, w) => `${n} produktů načtených z vašeho webu${w ? `, naposledy ${w}` : ""}. Načítají se znovu každou noc.`,
+        catWeb: (n, w, s) => `${n} produktů${s ? ` a ${s} stránek s informacemi` : ""} načtených z vašeho webu${w ? `, naposledy ${w}` : ""}. Načítá se znovu každou noc.`,
         catWebPending: "Načítám produkty z vašeho webu… Může to trvat až 2 minuty, stránku nechte otevřenou.",
         "cat.web": "↻ Načíst produkty z webu znovu", "cat.webBusy": "Čtu váš web…",
         catFeed: (n, w) => `${n} produktů z feedu${w ? `, staženo ${w}` : ""}. Obnovuje se samo každých 6 hodin.`,
@@ -398,6 +424,17 @@
         helpSafe: "Hesla k webu sem prosím nepište – přístup si domluvíme bezpečně, až se ozveme.",
         helpSend: "Odeslat žádost", helpSending: "Odesílám…", helpThanks: "Díky! Žádost máme, brzy se vám ozveme.", helpErr: "Žádost se nepodařilo odeslat.",
         plat: { shoptet: "Shoptet", wordpress: "WordPress / WooCommerce", shopify: "Shopify", upgates: "Upgates", gtm: "Máme Google Tag Manager", other: "Něco jiného / nevím" },
+        suH: "Rozjeďte Sellu na svém webu", suP: "Pět kroků. Odškrtávají se samy, jak je uděláte.", suDoneH: "✓ Sella na vašem webu běží", suShow: "Zobrazit kroky", suHide: "Skrýt",
+        suProg: (a, b) => `${a} z ${b} hotovo`,
+        s1: "Zkopírujte kód", s1p: "Jeden řádek pro váš web – najdete ho níže v části Na vašem webu.", s1Locked: "Kód se odemkne po zaplacení tarifu.", s1Go: "Ukázat kód",
+        s2: "Vložte ho na svůj web", s2p: "Na všechny stránky, těsně před </body>. Ve videu je postup pro Shoptet, WordPress, Shopify i Google Tag Manager.",
+        s3: "Sella se ukáže na vašem webu", s3Wait: "Až kód vložíte, otevřete svůj web – tady se to pak samo odškrtne (obnovte stránku).",
+        s3Done: (h, d) => `Běží na <b>${h}</b> · naposledy ${d}`,
+        s4: "Sella si přečte váš web", s4Wait: "Produkty a texty stránek čte sama, nejdéle pár minut. Pak každou noc znovu, ať zná vždy aktuální stav.",
+        s4Done: (p, s) => [p ? `${p} produktů` : "", s ? `${s} stránek s informacemi` : ""].filter(Boolean).join(" a ") + " – znovu se načítá každou noc.",
+        s4Err: (e) => `Web se nepodařilo přečíst: ${e}`, s4Reload: "↻ Načíst web znovu",
+        s5: "Pojmenujte ji a nastavte vzhled", s5p: (n) => `Barvy a písmo převzala z vašeho webu. Teď se jmenuje <b>${n}</b> – jméno, maskota i tón řeči si změníte, jak chcete.`, s5Go: "Nastavit jméno a vzhled",
+        s5Done: (n) => `Jmenuje se <b>${n}</b>. Změnit to můžete kdykoli.`,
         setH: "Nastavení obchodu", setDomains: "Domény e-shopu", setFeed: "Produktový feed (XML) – nepovinné, bez něj čteme produkty přímo z webu", setFeedPh: "https://…/feed.xml", save: "Uložit", saving: "Ukládám…",
         saved: "Uloženo.", savedFeed: "Uloženo. Načítám produkty…", setDemo: "Ukázkový obchod – nastavení spravujeme my.", setDomainsHint: "Víc domén oddělte čárkou.",
         billH: "Platby", billManual: "Platíte na fakturu podle dohody s námi.", billUnpaid: "Zatím nezaplaceno.",
@@ -437,7 +474,7 @@
         "tipsList.h": "Which tips work", "tipsList.p": "When the assistant spoke up by itself and how often the customer used the tip.",
         "cat.k": "Product catalogue", "cat.refresh": "↻ Fetch the feed again", "cat.busy": "Fetching the feed…",
         catDemo: (n) => `Demo catalogue, ${n} products.`, catNone: "We don't know your website's address yet, so the assistant knows no products. Add your domain in the shop settings.",
-        catWeb: (n, w) => `${n} products read from your website${w ? `, last ${w}` : ""}. They're read again every night.`,
+        catWeb: (n, w, s) => `${n} products${s ? ` and ${s} pages of information` : ""} read from your website${w ? `, last ${w}` : ""}. Read again every night.`,
         catWebPending: "Reading products from your website… This can take up to 2 minutes, keep the page open.",
         "cat.web": "↻ Read products from the website again", "cat.webBusy": "Reading your website…",
         catFeed: (n, w) => `${n} products from the feed${w ? `, fetched ${w}` : ""}. It refreshes itself every 6 hours.`,
@@ -469,6 +506,17 @@
         helpSafe: "Please don't write any website passwords here – we'll arrange access safely when we get in touch.",
         helpSend: "Send request", helpSending: "Sending…", helpThanks: "Thanks! We've got your request and will be in touch soon.", helpErr: "Couldn't send the request.",
         plat: { shoptet: "Shoptet", wordpress: "WordPress / WooCommerce", shopify: "Shopify", upgates: "Upgates", gtm: "We use Google Tag Manager", other: "Something else / not sure" },
+        suH: "Get Sella running on your website", suP: "Five steps. They tick themselves off as you go.", suDoneH: "✓ Sella is live on your website", suShow: "Show the steps", suHide: "Hide",
+        suProg: (a, b) => `${a} of ${b} done`,
+        s1: "Copy the code", s1p: "One line for your website – you'll find it below under On your website.", s1Locked: "The code unlocks once you pay for a plan.", s1Go: "Show the code",
+        s2: "Add it to your website", s2p: "On every page, just before </body>. The video shows how on Shoptet, WordPress, Shopify and Google Tag Manager.",
+        s3: "Sella shows up on your website", s3Wait: "Once the code is in, open your website – this ticks itself off (refresh this page).",
+        s3Done: (h, d) => `Running on <b>${h}</b> · last seen ${d}`,
+        s4: "Sella reads your website", s4Wait: "It reads your products and page texts by itself, in a few minutes at most. Then again every night, so it always knows what's current.",
+        s4Done: (p, s) => [p ? `${p} products` : "", s ? `${s} pages of information` : ""].filter(Boolean).join(" and ") + " – read again every night.",
+        s4Err: (e) => `Couldn't read the website: ${e}`, s4Reload: "↻ Read the website again",
+        s5: "Name it and set its look", s5p: (n) => `It took its colours and font from your website. Its name is <b>${n}</b> for now – change the name, mascot and tone as you like.`, s5Go: "Set name and look",
+        s5Done: (n) => `Its name is <b>${n}</b>. You can change it any time.`,
         setH: "Shop settings", setDomains: "Shop domains", setFeed: "Product feed (XML) – optional, without it we read products straight from your website", setFeedPh: "https://…/feed.xml", save: "Save", saving: "Saving…",
         saved: "Saved.", savedFeed: "Saved. Loading products…", setDemo: "Demo shop – we manage its settings.", setDomainsHint: "Separate more domains with commas.",
         billH: "Payments", billManual: "You pay by invoice as agreed with us.", billUnpaid: "Not paid yet.",
@@ -563,6 +611,7 @@
       $("status").querySelector("span").textContent = b.needsPayment ? t(b.status === "canceled" ? "ended" : "awaiting")
         : b.status === "past_due" ? t("pastDue") : limited ? t("limited") : t("running");
       renderActivate(d);
+      renderSetup(d, me);
       renderSite(d, me);
 
       // the four main numbers
@@ -756,6 +805,49 @@
              ${b.canManage ? `<button class="btn ${b.status === "past_due" ? "dark" : "light"}" id="portal">${t("portal")}</button><p class="small">${t("portalP")}</p>`
                : b.payments === "simulated" ? `<p class="small">${t("simNote")}</p>` : b.payments === "demo" ? `<p class="small">${t("demoNote")}</p>` : ""}`}`;
     }
+    // ---- step by step: copy the code → put it on the website → it shows up there → it has read the
+    // website → name and look. Each step ticks itself off from what the server knows.
+    const flag = { get: (k) => { try { return localStorage.getItem(k) === "1"; } catch { return false; } }, set: (k, v) => { try { v ? localStorage.setItem(k, "1") : localStorage.removeItem(k); } catch {} } };
+    let setupOpen = false;
+    function renderSetup(d, me) {
+      const c = d.client, b = d.billing || {}, cat = d.catalog;
+      const box = $("setup");
+      box.hidden = c.builtIn;
+      if (c.builtIn) return;
+      const seen = c.widgetSeen, locked = b.needsPayment;
+      const read = cat && (cat.source === "demo" || (!cat.pending && (cat.products || cat.sitePages)));
+      const steps = [
+        { done: !locked && (seen || flag.get(`sella-copied-${c.id}`)), h: t("s1"), p: locked ? t("s1Locked") : t("s1p"), acts: locked ? "" : `<button class="btn light" data-setup="code">${t("s1Go")}</button>` },
+        { done: Boolean(seen), h: t("s2"), p: esc(t("s2p")),
+          acts: `<button class="btn light" data-howto-video>${t("howVideo")}</button>${c.installRequest ? "" : `<button class="btn light" data-howto-help>${t("howDo")}</button>`}`,
+          extra: c.installRequest ? `<p class="state">${c.installRequest.doneAt ? t("reqDone", fmtDate(c.installRequest.doneAt)) : t("reqSent", fmtDate(c.installRequest.at))}</p>` : "" },
+        { done: Boolean(seen), h: t("s3"), p: seen ? `<span class="state">✓ ${t("s3Done", esc(seen.host), ago(Date.parse(seen.at)))}</span>` : `<span class="wait">${t("s3Wait")}</span>` },
+        { done: Boolean(read), h: t("s4"),
+          p: cat?.error && !read ? `<span class="wait">${esc(t("s4Err", cat.error))}</span>` : read ? `<span class="state">✓ ${t("s4Done", nf(cat.products), nf(cat.sitePages))}</span>` : t("s4Wait"),
+          acts: cat?.error && !read ? `<button class="btn light" data-setup="reload">${t("s4Reload")}</button>` : "" },
+        { done: c.named || c.styled, h: t("s5"), p: c.named || c.styled ? t("s5Done", esc(c.agentName)) : t("s5p", esc(c.agentName)),
+          acts: `<a class="btn ${c.named || c.styled ? "light" : "dark"}" href="${esc($("edit-bot").href)}">${t("s5Go")}</a>` },
+      ];
+      const done = steps.filter((s) => s.done).length, all = done === steps.length;
+      const now = steps.findIndex((s) => !s.done);
+      const compact = !setupOpen && (all || flag.get(`sella-setup-hidden-${c.id}`));
+      box.classList.toggle("compact", compact);
+      box.innerHTML = `<div class="top"><div><h2>${all ? t("suDoneH") : t("suH")}</h2>${compact ? "" : `<p>${t("suP")}</p>`}</div>
+          <div><span class="progress">${t("suProg", done, steps.length)}</span> · <button class="hide" data-setup="${compact ? "show" : "hide"}">${compact ? t("suShow") : t("suHide")}</button></div></div>
+        ${compact ? "" : `<ol class="steps">${steps.map((s, i) => `<li class="step${s.done ? " done" : i === now ? " now" : ""}">
+          <span class="n">${s.done ? "✓" : i + 1}</span><b>${s.h}</b>
+          <div><p>${s.p}</p>${s.extra ?? ""}${s.acts && !s.done ? `<div class="row">${s.acts}</div>` : ""}</div></li>`).join("")}</ol>`}`;
+    }
+    $("setup").addEventListener("click", (e) => {
+      const a = e.target.closest("[data-setup]")?.dataset.setup;
+      if (!a || !last) return;
+      const id = last.d.client.id;
+      if (a === "code") $("embed").scrollIntoView({ behavior: "smooth", block: "center" });
+      else if (a === "reload") reloadCatalog();
+      else if (a === "hide") { setupOpen = false; flag.set(`sella-setup-hidden-${id}`, true); renderSetup(last.d, last.me); }
+      else if (a === "show") { setupOpen = true; renderSetup(last.d, last.me); }
+    });
+
     // ---- help with the embed code: every website is different, so a how-to video, or we do it for them
     function howto(c) {
       const r = c.installRequest;
@@ -828,6 +920,8 @@
         });
         btn.textContent = t("copied");
         setTimeout(() => { btn.textContent = t("copy"); }, 1800);
+        flag.set(`sella-copied-${last.d.client.id}`, true);
+        renderSetup(last.d, last.me);
       } else if (btn.id === "save-settings") {
         btn.disabled = true; btn.textContent = t("saving");
         const feedUrl = $("set-feed").value.trim(), oldFeed = last.d.client.feedUrl;
@@ -871,7 +965,7 @@
       $("catalog-text").innerHTML = c.source === "demo" ? t("catDemo", c.products)
         : c.source === "none" ? t("catNone")
         : web && c.pending ? t("catWebPending")
-        : (web ? t("catWeb", nf(c.products), when) : t("catFeed", nf(c.products), when)) + (c.error ? `<br><span class="err">${esc(t("catErr", c.error, c.products))}</span>` : "");
+        : (web ? t("catWeb", nf(c.products), when, c.sitePages ? nf(c.sitePages) : "") : t("catFeed", nf(c.products), when)) + (c.error ? `<br><span class="err">${esc(t("catErr", c.error, c.products))}</span>` : "");
       const btn = $("catalog-refresh");
       btn.hidden = !(c.source === "feed" || web) || (web && c.pending);
       if (!btn.disabled) btn.textContent = t(web ? "cat.web" : "cat.refresh");
@@ -886,7 +980,7 @@
       b.disabled = true; b.textContent = t(web ? "cat.webBusy" : "cat.busy");
       try {
         const r = await call("/api/analytics/catalog", { method: "POST" });
-        if (r.ok) renderCatalog({ ...(await r.json()), pending: false });
+        if (r.ok) { const s = { ...(await r.json()), pending: false }; renderCatalog(s); if (last) { last.d.catalog = s; renderSetup(last.d, last.me); } }
       } finally {
         b.disabled = false; b.textContent = t(web ? "cat.web" : "cat.refresh");
         readingWebsite = false;

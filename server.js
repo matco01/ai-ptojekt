@@ -13,13 +13,13 @@ import { personaName } from "./lib/persona.js";
 import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
-  setBotSettings, setInstallRequest,
+  setBotSettings, setInstallRequest, setWidgetSeen,
 } from "./lib/clients.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
 import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
-import { rateLimit, hit } from "./lib/ratelimit.js";
+import { rateLimit, hit, once } from "./lib/ratelimit.js";
 import { recordUsage, allowance, usageForMonth, monthKey } from "./lib/usage.js";
 import { limitsFor, PLANS, publicPlans } from "./lib/plans.js";
 import { alert } from "./lib/alerts.js";
@@ -122,6 +122,10 @@ function cleanSignals(raw = {}, cat) {
     declined: Boolean(raw.declined),
     shown: (Array.isArray(raw.shown) ? raw.shown : []).map((x) => str(x, 80)).slice(0, 30),
     via: raw.via ? str(raw.via, 300) : null,
+    // the visible text of the page the customer is on (the widget leaves out carts, checkouts and accounts)
+    pageText: str(raw.pageText, 4000).trim(),
+    pageTitle: str(raw.pageTitle, 160).trim(),
+    pageUrl: /^https?:\/\//.test(raw.pageUrl ?? "") ? str(raw.pageUrl, 300) : "",
     // the conversation so far as the widget saw it (text only) – lets any server instance continue it
     history: (Array.isArray(raw.history) ? raw.history : []).slice(-12)
       .filter((h) => (h?.role === "user" || h?.role === "assistant") && typeof h.text === "string" && h.text.trim())
@@ -223,7 +227,20 @@ app.post("/api/cart/price", rateLimit("cart", 60, 60e3), withClient(), (req, res
 app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req, res) => {
   const a = await allowance(req.client);
   res.json({ on: a.chat && req.client.active !== false, look: widgetLook(req.client) });
+  noteInstalled(req.client, req.get("Origin"), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
 });
+
+// The widget started on the shop's own website: the code is in place. Shown in the owner's
+// step-by-step setup ("Sella běží na vašem webu"); written at most once an hour per shop.
+async function noteInstalled(client, origin, ownHost) {
+  let host;
+  try { host = new URL(origin).hostname; } catch { return; }
+  if (host === ownHost?.split(":")[0] || host === "localhost" || host === "127.0.0.1") return;
+  const seen = client.widgetSeen;
+  if (seen?.host === host && Date.now() - Date.parse(seen.at) < 3600e3) return;
+  if (!(await once(`seen:${client.id}`, 3600e3))) return;
+  await setWidgetSeen(client.id, { host, at: new Date().toISOString(), first: seen?.first ?? new Date().toISOString() });
+}
 
 // the plans shops can choose (Sella price list)
 app.get("/api/plans", (req, res) => res.json({ plans: publicPlans() }));
@@ -432,7 +449,9 @@ app.get("/api/analytics", admin, async (req, res) => {
     const c = req.client;
     res.json({
       ...stats,
-      client: { id: c.id, name: c.name, active: c.active, domains: c.domains, feedUrl: c.feedUrl ?? "", ownerEmail: c.ownerEmail ?? "", builtIn: isBuiltIn(c.id), installRequest: c.installRequest ?? null },
+      client: { id: c.id, name: c.name, active: c.active, domains: c.domains, feedUrl: c.feedUrl ?? "", ownerEmail: c.ownerEmail ?? "", builtIn: isBuiltIn(c.id), installRequest: c.installRequest ?? null,
+        // for the step-by-step setup: is the code on the website, and has the owner named the assistant
+        widgetSeen: c.widgetSeen ?? null, agentName: agentName(c), named: Boolean(c.agentName), styled: Object.keys(c.appearance ?? {}).length > 0 },
       billing: billingView(c),
       catalog: catalogStatus(req.client),
       usage: usageView(req.client, await allowance(req.client), { master: req.isMaster }),

@@ -247,6 +247,20 @@
       ...extra,
     };
   }
+  // What the page the customer is on says right now, for the chat: the site's current texts even when
+  // they are drawn in the browser (React…) and the server can't read them. Never a cart, checkout,
+  // account or a page with a form being filled in – those can hold the customer's own data.
+  const PRIVATE_PAGE = /\/(cart|kosik|basket|checkout|pokladna|objednavka|order|login|prihlaseni|registrace|register|account|muj-ucet|ucet|profile|profil)(\/|$)/i;
+  function pageNow() {
+    try {
+      if (PRIVATE_PAGE.test(location.pathname) || document.querySelector('input[type="password"]')) return {};
+      const main = document.querySelector("main, [role=main]") || document.body;
+      const text = (main.innerText || "").replace(/[ \t ]+/g, " ").replace(/\s*\n\s*/g, "\n")
+        .replace(/^[a-z]+(_[a-z]+)+$/gm, "").replace(/\n{2,}/g, "\n") // icon-font names (calendar_month, expand_more)
+        .trim().slice(0, 4000);
+      return text.length > 40 ? { pageText: text, pageTitle: document.title.slice(0, 160), pageUrl: location.origin + location.pathname } : {};
+    } catch { return {}; }
+  }
   const post = (path, body) => fetch(cfg.api + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client: cfg.client, lang: UI_LANG, ...body }) }).then((r) => r.json());
 
   // ------------------------------------------- automatic shop integration ----
@@ -1923,7 +1937,7 @@
         method: "POST", headers: { "Content-Type": "application/json" },
         // the transcript so far (without this message) travels along, so the conversation survives
         // even if the server is a fresh serverless instance that never saw it
-        body: JSON.stringify({ client: cfg.client, lang: UI_LANG, sessionId, text, context: signals({ via, history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: (h.text + (h.files?.length ? ` [${L("attached")}: ${h.files.map((x) => x.name).join(", ")}]` : "")).trim().slice(0, 2000) })) }),
+        body: JSON.stringify({ client: cfg.client, lang: UI_LANG, sessionId, text, context: signals({ via, ...pageNow(), history: history.filter((h) => h.role === "me" || h.role === "bot").slice(0, -1).slice(-12).map((h) => ({ role: h.role === "me" ? "user" : "assistant", text: (h.text + (h.files?.length ? ` [${L("attached")}: ${h.files.map((x) => x.name).join(", ")}]` : "")).trim().slice(0, 2000) })) }),
           ...(files.length ? { attachments: files.map(({ kind, media_type, data }) => ({ kind, media_type, data })) } : {}) }),
         signal: ctrl.signal,
       });

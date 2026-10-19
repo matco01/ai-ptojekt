@@ -56,6 +56,8 @@ alter table clients add column if not exists persona jsonb;     -- {"tone":"frie
 
 -- The owner asks us to put the embed code on their website for them (v7): {"platform","contact","note","at","doneAt"}.
 alter table clients add column if not exists install_request jsonb;
+-- The widget has started on the shop's own website (v8): {"host","at","first"} – the setup steps show it.
+alter table clients add column if not exists widget_seen jsonb;
 
 -- What the owner wants the assistant to know beyond the catalogue: texts and uploaded documents.
 create table if not exists knowledge (
