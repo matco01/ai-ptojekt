@@ -361,7 +361,7 @@
     const paintAvatar = choice("avatar", () => S.appearance.avatar || "auto", (v) => { S.appearance.avatar = v; showAvatarBoxes(); });
     const shapeOf = () => S.appearance.shape || (S.appearance.avatar === "image" ? "free" : "square");
     const paintShape = choice("shape", shapeOf, (v) => { S.appearance.shape = v; });
-    const paintFace = choice("face", () => S.appearance.face || "full", (v) => { S.appearance.face = v; showAvatarBoxes(); });
+    const paintFace = choice("face", () => S.appearance.face || "none", (v) => { S.appearance.face = v; showAvatarBoxes(); });
     const slider = (id, key, def, fmt) => {
       const el = $(id), out = $(id + "-out");
       const paint = () => { el.value = S.appearance[key] ?? def; out.textContent = fmt(+el.value); };
@@ -378,7 +378,7 @@
       // "free" = a picture uncut – only for a picture; a tile always has an outline
       $("shape-free").hidden = S.appearance.avatar !== "image";
       if (S.appearance.shape === "free" && S.appearance.avatar !== "image") S.appearance.shape = "";
-      $("face-adjust").hidden = (S.appearance.face || "full") === "none";
+      $("face-adjust").hidden = (S.appearance.face || "none") === "none";
       paintShape?.();
     }
 
@@ -506,7 +506,7 @@
         else { if (site.logo?.letter) attrs.letter = site.logo.letter; if (site.logo?.color) attrs.avatarColor = site.logo.color; }
       }
       if (a.shape) attrs.shape = a.shape;
-      if (a.face && a.face !== "full") attrs.face = a.face;
+      if (a.face && a.face !== "none") attrs.face = a.face;
       if (a.faceY) attrs.faceY = a.faceY;
       if (a.faceScale && a.faceScale !== 100) attrs.faceScale = a.faceScale;
       const dataAttrs = Object.entries(attrs).map(([k, v]) => `data-${k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase())}="${esc(v)}"`).join(" ");

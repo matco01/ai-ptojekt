@@ -1165,7 +1165,7 @@
       brand, image, letter,
       // outline: a picture stays uncut unless a shape is chosen; a tile is a rounded square by default
       shape: SHAPES.includes(d.shape) && !(d.shape === "free" && !image) ? d.shape : image ? "free" : "square",
-      face: ["full", "eyes", "none"].includes(d.face) ? d.face : "full",
+      face: ["full", "eyes", "none"].includes(d.face) ? d.face : "none", // a face only when the owner picks one
       faceY: clamp(Number(d.faceY) || 0, -30, 30), faceScale: clamp((Number(d.faceScale) || 100) / 100, 0.5, 1.5),
       hi: hsl(h, s, clamp(l + 0.19, 0, 0.7)), mid: hsl(h, s, clamp(l + 0.05, 0, 0.8)), base: hex(color), lo: hsl(h, s, clamp(l - 0.07, 0.04, 1)),
       ink: dark || image ? hsl(h, s, clamp(Math.min(l, 0.3) - 0.08, 0.03, 0.2)) : "#1b1f3b",
