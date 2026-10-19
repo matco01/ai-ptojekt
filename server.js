@@ -227,7 +227,8 @@ app.post("/api/cart/price", rateLimit("cart", 60, 60e3), withClient(), (req, res
 app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req, res) => {
   const a = await allowance(req.client);
   // noted before answering: on Vercel a function stops as soon as it has answered (the write is rare – once an hour at most)
-  await noteInstalled(req.client, req.get("Origin"), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
+  // (the owner's preview on the settings page isn't the shop's website)
+  if (!req.query.preview) await noteInstalled(req.client, req.get("Origin"), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
   res.json({
     on: a.chat && req.client.active !== false, look: widgetLook(req.client), starters: openingChips(req.cat, req.lang),
     lookSavedAt: req.client.siteLook?.at ?? null, // when the website's look was last saved (the widget sends it when it's missing or old)

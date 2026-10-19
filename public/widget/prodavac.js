@@ -2507,7 +2507,9 @@
     // is the shop's assistant on? Off when its plan's messages for the month are used up, and when the
     // server refuses the shop (not registered, not paid, or this website isn't one of its domains).
     // A passing server error or a network hiccup doesn't switch it off.
-    const on = preview || await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}`).then(async (r) => {
+    // the owner's preview takes only the opening buttons written for the website (its look is the unsaved one)
+    const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}${preview ? "&preview=1" : ""}`).then(async (r) => {
+      if (preview) { const st = r.ok ? await r.json() : {}; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return true; }
       if (r.ok) { const st = await r.json(); look = st.look || {}; lookSavedAt = st.lookSavedAt ?? null; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return st.on !== false; }
       if (r.status >= 500 || r.status === 429) return true;
       console.warn("[Sella]", (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
