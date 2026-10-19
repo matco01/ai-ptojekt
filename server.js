@@ -226,7 +226,10 @@ app.post("/api/cart/price", rateLimit("cart", 60, 60e3), withClient(), (req, res
 // is the shop's assistant switched on? (off once the plan's messages for the month are used up)
 app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req, res) => {
   const a = await allowance(req.client);
-  res.json({ on: a.chat && req.client.active !== false, look: widgetLook(req.client), starters: openingChips(req.cat, req.lang) });
+  res.json({
+    on: a.chat && req.client.active !== false, look: widgetLook(req.client), starters: openingChips(req.cat, req.lang),
+    lookSavedAt: req.client.siteLook?.at ?? null, // when the website's look was last saved (the widget sends it when it's missing or old)
+  });
   noteInstalled(req.client, req.get("Origin"), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
 });
 
@@ -241,13 +244,14 @@ const openingChips = (cat, lang) => cat.store.starters?.[lang] ?? (cat.products.
 
 // The widget started on the shop's own website: the code is in place. Shown in the owner's
 // step-by-step setup ("Sella běží na vašem webu"); written at most once an hour per shop.
-// The widget's website, or null when it isn't one to note: a developer's own computer, or our demo
-// shops running on our own site (Sella's own website on it counts).
-function shopHost(client, origin, ownHost) {
+// The widget's website, or null when it isn't one to note: a developer's own computer, or – for the
+// "installed" step – our demo shops running on our own site (Sella's own website on it counts). A demo's
+// look is noted all the same: its demo page is its website.
+function shopHost(client, origin, ownHost, { demos = false } = {}) {
   let host;
   try { host = new URL(origin).hostname; } catch { return null; }
   if (host === "localhost" || host === "127.0.0.1") return null;
-  if (host === ownHost?.split(":")[0] && isBuiltIn(client.id)) return null;
+  if (!demos && host === ownHost?.split(":")[0] && isBuiltIn(client.id)) return null;
   return host;
 }
 async function noteInstalled(client, origin, ownHost) {
@@ -281,7 +285,7 @@ function cleanSiteLook(raw = {}, host) {
 }
 app.post("/api/site-look", rateLimit("site-look", 10, 60e3), withClient(), async (req, res) => {
   res.json({ ok: true });
-  const host = shopHost(req.client, req.get("Origin"), req.get("Host"));
+  const host = shopHost(req.client, req.get("Origin"), req.get("Host"), { demos: true });
   if (!host) return;
   const look = cleanSiteLook(req.body?.look, host);
   const was = req.client.siteLook;

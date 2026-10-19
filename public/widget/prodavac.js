@@ -590,6 +590,7 @@
   // data-* attributes, skips the on/off check and – with no consent – records no statistics.
   const preview = script?.dataset.preview === "1";
   let look = {};
+  let lookSavedAt = null; // when the server last saved this website's look (reportLook)
   let starters = null; // the opening buttons written for this website (null = the shop's usual ones below)
   let siteOnly = false; // true while reading the website's own look for the settings preview (reportLook)
   const opts = () => {
@@ -2487,9 +2488,9 @@
   // (colours, font, buttons, logo, her name), so the owner sees her as customers do. Read without
   // the dashboard's settings – the preview adds the unsaved ones – and sent at most once a day.
   function reportLook() {
+    // the server says when it last saved the look: sent when it has none or it is a day old, once per visit
     const key = "site-look:" + cfg.client;
-    // without cookie consent localStorage lasts only for the page – then once per visit
-    if (preview || ss.get(key) || Date.now() - (ls.get(key) || 0) < 24 * 3600e3) return;
+    if (preview || ss.get(key) || Date.now() - (Date.parse(lookSavedAt) || 0) < 24 * 3600e3) return;
     let t, p;
     siteOnly = true;
     try { t = detectTheme(); p = detectPersona(); } catch { return; } finally { siteOnly = false; }
@@ -2498,7 +2499,7 @@
       mode: t.mode, bg: t.bg, text: t.text, brand: t.c1, font: t.font, bfont: t.bfont, btt: t.btt, bls: t.bls, radius: t.r, fonts,
       logo: { image: p.image, letter: p.letter, color: p.base }, siteName: p.brand, name: cfg.name,
     };
-    ls.set(key, Date.now()); ss.set(key, true);
+    ss.set(key, true);
     post("/api/site-look", { look }).catch(() => {});
   }
 
@@ -2507,7 +2508,7 @@
     // server refuses the shop (not registered, not paid, or this website isn't one of its domains).
     // A passing server error or a network hiccup doesn't switch it off.
     const on = preview || await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}`).then(async (r) => {
-      if (r.ok) { const st = await r.json(); look = st.look || {}; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return st.on !== false; }
+      if (r.ok) { const st = await r.json(); look = st.look || {}; lookSavedAt = st.lookSavedAt ?? null; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return st.on !== false; }
       if (r.status >= 500 || r.status === 429) return true;
       console.warn("[Sella]", (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
       return false;
