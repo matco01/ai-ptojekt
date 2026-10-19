@@ -69,6 +69,7 @@
       vListening: "Poslouchám vás…", vThinking: "Přemýšlím…", vSpeakTouch: "Mluvím… (klepnutím mě přerušíte)", vSpeak: "Mluvím… (klidně mi skočte do řeči)", vIdle: "Klepněte na mě a mluvte",
       micDenied: "Mikrofon není povolen. Povolte ho v prohlížeči, nebo přepněte na psaní.",
       offNote: "Prodavačka je teď nedostupná. Děkujeme za pochopení.", attached: "přiloženo",
+      prevCards: "Předchozí produkty", nextCards: "Další produkty",
     },
     en: {
       open: "Open the shop assistant", openNamed: (n) => `Open ${n}, the shop assistant`, role: "shop assistant · AI", close: "Close", closeTip: "Close tip",
@@ -92,6 +93,7 @@
       vListening: "Listening…", vThinking: "Thinking…", vSpeakTouch: "Speaking… (tap to interrupt)", vSpeak: "Speaking… (feel free to interrupt)", vIdle: "Tap me and talk",
       micDenied: "The microphone isn't allowed. Allow it in your browser, or switch to typing.",
       offNote: "The shop assistant isn't available right now. Thanks for understanding.", attached: "attached",
+      prevCards: "Previous products", nextCards: "More products",
     },
   }[UI_LANG];
   const L = (k, ...a) => (typeof TEXT[k] === "function" ? TEXT[k](...a) : TEXT[k]);
@@ -119,16 +121,19 @@
   // localStorage (remembered across visits) and the behaviour history are used only with consent;
   // without it they live in memory for the current page. The rest of sessionStorage only keeps the
   // widget working while the visitor moves between pages (open chat, its messages, "just looking").
+  // Keys carry the shop's id: two shops on one domain (our two demos, a group's shops under one
+  // address) must never see each other's conversation, session or history.
   const mem = new Map();
   const TRACKING = /^(searches|seq|cartRemovals)$/;
+  const PREFIX = `aip_${cfg.client}_`;
   const box = (storage, needsConsent) => ({
     get(k) {
       if (needsConsent(k) && !consent()) return mem.get(k) ?? null;
-      try { return JSON.parse(storage().getItem("aip_" + k)); } catch { return null; }
+      try { return JSON.parse(storage().getItem(PREFIX + k)); } catch { return null; }
     },
     set(k, v) {
       if (needsConsent(k) && !consent()) { mem.set(k, v); return; }
-      try { storage().setItem("aip_" + k, JSON.stringify(v)); } catch {}
+      try { storage().setItem(PREFIX + k, JSON.stringify(v)); } catch {}
     },
   });
   const ls = box(() => localStorage, () => true);
@@ -152,7 +157,7 @@
     consentOverride = Boolean(granted);
     if (!consentOverride) {
       queue = [];
-      try { for (const k of Object.keys(localStorage)) if (k.startsWith("aip_")) localStorage.removeItem(k); } catch {}
+      try { for (const k of Object.keys(localStorage)) if (k.startsWith(PREFIX)) localStorage.removeItem(k); } catch {}
     }
   };
   let mode = null;          // "chat" | "voice" | null (panel closed)
@@ -837,8 +842,18 @@
     .msgs > .chips { align-self: flex-start; }
 
     /* product cards: white so the products stand out */
-    .cards { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; align-self: stretch; flex: none; scrollbar-width: none; }
+    .cards-wrap { position: relative; align-self: stretch; flex: none; min-width: 0; }
+    .cards { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; scrollbar-width: none; scroll-snap-type: x proximity; }
     .cards::-webkit-scrollbar { display: none; }
+    .cards.drag { scroll-snap-type: none; cursor: grabbing; user-select: none; }
+    .cards.drag .pc { pointer-events: none; }
+    /* the row hides its scrollbar, so a mouse needs arrows (touch screens just swipe) */
+    .cards-nav { position: absolute; top: calc(50% - 22px); z-index: 2; width: 34px; height: 34px; border-radius: 50%; border: none; padding: 0; cursor: pointer;
+      display: grid; place-items: center; background: #fff; color: #151a3a; box-shadow: 0 6px 18px rgba(15,21,34,.28), 0 0 0 1px var(--edge); transition: transform .2s; }
+    .cards-nav:hover { transform: scale(1.08); }
+    .cards-nav.prev { left: -6px; } .cards-nav.next { right: -6px; }
+    .cards-nav[hidden] { display: none; }
+    @media (hover: none) { .cards-nav { display: none; } }
     .pc { position: relative; flex: 0 0 172px; background: #fff; color: #151a3a; border: 1px solid var(--edge); border-radius: var(--rb); overflow: hidden; display: flex; flex-direction: column;
       box-shadow: var(--card-shadow); transform-style: preserve-3d; transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
       animation: cardin .45s cubic-bezier(.34,1.3,.64,1) both; animation-delay: calc(var(--i, 0) * .07s); }
@@ -1704,7 +1719,50 @@
       };
       box.append(card);
     });
-    return box;
+    return scrollable(box);
+  }
+
+  // The card row scrolls sideways: arrows (shown only when there is more to see) and dragging with
+  // the mouse – a mouse wheel scrolls only up and down, so without them the last cards were unreachable.
+  function scrollable(box) {
+    const wrap = el(`<div class="cards-wrap"></div>`);
+    const arrow = (dir) => el(`<button class="cards-nav ${dir}" type="button" aria-label="${L(dir === "prev" ? "prevCards" : "nextCards")}" hidden>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${dir === "prev" ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"}"/></svg></button>`);
+    const prev = arrow("prev"), next = arrow("next");
+    wrap.append(prev, box, next);
+    const sync = () => {
+      prev.hidden = box.scrollLeft < 4;
+      next.hidden = box.scrollLeft + box.clientWidth >= box.scrollWidth - 4;
+    };
+    const step = (sign) => box.scrollBy({ left: sign * Math.max(box.clientWidth * 0.8, 160), behavior: reduced ? "auto" : "smooth" });
+    prev.onclick = () => step(-1);
+    next.onclick = () => step(1);
+    box.addEventListener("scroll", sync, { passive: true });
+    if (typeof ResizeObserver === "function") new ResizeObserver(sync).observe(box);
+    requestAnimationFrame(sync);
+
+    let drag = null;
+    box.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      drag = { x: e.clientX, left: box.scrollLeft, moved: false };
+    });
+    addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (!drag.moved && Math.abs(dx) < 6) return;
+      drag.moved = true;
+      box.classList.add("drag");
+      box.scrollLeft = drag.left - dx;
+    });
+    addEventListener("pointerup", () => {
+      if (!drag) return;
+      const moved = drag.moved;
+      drag = null;
+      box.classList.remove("drag");
+      // a drag isn't a click on the card it ended over
+      if (moved) box.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); }, { capture: true, once: true });
+    });
+    return wrap;
   }
 
   // the product image flies in an arc into the shop's cart icon, which then bounces
