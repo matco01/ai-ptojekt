@@ -35,7 +35,7 @@
   const cfg = {
     api: script.dataset.api || new URL(script.src || location.href).origin,
     client: script.dataset.client, // which shop this embed belongs to
-    name: script?.dataset.name || "Klára",
+    name: script?.dataset.name || "", // made from the shop's name at start-up (personaName), then the server's
     color: script?.dataset.color || "#1a8f4c",
     greetDelay: Number(script?.dataset.greetDelay ?? 0.6) * 1000,
     lang: script?.dataset.lang || "cs-CZ",
@@ -585,64 +585,145 @@
     return o;
   };
 
-  /** Reads the shop's brand colour, font, button roundness and light/dark look. data-* attributes override. */
+  // The website's logo: an element called "logo", or the link home in the page's top bar
+  // (in <header>, <nav> or a plain <div> – sites build their top bar every way).
+  function findLogo() {
+    const named = document.querySelector('[class*="logo" i], [id*="logo" i], a[rel="home"]');
+    if (named) return named;
+    return [...document.querySelectorAll("a[href]")].find((a) => {
+      try {
+        const u = new URL(a.getAttribute("href"), location.href);
+        if (u.origin !== location.origin || !/^\/(index\.html?)?$/.test(u.pathname) || u.hash.length > 2) return false;
+      } catch { return false; }
+      const r = a.getBoundingClientRect();
+      return r.width > 0 && r.top + scrollY < 200;
+    }) || null;
+  }
+  const saturated = (c, minS = 0.3) => { if (!c || c.a < 0.6) return false; const { s, l } = toHsl(c); return s >= minS && l >= 0.08 && l <= 0.8; };
+  // the colour the logo is drawn in (an svg's fill / stroke, or the logo text)
+  function logoColor() {
+    const logo = findLogo();
+    if (!logo) return null;
+    for (const e of [logo, ...logo.querySelectorAll("*")]) {
+      const cs = getComputedStyle(e);
+      for (const v of [e.getAttribute("fill"), e.getAttribute("stroke"), cs.fill, cs.stroke, cs.color]) {
+        const c = parseColor(v);
+        if (saturated(c)) return c;
+      }
+    }
+    return null;
+  }
+  // the coloured text the site uses most for headings and links
+  function textAccent() {
+    const count = new Map();
+    for (const e of [...document.querySelectorAll("h1, h2, h3, a, strong, [class*='primary' i]")].slice(0, 400)) {
+      const c = parseColor(getComputedStyle(e).color);
+      if (saturated(c, 0.35)) count.set(hex(c), (count.get(hex(c)) || 0) + 1);
+    }
+    const best = [...count].sort((a, b) => b[1] - a[1])[0]?.[0];
+    return best ? parseColor(best) : null;
+  }
+
+  /**
+   * Reads the shop's look so the assistant blends in like a chameleon: brand colour, the style of
+   * its buttons (font, capitals, letter spacing, corners), the page's own background and text
+   * colour, light or dark. data-* attributes and the dashboard's settings override.
+   */
   function detectTheme() {
     const d = opts();
     const bg = [document.body, document.documentElement].map((e) => parseColor(getComputedStyle(e).backgroundColor)).find((c) => c && c.a > 0.5) || { r: 255, g: 255, b: 255 };
     const font = d.font || getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
-    // remembered for the visit, so Klára doesn't change colour from page to page
+    // remembered for the visit, so the assistant doesn't change colour from page to page
     // (keyed by the site's look, so two different sites never share it)
-    const key = "theme:" + hex(bg) + "|" + font.slice(0, 40);
+    const key = "theme3:" + hex(bg) + "|" + font.slice(0, 40);
     const cached = !d.color && !d.theme && ss.get(key);
     if (cached) return applyTheme(cached);
-    let brand = d.color ? parseColor(d.color) : null, radius = null;
-    if (!brand) {
+    let brand = d.color ? parseColor(d.color) : null, radius = null, btn = null;
+    {
       // the brand colour = the saturated colour used most on buttons, counted by how often it
-      // appears (one huge button can't win alone) and weighted up in the header / navigation
-      const score = new Map(), radii = new Map();
+      // appears (one huge button can't win alone) and weighted up in the header / navigation.
+      // Dark brand colours count too (a deep green, navy, burgundy); a site whose buttons are
+      // all black or dark grey gets that.
+      const score = new Map(), plain = new Map(), radii = new Map(), sample = new Map();
       for (const e of document.querySelectorAll('button, a, input[type="submit"], [role="button"], [class*="btn"]')) {
         const cs = getComputedStyle(e), c = parseColor(cs.backgroundColor);
         if (!c || c.a < 0.8) continue;
-        const { s, l } = toHsl(c);
-        if (s < 0.35 || l < 0.18 || l > 0.82) continue;
         const rect = e.getBoundingClientRect(), area = Math.min(rect.width * rect.height, 6000);
         if (area < 150) continue;
+        const { s, l } = toHsl(c);
+        const into = s >= 0.3 && l >= 0.08 && l <= 0.82 ? score : l < 0.3 ? plain : null;
+        if (!into) continue;
         const inHeader = rect.top + scrollY < 160 || e.closest("header, nav, [role=banner]");
         const k = hex(c);
-        score.set(k, (score.get(k) || 0) + area * (inHeader ? 3 : 1));
-        // the roundest corner – buttons joined to an input are often rounded on one side only
-        if (!radii.has(k)) radii.set(k, Math.max(...[cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomLeftRadius, cs.borderBottomRightRadius].map((v) => parseFloat(v) || 0)));
+        into.set(k, (into.get(k) || 0) + area * (inHeader ? 3 : 1));
+        if (!sample.has(k)) {
+          sample.set(k, e);
+          // the roundest corner – buttons joined to an input are often rounded on one side only
+          radii.set(k, Math.max(...[cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomLeftRadius, cs.borderBottomRightRadius].map((v) => parseFloat(v) || 0)));
+        }
       }
-      const best = [...score].sort((a, b) => b[1] - a[1])[0]?.[0];
-      brand = parseColor(best || "#2288e5");
-      radius = best ? radii.get(best) : null;
+      const top = (m) => [...m].sort((a, b) => b[1] - a[1])[0]?.[0];
+      const best = top(score) || top(plain);
+      if (best) { btn = sample.get(best); radius = radii.get(best); brand ??= parseColor(best); }
     }
+    // no coloured buttons: the logo's colour, then the colour of headings and links
+    brand ??= logoColor() || textAccent() || parseColor("#2288e5");
     const mode = d.theme === "dark" || d.theme === "light" ? d.theme : luminance(bg) < 0.45 ? "dark" : "light";
 
-    // two companion colours for gradients: neighbouring hues, stepping towards the "nice" side –
-    // warm colours towards red/amber, reds towards pink/violet, cool colours towards violet/magenta
+    // two companion colours for gradients. A deep or quiet brand colour keeps to its own family
+    // (a dark green gets greens, not violet); a bright one steps to neighbouring hues on the
+    // "nice" side – warm towards red/amber, reds towards pink/violet, cool towards violet/magenta.
     const { h, s, l } = toHsl(brand);
-    const [s2, s3] = h >= 20 && h < 70 ? [-16, -36] : h >= 300 || h < 20 ? [-28, -56] : [38, 80];
     const c1 = hex(brand);
-    const c2 = hsl(h + s2, Math.max(s, 0.55), clamp(l + 0.06, 0.45, 0.66));
-    const c3 = hsl(h + s3, Math.max(s * 0.95, 0.5), clamp(l + 0.12, 0.52, 0.72));
+    let c2, c3;
+    if (l < 0.3 || s < 0.45) {
+      c2 = hsl(h + 10, s * 0.9, clamp(l + 0.1, l, 0.5));
+      c3 = hsl(h + 24, s * 0.75, clamp(l + 0.22, l, 0.62));
+    } else {
+      const [s2, s3] = h >= 20 && h < 70 ? [-16, -36] : h >= 300 || h < 20 ? [-28, -56] : [38, 80];
+      c2 = hsl(h + s2, Math.max(s, 0.55), clamp(l + 0.06, 0.45, 0.66));
+      c3 = hsl(h + s3, Math.max(s * 0.95, 0.5), clamp(l + 0.12, 0.52, 0.72));
+    }
     const r = radius ?? parseFloat(d.radius ?? 10);
-    // on a dark site the panel takes the site's own dark tone (a touch lighter), not a fixed navy
-    const b = toHsl(bg);
-    const surf = mode === "dark" ? { bg: hsl(b.h, b.s, clamp(b.l + 0.05, 0.07, 0.2)), bg2: hsl(b.h, b.s, clamp(b.l + 0.09, 0.1, 0.24)) } : {};
 
-    const t = { mode, c1, c2, c3, font, r, ...surf };
+    // the panel takes the page's own tone: a dark site's dark (a touch lighter), a cream or tinted
+    // light site's tint; pure white sites stay white. Text takes the page's text colour.
+    const b = toHsl(bg);
+    const text = parseColor(getComputedStyle(document.body).color);
+    const surf = mode === "dark"
+      ? { bg: hsl(b.h, b.s, clamp(b.l + 0.05, 0.07, 0.2)), bg2: hsl(b.h, b.s, clamp(b.l + 0.09, 0.1, 0.24)) }
+      : b.l < 0.985 && b.l > 0.8
+        ? { bg: hsl(b.h, b.s, Math.min(b.l + 0.01, 0.99)), bg2: hsl(b.h, b.s, Math.min(b.l + 0.025, 0.995)), glass: hsl(b.h, b.s * 0.9, b.l - 0.035),
+            ink: text && luminance(text) < 0.35 ? hex(text) : null }
+        : {};
+
+    // the site's button style, worn by the assistant's buttons and chips
+    const style = {};
+    if (btn) {
+      const cs = getComputedStyle(btn), size = parseFloat(cs.fontSize) || 14, ls = parseFloat(cs.letterSpacing) || 0;
+      Object.assign(style, {
+        bfont: cs.fontFamily, btt: cs.textTransform === "uppercase" ? "uppercase" : "none",
+        bls: ls > 0 ? Math.min(ls / size, 0.12).toFixed(3) + "em" : "normal",
+      });
+    }
+
+    const t = { mode, c1, c2, c3, font, r, ...surf, ...style };
     if (!d.color && !d.theme) ss.set(key, t);
     return applyTheme(t);
   }
-  function applyTheme({ mode, c1, c2, c3, font, r, bg, bg2 }) {
+  function applyTheme({ mode, c1, c2, c3, font, r, bg, bg2, glass, ink, bfont, btt, bls }) {
     host.dataset.mode = mode;
     const set = (k, v) => host.style.setProperty(k, v);
     set("--c", c1); set("--c2", c2); set("--c3", c3); set("--font", font);
     if (bg) { set("--bg", bg); set("--bg2", bg2); }
-    set("--rp", clamp(r * 2.2 + 6, 14, 28) + "px");  // panel
-    set("--rb", clamp(r * 1.6 + 6, 12, 22) + "px");  // bubbles, cards
-    set("--rc", clamp(r * 1.4 + 4, 8, 22) + "px");   // chips, buttons
+    if (glass) set("--glass", glass);
+    if (ink) { set("--ink", ink); set("--strong", ink); set("--bot", ink); set("--soft", `color-mix(in srgb, ${ink} 68%, ${bg || "#fff"})`); }
+    set("--bfont", bfont || font); set("--btt", btt || "none"); set("--bls", bls || "normal");
+    // a sharp-cornered site gets a sharp assistant; a rounded one a rounded one
+    set("--rp", clamp(r * 2.2 + 6, 8, 28) + "px");   // panel
+    set("--rb", clamp(r * 1.6 + 6, 6, 22) + "px");   // bubbles, cards
+    set("--rc", clamp(r * 1.4 + 4, 4, 22) + "px");   // chips, buttons
+    set("--rpill", r <= 4 ? clamp(r * 1.4 + 4, 4, 22) + "px" : "999px"); // the launcher label and the message field
     return { c1, c2, c3 };
   }
   let theme = { c1: "#2288e5", c2: "#7c5cff", c3: "#ff7eb3" };
@@ -722,7 +803,7 @@
     /* ---------- launcher ---------- */
     .launch { position: relative; display: flex; align-items: center; gap: 12px; border: none; background: none; padding: 0; animation: dropin .6s cubic-bezier(.34,1.56,.64,1) both; }
     .launch .av { animation: bob 3.2s ease-in-out infinite; }
-    .launch-label { order: -1; padding: 11px 18px; border-radius: 999px; font-size: 14.5px; font-weight: 650; color: var(--ink);
+    .launch-label { order: -1; padding: 11px 18px; border-radius: var(--rpill, 999px); font-family: var(--bfont, var(--font)); text-transform: var(--btt, none); letter-spacing: var(--bls, normal); font-size: 14.5px; font-weight: 650; color: var(--ink);
       background: linear-gradient(var(--bg2), var(--bg2)) padding-box, linear-gradient(90deg, var(--c), var(--c2), var(--c3)) border-box; border: 1.5px solid transparent;
       box-shadow: var(--card-shadow); transition: transform .2s, box-shadow .2s; }
     .launch:hover .launch-label { transform: translateX(-4px); box-shadow: 0 12px 30px ${mix("--c2", 35)}; }
@@ -736,7 +817,7 @@
     .aurora span:nth-child(1) { background: var(--c); left: -100px; top: -120px; animation: drift1 17s ease-in-out infinite alternate; }
     .aurora span:nth-child(2) { background: var(--c2); right: -120px; top: 30%; animation: drift2 21s ease-in-out infinite alternate; }
     .aurora span:nth-child(3) { background: var(--c3); left: 20%; bottom: -160px; opacity: calc(var(--aur) * .7); animation: drift3 25s ease-in-out infinite alternate; }
-    .gbtn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--edge); background: var(--glass); color: var(--ink); display: grid; place-items: center; font-size: 17px; transition: background .2s, transform .2s; }
+    .gbtn { width: 36px; height: 36px; border-radius: var(--rpill, 50%); border: 1px solid var(--edge); background: var(--glass); color: var(--ink); display: grid; place-items: center; font-size: 17px; transition: background .2s, transform .2s; }
     .gbtn:hover { background: ${mix("--c", 14)}; transform: rotate(8deg) scale(1.06); }
 
     /* ---------- arrival: the mascot hops over to you and asks ---------- */
@@ -763,7 +844,7 @@
     .g-text { font-size: 16.5px; line-height: 1.5; margin: 0 24px 16px 0; min-height: 50px; color: var(--strong); }
     .caret::after { content: ""; display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: -3px; background: var(--c); animation: caret .8s steps(1) infinite; }
     .g-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .g-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 13px; border: 0; font-size: 15px; font-weight: 600;
+    .g-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: var(--rc); font-family: var(--bfont, var(--font)); text-transform: var(--btt, none); letter-spacing: var(--bls, normal); border: 0; font-size: 15px; font-weight: 600;
       background: var(--glass); color: var(--strong); transition: transform .15s, filter .15s, background .15s; }
     .g-btn svg { font-size: 18px; }
     .g-btn:hover { background: ${mix("--c", 12)}; } .g-btn:active { transform: scale(.97); }
@@ -796,7 +877,7 @@
 
     /* ---------- chips ---------- */
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip { padding: 8px 14px; border-radius: var(--rc); font-size: 14px; font-weight: 600; color: var(--ink);
+    .chip { padding: 8px 14px; border-radius: var(--rc); font-family: var(--bfont, var(--font)); text-transform: var(--btt, none); letter-spacing: var(--bls, normal); font-size: 14px; font-weight: 600; color: var(--ink);
       background: linear-gradient(var(--bg2), var(--bg2)) padding-box, linear-gradient(90deg, var(--c), var(--c2), var(--c3)) border-box; border: 1.5px solid transparent;
       transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s; animation: rise .35s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * .05s); }
     .chip:hover { transform: translateY(-2px); box-shadow: 0 8px 20px ${mix("--c2", 30)}; }
@@ -871,21 +952,21 @@
     .pc .hl { font-size: 11.5px; color: #6b7090; }
     .pc .price { font-size: 16px; font-weight: 850; margin-top: 2px; }
     .pc .old { font-size: 11.5px; color: #9aa0b8; text-decoration: line-through; font-weight: 500; margin-left: 5px; }
-    .add { margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 700; padding: 9px 6px; border-radius: var(--rc); border: none; color: #fff;
+    .add { font-family: var(--bfont, var(--font)); text-transform: var(--btt, none); letter-spacing: var(--bls, normal); margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 700; padding: 9px 6px; border-radius: var(--rc); border: none; color: #fff;
       background: linear-gradient(120deg, var(--c), var(--c2)); transition: transform .2s, filter .2s; }
     .add:hover { transform: translateY(-1px); filter: brightness(1.08); }
     .add:disabled { background: #22b573; }
     .add.done { animation: popin .4s cubic-bezier(.34,1.56,.64,1); }
 
     /* input: capsule with a slowly rotating gradient edge */
-    .input { position: relative; margin: 4px 14px 14px; border-radius: 999px; padding: 1.5px; overflow: hidden; }
+    .input { position: relative; margin: 4px 14px 14px; border-radius: var(--rpill, 999px); padding: 1.5px; overflow: hidden; }
     .input::before { content: ""; position: absolute; left: 50%; top: 50%; width: 700px; height: 700px; margin: -350px 0 0 -350px;
       background: conic-gradient(var(--c), var(--c2), var(--c3), var(--c)); animation: spin 5s linear infinite; opacity: .4; transition: opacity .3s; }
     .input:focus-within::before { opacity: 1; }
-    .field { position: relative; display: flex; align-items: flex-end; gap: 6px; padding: 6px; border-radius: 999px; background: var(--bg2); }
+    .field { position: relative; display: flex; align-items: flex-end; gap: 6px; padding: 6px; border-radius: calc(var(--rpill, 999px) - 1px); background: var(--bg2); }
     .field textarea { flex: 1; resize: none; border: none; background: none; color: var(--strong); font-size: 15px; line-height: 20px; padding: 9px 0; height: 38px; max-height: 110px; outline: none; }
     .field textarea::placeholder { color: var(--ph); }
-    .send { width: 38px; height: 38px; border-radius: 50%; border: none; color: #fff; display: grid; place-items: center; font-size: 18px; flex: none;
+    .send { width: 38px; height: 38px; border-radius: var(--rpill, 50%); border: none; color: #fff; display: grid; place-items: center; font-size: 18px; flex: none;
       background: linear-gradient(135deg, var(--c), var(--c2)); box-shadow: 0 6px 16px ${mix("--c2", 40)}; transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
     .send:hover { transform: scale(1.1) rotate(-8deg); }
     .send:disabled { opacity: .45; cursor: default; transform: none; }
@@ -1025,7 +1106,7 @@
   function detectPersona() {
     const d = opts();
     const meta = (n) => document.querySelector(`meta[property="${n}"], meta[name="${n}"]`)?.content?.trim();
-    const logo = document.querySelector('[class*="logo" i], [id*="logo" i], a[rel="home"], header a[href="/"], header a[href="#/"], header a[href="./"]');
+    const logo = findLogo();
     const pic = logo?.matches("img, svg") ? logo : logo?.querySelector("img, svg");
     const titleBrand = document.title.split(/\s[–—|\-·:]\s/)[0].trim();
     const brand = (d.brand || meta("og:site_name") || meta("application-name") || (titleBrand && titleBrand.length <= 30 ? titleBrand : "")
@@ -1053,8 +1134,10 @@
     if (!color && mark) color = parseColor(getComputedStyle(mark).backgroundColor);
     if (!letter && mark) { const t = mark.textContent.trim(); if (t.length && t.length <= 2) letter = t[0]; }
     if (!color && pic?.tagName.toLowerCase() === "img") color = parseColor(dominantColor(pic));
+    if (!color) color = logoColor();
     if (!color) { const b = toHsl(parseColor(theme.c1)); color = parseColor(hsl(b.h, b.s, clamp(b.l - 0.12, 0.15, 0.4))); }
-    letter = (letter || brand.replace(/[^\p{L}\p{N}]/gu, "")[0] || "A");
+    // "The Green Dock" → G, not T
+    letter = (letter || brand.replace(/^(the|a|an)\s+/i, "").replace(/[^\p{L}\p{N}]/gu, "")[0] || "A");
 
     const { h, s, l } = toHsl(color);
     const dark = l < 0.55; // light tiles get dark eyebrows/letter, dark tiles white ones
@@ -1157,13 +1240,20 @@
 
   // the agent's name belongs to the shop (set by the server per client), so every visitor meets the same one.
   // The cached name only makes the start instant – it is re-checked on every page load.
+  // keep in step with lib/persona.js
+  function personaName(shopName) {
+    const b = String(shopName).replace(/^(the|a|an)\s+/i, "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z]/g, "");
+    if (!b) return "Bip";
+    return b[0].toUpperCase() + (b.slice(1).match(/[aeiouy]/i)?.[0] || "i").toLowerCase() + "ko";
+  }
   let ttsServer = false; // true when the server has a natural neural voice (ElevenLabs)
   async function loadName() {
     AV ??= detectPersona();
     fetch(cfg.api + "/api/health").then((r) => r.json()).then((h) => { ttsServer = h.tts === "elevenlabs"; }).catch(() => {});
     const key = "agent-name:" + cfg.client;
     const cached = look.name || script.dataset.name || ls.get(key);
-    if (cached) cfg.name = cached;
+    // until the server answers: the same kind of name it makes from the shop's name (lib/persona.js)
+    cfg.name = cached || personaName(AV.brand);
     const fresh = post("/api/persona", { brand: AV.brand })
       .then((r) => {
         integ = r?.integration || {};
@@ -2279,6 +2369,19 @@
   // -------------------------------------------------------------- boot ----
   api.open = (m = "chat") => openPanel(m);
 
+  // A site drawn in the browser (React, Vue…) can still be an empty <div id="root"> at this point –
+  // its colours and logo aren't there to read yet. Wait until links or buttons appear (at most 4 s).
+  function contentReady() {
+    const drawn = () => document.querySelectorAll("a[href], button").length >= 3;
+    if (drawn()) return Promise.resolve();
+    return new Promise((done) => {
+      const mo = new MutationObserver(() => { if (drawn()) finish(); });
+      const finish = () => { mo.disconnect(); clearTimeout(timer); requestAnimationFrame(() => done()); };
+      const timer = setTimeout(finish, 4000);
+      mo.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+
   async function boot() {
     // is the shop's assistant on? Off when its plan's messages for the month are used up, and when the
     // server refuses the shop (not registered, not paid, or this website isn't one of its domains).
@@ -2290,6 +2393,7 @@
       return false;
     }).catch(() => true);
     if (!on) { off = true; return; }
+    await contentReady();
     theme = detectTheme();
     AV = detectPersona();
     nameReady = loadName();
