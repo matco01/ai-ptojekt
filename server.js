@@ -237,7 +237,7 @@ const NEUTRAL_CHIPS = {
   cs: [{ label: "💬 Co nabízíte?", ask: "Co všechno nabízíte?" }, { label: "💰 Ceny", ask: "Jaké máte ceny?" }, { label: "📞 Kontakt", ask: "Jak vás můžu kontaktovat?" }],
   en: [{ label: "💬 What do you offer?", ask: "What do you offer?" }, { label: "💰 Prices", ask: "What are your prices?" }, { label: "📞 Contact", ask: "How can I contact you?" }],
 };
-const openingChips = (cat, lang) => cat.store.starters?.chips ?? (cat.products.length ? null : NEUTRAL_CHIPS[lang]);
+const openingChips = (cat, lang) => cat.store.starters?.[lang] ?? (cat.products.length ? null : NEUTRAL_CHIPS[lang]);
 
 // The widget started on the shop's own website: the code is in place. Shown in the owner's
 // step-by-step setup ("Sella běží na vašem webu"); written at most once an hour per shop.
