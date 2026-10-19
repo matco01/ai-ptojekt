@@ -241,10 +241,18 @@ const openingChips = (cat, lang) => cat.store.starters?.chips ?? (cat.products.l
 
 // The widget started on the shop's own website: the code is in place. Shown in the owner's
 // step-by-step setup ("Sella běží na vašem webu"); written at most once an hour per shop.
-async function noteInstalled(client, origin, ownHost) {
+// The widget's website, or null when it isn't one to note: a developer's own computer, or our demo
+// shops running on our own site (Sella's own website on it counts).
+function shopHost(client, origin, ownHost) {
   let host;
-  try { host = new URL(origin).hostname; } catch { return; }
-  if (host === ownHost?.split(":")[0] || host === "localhost" || host === "127.0.0.1") return;
+  try { host = new URL(origin).hostname; } catch { return null; }
+  if (host === "localhost" || host === "127.0.0.1") return null;
+  if (host === ownHost?.split(":")[0] && isBuiltIn(client.id)) return null;
+  return host;
+}
+async function noteInstalled(client, origin, ownHost) {
+  const host = shopHost(client, origin, ownHost);
+  if (!host) return;
   const seen = client.widgetSeen;
   if (seen?.host === host && Date.now() - Date.parse(seen.at) < 3600e3) return;
   if (!(await once(`seen:${client.id}`, 3600e3))) return;
@@ -273,9 +281,8 @@ function cleanSiteLook(raw = {}, host) {
 }
 app.post("/api/site-look", rateLimit("site-look", 10, 60e3), withClient(), async (req, res) => {
   res.json({ ok: true });
-  let host;
-  try { host = new URL(req.get("Origin")).hostname; } catch { return; }
-  if (host === req.get("Host")?.split(":")[0] || host === "localhost" || host === "127.0.0.1") return;
+  const host = shopHost(req.client, req.get("Origin"), req.get("Host"));
+  if (!host) return;
   const look = cleanSiteLook(req.body?.look, host);
   const was = req.client.siteLook;
   // field by field: the database may hand the stored object back with its keys in another order
