@@ -599,6 +599,7 @@
     if (look.theme) o.theme = look.theme;
     if (look.letter) { o.letter = look.letter; delete o.avatarImage; if (look.avatarColor) o.avatarColor = look.avatarColor; }
     if (look.image) { o.avatarImage = cfg.api + look.image; delete o.letter; delete o.avatarColor; }
+    if (look.avatar) o.avatar = look.avatar; // "logo": the mascot made from the website's logo instead of the blob
     for (const k of ["shape", "face", "faceY", "faceScale"]) if (look[k] != null) o[k] = String(look[k]);
     return o;
   };
@@ -818,6 +819,9 @@
     .av.happy { animation: hop .5s ease; }
     .av.listen::before, .av.listen::after { content: ""; position: absolute; inset: 4%; border-radius: 30%; border: 2px solid var(--c); animation: ripple 1.5s ease-out infinite; }
     .av.listen::after { animation-delay: .75s; }
+    /* the blob: blobatar's own motion (breathing, bobbing, blinking, glances); the eyes travel ~3 units after the cursor */
+    .av.blob .mo-eyes { --mo-track-travel: 3px; }
+    .av.blob.listen::before, .av.blob.listen::after { border-radius: 50%; }
 
     /* ---------- launcher ---------- */
     .launch { position: relative; display: flex; align-items: center; gap: 12px; border: none; background: none; padding: 0; animation: dropin .6s cubic-bezier(.34,1.56,.64,1) both; }
@@ -1100,6 +1104,71 @@
   let avatarSeq = 0;
   let AV = null;
 
+  // ---------------------------------------------------- the blob mascot ----
+  // Sella's own mascot (blobatar, MIT – public/vendor/blobatar): its shape, eyes and way of moving come
+  // from her name, so every shop's assistant is one of a kind and always the same; its colour is the
+  // website's. It breathes, bobs, blinks, glances about, follows the cursor and makes faces as she thinks
+  // or is pleased. Loaded next to the widget; if it can't be, she is the tile with a letter as before.
+  let Blob = null;
+  const BLOB_EXPR = { think: "thinking", happy: "happy", listen: "surprised" };
+  const wantsBlob = () => { const d = opts(); return d.avatar !== "logo" && !d.avatarImage && !d.letter; };
+  function loadBlob() {
+    if (window.SellaBlob) return Promise.resolve(setupBlob(window.SellaBlob));
+    return new Promise((done) => {
+      const s = document.createElement("script");
+      s.src = cfg.api + "/vendor/blobatar/blobatar.js";
+      s.onload = () => done(setupBlob(window.SellaBlob));
+      s.onerror = () => done(null);
+      document.head.append(s);
+      setTimeout(() => done(null), 4000); // never keep the page waiting for her
+    });
+  }
+  function setupBlob(lib) {
+    if (!lib || Blob) return Blob;
+    const css = lib.motionCss + lib.gazeCss;
+    // @property doesn't work inside the widget's shadow root: registered for the page instead (all named --mo-*),
+    // so her expressions morph smoothly instead of jumping
+    for (const [, name, body] of css.matchAll(/@property\s+(--[\w-]+)\s*\{([^}]*)\}/g)) {
+      const get = (k) => body.match(new RegExp(`${k}\\s*:\\s*"?([^;"]*)"?`))?.[1]?.trim();
+      try { CSS.registerProperty({ name, syntax: get("syntax") || "*", inherits: get("inherits") === "true", initialValue: get("initial-value") }); } catch {}
+    }
+    const style = document.createElement("style");
+    style.textContent = css.replace(/@property\s+--[\w-]+\s*\{[^}]*\}/g, "");
+    root.append(style);
+    return (Blob = lib);
+  }
+  const blobSeed = () => cfg.name || AV?.brand || "Sella";
+  function blobParts(mood) {
+    return Blob.parts(blobSeed(), { palette: { head: AV.head, eye: AV.eye }, animate: "always", expression: Blob.expressions[BLOB_EXPR[mood]] });
+  }
+  function blobAvatar(size, live, mood) {
+    const p = blobParts(mood);
+    return `
+    <span class="av blob nomouth ${mood}" style="--s:${size}px" data-seed="${esc(blobSeed())}" aria-hidden="true">
+      <svg viewBox="0 0 100 100">
+        <ellipse cx="51" cy="98" rx="30" ry="3.2" fill="rgba(15,24,73,.14)"/>
+        <g class="mover"><g class="${p.cls}" style="${esc(Blob.serializeVars(p.vars ?? {}))}">${p.inner}</g></g>
+      </svg>
+      <span class="orbit"><b></b><b></b><b></b></span>
+      ${live ? `<span class="live"></span>` : ""}
+    </span>`;
+  }
+  /** The blob in a mood: its expression morphs (and a changed name gives it its own shape). */
+  function poseBlob(av, mood) {
+    const g = av.querySelector(".mo-root");
+    if (!g || !Blob) return;
+    const seed = blobSeed(), p = blobParts(mood);
+    if (av.dataset.seed !== seed) { av.dataset.seed = seed; g.innerHTML = p.inner; }
+    g.setAttribute("class", p.cls);
+    g.setAttribute("style", Blob.serializeVars(p.vars ?? {}));
+  }
+  // the eyes follow the cursor (blobatar's gaze); a mascot that left the page stops watching
+  const gazes = new Map();
+  function watchBlobs() {
+    for (const [svg, g] of gazes) if (!svg.isConnected) { g.stop(); gazes.delete(svg); }
+    for (const svg of root.querySelectorAll(".av.blob > svg")) if (!gazes.has(svg)) gazes.set(svg, Blob.gaze(svg, { target: "pointer" }));
+  }
+
   function dominantColor(imgEl) {
     try {
       const c = document.createElement("canvas"); c.width = c.height = 24;
@@ -1130,6 +1199,15 @@
     const titleBrand = document.title.split(/\s[–—|\-·:]\s/)[0].trim();
     const brand = (d.brand || meta("og:site_name") || meta("application-name") || (titleBrand && titleBrand.length <= 30 ? titleBrand : "")
       || pic?.getAttribute("alt")?.replace(/\s*logo\s*/i, "") || location.hostname.replace(/^www\./, "").split(".")[0] || "Obchod").trim().slice(0, 40);
+
+    // the blob, in the website's colour, with eyes that read on it
+    if (Blob && !siteOnly && wantsBlob()) {
+      const c = parseColor(theme.c1) || { r: 34, g: 136, b: 229 }, { h, s } = toHsl(c);
+      return {
+        brand, blob: true, letter: brand[0] || "A", shape: "free", face: "none", faceY: 0, faceScale: 1,
+        base: hex(c), head: hex(c), eye: luminance(c) < 0.5 ? hsl(h, s * 0.3, 0.96) : hsl(h, s * 0.5, 0.12),
+      };
+    }
 
     // a square-ish logo picture → the agent is that logo
     let image = d.avatarImage || null;
@@ -1185,6 +1263,7 @@
   };
   const avatar = (size, { live = false, mood = "" } = {}, blink = (Math.random() * 4).toFixed(2)) => {
     AV ??= detectPersona();
+    if (AV.blob && Blob) return blobAvatar(size, live, mood);
     const n = ++avatarSeq, pic = !!AV.image, sh = SHAPE[AV.shape] || null; // null = a picture, uncut
     // on a picture the face sits a bit more to the centre and gets a light halo so it reads on any artwork
     const [ex1, ex2, ey, er] = pic ? [33, 67, 42, 10.8] : [20, 80, 50, 12.6];
@@ -1287,6 +1366,7 @@
     if (!av) return;
     av.classList.remove("think", "talk", "listen", "happy", "say");
     if (mood && mood !== "idle") av.classList.add(mood);
+    if (av.classList.contains("blob")) poseBlob(av, mood);
   };
 
   // eyes follow the cursor – a tiny thing that makes her feel present
@@ -1294,7 +1374,8 @@
   addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; if (!eyeRaf) eyeRaf = requestAnimationFrame(updateEyes); }, { passive: true });
   function updateEyes() {
     eyeRaf = 0;
-    for (const av of root.querySelectorAll(".av")) {
+    if (Blob) watchBlobs();
+    for (const av of root.querySelectorAll(".av:not(.blob)")) {
       const r = av.getBoundingClientRect();
       if (!r.width) continue;
       const dx = mx - (r.left + r.width / 2), dy = my - (r.top + r.height / 2);
@@ -2432,10 +2513,14 @@
       return false;
     }).catch(() => true);
     if (!on) { off = true; return; }
+    const blobReady = wantsBlob() ? loadBlob() : null;
     await contentReady();
     theme = detectTheme();
+    await blobReady;
     AV = detectPersona();
     nameReady = loadName();
+    // the blob's shape comes from her name: once the server has confirmed it, she takes her own shape
+    nameReady.then(() => root.querySelectorAll(".av.blob").forEach((av) => poseBlob(av, Object.keys(BLOB_EXPR).find((m) => av.classList.contains(m)) || "")));
     const pageReady = autoInit().catch(() => {});
     launcher.innerHTML = avatar(60) + `<span class="launch-label">${L("launch")}</span>`;
     nameReady.then(() => { launcher.setAttribute("aria-label", L("openNamed", cfg.name)); reportLook(); });

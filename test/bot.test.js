@@ -41,6 +41,10 @@ test("the widget gets only what was set; the picture travels by its own versione
   assert.equal(widgetLook({ id: "s", name: "Kavárna", appearance: { avatar: "letter" } }).letter, "K"); // no letter → the shop's initial
   assert.deepEqual(widgetLook({ id: "s", name: "A", appearance: { shape: "circle", face: "full", faceY: -5, faceScale: 120 } }), { shape: "circle", face: "full", faceY: -5, faceScale: 120 });
   assert.deepEqual(widgetLook({ id: "s", name: "A", appearance: { face: "none", faceY: 0, faceScale: 100 } }), {}); // defaults aren't sent
+  // the default is her own blob; the mascot from the website's logo is a choice
+  assert.equal(validateBot({ appearance: { avatar: "logo" } }).appearance.avatar, "logo");
+  assert.deepEqual(widgetLook({ id: "s", name: "A", appearance: { avatar: "logo" } }), { avatar: "logo" });
+  assert.deepEqual(widgetLook({ id: "s", name: "A", appearance: { avatar: "auto" } }), {});
   const img = avatarImage({ appearance: { image: PNG } });
   assert.equal(img.type, "image/png");
   assert.equal(img.body.subarray(1, 4).toString(), "PNG");

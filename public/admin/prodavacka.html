@@ -150,7 +150,8 @@
             <h2 data-i18n="avH">Maskot</h2>
             <p class="hint" data-i18n="avP">Postavička s očima, která mrká, sleduje kurzor a mluví.</p>
             <div class="choices" id="avatar">
-              <button class="choice" data-v="auto"><b data-i18n="avAuto">Z vašeho loga</b><span data-i18n="avAutoP">najdeme ho na webu sami</span></button>
+              <button class="choice" data-v="auto"><b data-i18n="avAuto">Vlastní postavička</b><span data-i18n="avAutoP">jedinečná podle jejího jména, v barvách webu</span></button>
+              <button class="choice" data-v="logo"><b data-i18n="avLogo">Z vašeho loga</b><span data-i18n="avLogoP">najdeme ho na webu sami</span></button>
               <button class="choice" data-v="letter"><b data-i18n="avLetter">Písmeno</b><span data-i18n="avLetterP">dlaždice v barvě s písmenem</span></button>
               <button class="choice" data-v="image"><b data-i18n="avImage">Vlastní obrázek</b><span data-i18n="avImageP">logo nebo ikona, nejlépe čtvercová</span></button>
             </div>
@@ -163,6 +164,8 @@
               <div class="row"><img class="thumb" id="thumb" alt=""><button class="btn light" id="pick-image" data-i18n="pickImage">Vybrat obrázek</button><input type="file" id="image-file" accept="image/png,image/jpeg,image/webp" hidden></div>
               <p class="tip" data-i18n="ownChar">Máte vlastní postavičku (maskota značky, zvířátko…)? Nahrajte ji jako PNG s průhledným pozadím, zvolte „Volný tvar“ a „Bez obličeje“ – Sella ji rozhýbe: houpe se a při mluvení poskakuje do rytmu hlasu. Když oči nemá, nechte jí naše a posuňte je na správné místo.</p>
             </div>
+            <!-- outline and face: for a logo, a letter or a picture; her own character has its own -->
+            <div id="tile-opts">
             <label class="l" data-i18n="shapeL">Tvar</label>
             <div class="choices shapes" id="shape">
               <button class="choice" data-v="square"><svg viewBox="0 0 100 100"><path d="M29 4 H71 Q96 4 96 29 V71 Q96 96 71 96 H29 Q4 96 4 71 V29 Q4 4 29 4 Z" fill="currentColor"/></svg><b data-i18n="shSquare">Dlaždice</b></button>
@@ -180,6 +183,7 @@
             <div id="face-adjust">
               <div class="slider"><span data-i18n="faceYL">Výška obličeje</span><input type="range" id="face-y" min="-30" max="30" step="1"><output id="face-y-out"></output></div>
               <div class="slider"><span data-i18n="faceSL">Velikost obličeje</span><input type="range" id="face-s" min="50" max="150" step="5"><output id="face-s-out"></output></div>
+            </div>
             </div>
           </div>
         </section>
@@ -266,7 +270,7 @@
         nameH: "Jméno", nameP: "Zákazníci ji tak uvidí v okně chatu i v pozdravu.", nameDefault: (n) => `Prázdné = „${n}“ (odvozené od názvu obchodu)`,
         colorH: "Barvy", colorP: "Bez nastavení si prodavačka barvu, písmo i světlý/tmavý vzhled vezme z vašeho webu.", colorAuto: "Barvu převzít z webu",
         themeL: "Okno chatu", thAuto: "Podle webu", thAutoP: "světlé na světlém webu, tmavé na tmavém", thLight: "Světlé", thDark: "Tmavé",
-        avH: "Maskot", avP: "Postavička s očima, která mrká, sleduje kurzor a mluví.", avAuto: "Z vašeho loga", avAutoP: "najdeme ho na webu sami",
+        avH: "Maskot", avP: "Postavička s očima, která mrká, sleduje kurzor a mluví.", avAuto: "Vlastní postavička", avAutoP: "jedinečná podle jejího jména, v barvách webu", avLogo: "Z vašeho loga", avLogoP: "najdeme ho na webu sami",
         avLetter: "Písmeno", avLetterP: "dlaždice v barvě s písmenem", avImage: "Vlastní obrázek", avImageP: "logo nebo ikona, nejlépe čtvercová",
         letterL: "Písmeno a barva dlaždice", shapeL: "Tvar", shSquare: "Dlaždice", shCircle: "Koule", shTriangle: "Trojúhelník", shBlob: "Kapka", shFree: "Volný tvar",
         faceL: "Obličej", fFull: "Celý", fFullP: "oči, obočí a pusa, která mluví", fEyes: "Jen oči", fEyesP: "mrkají a sledují kurzor", fNone: "Bez obličeje", fNoneP: "pro postavičky, které už oči mají",
@@ -302,7 +306,7 @@
         nameH: "Name", nameP: "Customers see it in the chat window and in the greeting.", nameDefault: (n) => `Empty = "${n}" (derived from the shop's name)`,
         colorH: "Colours", colorP: "Without settings the assistant takes its colour, font and light/dark look from your website.", colorAuto: "Take the colour from the website",
         themeL: "Chat window", thAuto: "Like the website", thAutoP: "light on a light site, dark on a dark one", thLight: "Light", thDark: "Dark",
-        avH: "Mascot", avP: "A little character with eyes that blinks, follows the cursor and talks.", avAuto: "From your logo", avAutoP: "we find it on your website",
+        avH: "Mascot", avP: "A little character with eyes that blinks, follows the cursor and talks.", avAuto: "Her own character", avAutoP: "unique to her name, in your website's colours", avLogo: "From your logo", avLogoP: "we find it on your website",
         avLetter: "Letter", avLetterP: "a coloured tile with a letter", avImage: "Your own picture", avImageP: "a logo or icon, ideally square",
         letterL: "Letter and tile colour", shapeL: "Shape", shSquare: "Tile", shCircle: "Ball", shTriangle: "Triangle", shBlob: "Drop", shFree: "Free shape",
         faceL: "Face", fFull: "Full", fFullP: "eyes, brows and a talking mouth", fEyes: "Eyes only", fEyesP: "they blink and follow the cursor", fNone: "No face", fNoneP: "for characters that already have eyes",
@@ -375,6 +379,7 @@
     function showAvatarBoxes() {
       $("letter-box").hidden = S.appearance.avatar !== "letter";
       $("image-box").hidden = S.appearance.avatar !== "image";
+      $("tile-opts").hidden = (S.appearance.avatar || "auto") === "auto";
       // "free" = a picture uncut – only for a picture; a tile always has an outline
       $("shape-free").hidden = S.appearance.avatar !== "image";
       if (S.appearance.shape === "free" && S.appearance.avatar !== "image") S.appearance.shape = "";
@@ -500,7 +505,8 @@
       if (a.theme && a.theme !== "auto") attrs.theme = a.theme;
       if (a.avatar === "letter") { attrs.letter = a.letter || data.client.name[0]; if (a.avatarColor) attrs.avatarColor = a.avatarColor; }
       if (a.avatar === "image" && a.image) attrs.avatarImage = a.image;
-      if (site && a.avatar !== "letter" && !(a.avatar === "image" && a.image)) {
+      if (a.avatar === "logo") attrs.avatar = "logo";
+      if (site && a.avatar === "logo") {
         // the mascot made from the website's logo, as customers see it
         if (site.logo?.image) attrs.avatarImage = site.logo.image;
         else { if (site.logo?.letter) attrs.letter = site.logo.letter; if (site.logo?.color) attrs.avatarColor = site.logo.color; }
