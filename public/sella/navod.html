@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sella – jak vložit kód na web</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
+  <!-- The how-to film: where the embed code goes on Shoptet, WordPress, Shopify, Google Tag Manager
+       and any other site, and – for those who'd rather not – that we can do it for them.
+       Like film.html every frame is a pure function of time (render(t)), so the page plays live and
+       is recorded frame by frame into navod-cs.mp4 / navod-en.mp4: ?lang=cs|en&rec=1 (scripts/record-film.mjs). -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #d0d9e1; overflow: hidden; }
+    body { display: grid; place-items: center; font-family: "Geist", -apple-system, Arial, sans-serif; color: #2f3133; -webkit-font-smoothing: antialiased; }
+    #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; background: #d0d9e1; transform-origin: center; flex: none; }
+    #stage * { box-sizing: border-box; }
+    .abs { position: absolute; will-change: transform, opacity; }
+    .serif { font-family: "Old Standard TT", Didot, Georgia, serif; font-weight: 400; }
+    .mono { font-family: "Geist Mono", ui-monospace, monospace; }
+
+    /* sky */
+    .cl { position: absolute; border-radius: 50%; filter: blur(60px); }
+    #c1 { width: 820px; height: 820px; right: -240px; top: -120px; background: radial-gradient(circle at 45% 45%, #8fb3d8 0 38%, #a7c7d6 58%, transparent 70%); }
+    #c2 { width: 760px; height: 760px; right: -200px; top: -40px; filter: blur(40px); opacity: .5; background: radial-gradient(circle at 46% 40%, transparent 0 56%, #ead2ae 62%, #bcd8cf 66%, transparent 72%); }
+    #c3 { width: 420px; height: 280px; left: -80px; top: 20px; background: radial-gradient(closest-side, #b7cbdc, transparent); }
+    #grain { position: absolute; inset: 0; opacity: .18; mix-blend-mode: soft-light;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+
+    /* 1 · title */
+    #title { left: 0; right: 0; top: 200px; text-align: center; }
+    #title .mark { font-size: 120px; line-height: 1; color: #434445; letter-spacing: -.02em; }
+    #title h1 { margin: 26px 0 0; font: 400 46px/1.15 "Old Standard TT", Georgia, serif; color: #2f3133; }
+    #title .tag { font-size: 15px; letter-spacing: .24em; text-transform: uppercase; color: #6f7781; margin-top: 22px; }
+
+    /* 2 · the code in the owner's overview (the same card as /admin/) */
+    #copy { left: 250px; top: 120px; width: 780px; }
+    #copy .sec { font: 400 34px/1.1 "Old Standard TT", Georgia, serif; margin: 0 0 6px 4px; }
+    #copy .sec small { display: block; font: 400 15px "Geist", sans-serif; color: #7b8188; margin-top: 8px; }
+    #copy .card { margin-top: 20px; padding: 26px 28px; border-radius: 26px; background: rgba(255,255,255,.55); box-shadow: inset 0 0 0 1px rgba(255,255,255,.8), 0 40px 90px -40px rgba(30,50,80,.5); }
+    #copy h3 { margin: 0; font-size: 20px; font-weight: 600; }
+    #copy .hint { margin: 6px 0 14px; font-size: 15px; color: #55595e; }
+    .snippet { padding: 16px 18px; border-radius: 16px; background: #233044; color: #e6edf6; font: 15px/1.65 "Geist Mono", ui-monospace, monospace; white-space: pre-wrap; word-break: break-all; }
+    .snippet .t { color: #8fb3d8; } .snippet .a { color: #ead2ae; } .snippet .s { color: #a9d6b8; }
+    #copybtn { display: inline-grid; place-items: center; margin-top: 16px; height: 46px; padding: 0 22px; border-radius: 99px; background: #2f3133; color: #f3f5f7; font-size: 15px; font-weight: 500; }
+    #copybtn.done { background: #2f7a52; }
+
+    /* 3 · which system */
+    #pick { left: 90px; right: 90px; top: 150px; text-align: center; }
+    #pick h2 { margin: 0 0 40px; font: 400 44px/1.15 "Old Standard TT", Georgia, serif; }
+    #tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+    .tile { height: 170px; padding: 22px 16px; border-radius: 22px; background: rgba(255,255,255,.5); box-shadow: inset 0 0 0 1px rgba(255,255,255,.8); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+    .tile .ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; font: 600 22px/1 "Geist", sans-serif; }
+    .tile b { font-size: 18px; } .tile small { font-size: 13px; color: #7b8188; line-height: 1.3; }
+    .tile.hot { background: #fff; box-shadow: 0 0 0 2px #4e7fb4, 0 30px 60px -30px rgba(30,50,90,.5); }
+
+    /* 4 · an admin of a shop system, in a browser window */
+    #win { left: 120px; top: 28px; width: 1040px; height: 552px; border-radius: 18px; background: #f6f7f9;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.7), 0 40px 90px -40px rgba(30,50,80,.55); overflow: hidden; }
+    #win .bar { height: 36px; display: flex; align-items: center; gap: 7px; padding: 0 16px; background: #e8ecf1; }
+    #win .bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(47,49,51,.18); }
+    #win .url { margin-left: 18px; height: 22px; padding: 0 14px; border-radius: 99px; background: #fff; font-size: 12px; color: #6f7781; display: flex; align-items: center; }
+    #win .top { position: absolute; left: 0; right: 0; top: 36px; height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 20px; background: var(--pc, #2f3133); color: #fff; }
+    #win .top .ic { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,.22); display: grid; place-items: center; font-weight: 700; }
+    #win .top b { font-size: 16px; font-weight: 600; } #win .top span { font-size: 13px; opacity: .75; }
+    #side { position: absolute; left: 0; top: 88px; bottom: 0; width: 230px; padding: 16px 10px; background: #fff; border-right: 1px solid #e4e7eb; display: flex; flex-direction: column; gap: 4px; }
+    .mi { height: 36px; padding: 0 14px; border-radius: 10px; display: flex; align-items: center; font-size: 14.5px; color: #55595e; }
+    .mi.sub { margin-left: 16px; font-size: 13.5px; height: 32px; }
+    .mi.on { background: color-mix(in srgb, var(--pc, #4e7fb4) 14%, #fff); color: #1d2024; font-weight: 600; }
+    #main { position: absolute; left: 230px; right: 0; top: 88px; bottom: 0; padding: 22px 30px; }
+    #crumb { font-size: 13.5px; color: #7b8188; height: 20px; }
+    #crumb b { color: #2f3133; font-weight: 600; }
+    #main h3 { margin: 10px 0 18px; font-size: 24px; font-weight: 600; }
+    .lbl { font-size: 13px; font-weight: 600; color: #55595e; margin: 0 0 7px; }
+    .field { height: 132px; padding: 14px 16px; border-radius: 12px; background: #fff; border: 1px solid #d7dce2; font: 14px/1.6 "Geist Mono", ui-monospace, monospace; color: #2f3133; white-space: pre-wrap; word-break: break-all; }
+    .field.focus { border-color: var(--pc, #4e7fb4); box-shadow: 0 0 0 4px color-mix(in srgb, var(--pc, #4e7fb4) 18%, transparent); }
+    .field .t { color: #2a5d93; } .field .a { color: #9a5b16; } .field .s { color: #2f7a52; }
+    .trig { margin-top: 16px; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 16px; border-radius: 12px; background: #fff; border: 1px solid #d7dce2; font-size: 14.5px; }
+    .trig i { width: 26px; height: 26px; border-radius: 50%; background: #4e7fb4; display: grid; place-items: center; color: #fff; font-style: normal; font-size: 13px; }
+    .save { display: inline-grid; place-items: center; margin-top: 18px; height: 42px; padding: 0 22px; border-radius: 10px; background: var(--pc, #2f3133); color: #fff; font-size: 14.5px; font-weight: 600; }
+    .save.press { filter: brightness(.85); transform: scale(.97); }
+    .saved { display: inline-flex; align-items: center; gap: 8px; margin-left: 14px; font-size: 14.5px; font-weight: 600; color: #2f7a52; }
+    /* a theme file in a code editor (Shopify, any other website) */
+    .ed { border-radius: 12px; background: #1f2633; color: #c9d3e0; font: 14px/1.75 "Geist Mono", ui-monospace, monospace; padding: 12px 0; overflow: hidden; }
+    .ed .ln { display: flex; padding: 0 16px; white-space: pre; }
+    .ed .ln u { width: 34px; flex: none; color: #5d6a80; text-decoration: none; }
+    .ed .ln.new { background: rgba(169,214,184,.16); box-shadow: inset 3px 0 0 #a9d6b8; }
+    .ed .ln.body { color: #ead2ae; }
+    .ed .t { color: #8fb3d8; } .ed .a { color: #ead2ae; } .ed .s { color: #a9d6b8; }
+    .ed .ln.body.mark { background: rgba(234,210,174,.14); }
+    #keys { left: 0; top: 0; padding: 10px 16px; border-radius: 12px; background: #2f3133; color: #fff; font: 600 18px "Geist", sans-serif; z-index: 32; box-shadow: 0 20px 40px -20px rgba(0,0,0,.6); }
+    #keys kbd { font: inherit; padding: 2px 9px; border-radius: 6px; background: rgba(255,255,255,.16); }
+
+    /* 5 · it works: the shop with the assistant */
+    #shop { left: 150px; top: 40px; width: 980px; height: 548px; border-radius: 18px; background: #fff; overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.7), 0 40px 90px -40px rgba(30,50,80,.55); }
+    #shop .bar { height: 36px; display: flex; align-items: center; gap: 7px; padding: 0 16px; background: #e8ecf1; }
+    #shop .bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(47,49,51,.18); }
+    #shop .url { margin-left: 18px; height: 22px; padding: 0 14px; border-radius: 99px; background: #fff; font-size: 12px; color: #6f7781; display: flex; align-items: center; }
+    #shop .hd { height: 64px; display: flex; align-items: center; gap: 22px; padding: 0 26px; border-bottom: 1px solid #edf0f3; }
+    #shop .logo { font: 400 26px/1 "Old Standard TT", Georgia, serif; }
+    .ph { border-radius: 8px; background: #eef1f4; }
+    #shop .grid { position: absolute; left: 26px; right: 26px; top: 210px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    #shop .grid > div { height: 230px; border-radius: 14px; background: #f4f6f8; }
+    #hero { position: absolute; left: 26px; right: 26px; top: 116px; height: 74px; display: flex; flex-direction: column; gap: 10px; }
+    #bubble { left: 690px; top: 330px; width: 330px; padding: 16px 18px; border-radius: 18px; background: #fff; z-index: 21; transform-origin: 90% 110%;
+      box-shadow: 0 24px 50px -24px rgba(20,30,70,.5), 0 0 0 1px rgba(28,38,99,.06); }
+    #bubble .who { font-size: 12.5px; font-weight: 700; color: #4e7fb4; margin-bottom: 4px; }
+    #bubble p { margin: 0 0 12px; font-size: 15.5px; line-height: 1.45; min-height: 45px; }
+    #bubble .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #bubble .acts span { height: 36px; border-radius: 11px; display: grid; place-items: center; font-size: 13.5px; font-weight: 600; background: #eef2f6; }
+    #bubble .acts span.pri { background: #4e7fb4; color: #fff; }
+    #mascot { left: 0; top: 0; width: 78px; height: 78px; z-index: 20; transform-origin: 50% 100%; }
+    #ok { left: 176px; top: 520px; padding: 10px 18px; border-radius: 99px; background: #2f7a52; color: #fff; font-size: 16px; font-weight: 600; z-index: 22; }
+
+    /* 6 · we'll do it for you */
+    #end { left: 0; right: 0; top: 150px; text-align: center; }
+    #end h2 { margin: 0; font: 400 76px/1.05 "Old Standard TT", Georgia, serif; color: #2f3133; letter-spacing: -.01em; }
+    #end .line { font-size: 23px; line-height: 1.45; color: #55595e; margin: 26px auto 0; max-width: 760px; }
+    #end .cta { display: inline-block; margin-top: 36px; padding: 17px 32px; border-radius: 99px; background: #2f3133; color: #f3f5f7; font-size: 19px; font-weight: 500; }
+    #end .where { margin-top: 18px; font-size: 15px; color: #7b8188; }
+    #end .mark { margin-top: 44px; font-size: 40px; color: #434445; }
+
+    #cursor { left: 0; top: 0; width: 22px; height: 22px; z-index: 30; }
+    #cap { left: 110px; right: 110px; bottom: 22px; text-align: center; font-size: 24px; line-height: 1.3; color: #2f3133; z-index: 40; min-height: 92px; display: flex; align-items: center; justify-content: center; }
+    #progress { left: 0; bottom: 0; height: 3px; background: #4e7fb4; z-index: 50; }
+  </style>
+</head>
+<body>
+<div id="stage">
+  <div class="abs cl" id="c1"></div><div class="abs cl" id="c2"></div><div class="abs cl" id="c3"></div>
+
+  <div class="abs" id="title"><div class="mark serif">Sella</div><h1 id="th"></h1><div class="tag" id="ttag"></div></div>
+
+  <div class="abs" id="copy">
+    <h2 class="sec" id="csec"></h2>
+    <div class="card"><h3 id="ch"></h3><p class="hint" id="chint"></p><div class="snippet" id="csnip"></div><span id="copybtn"></span></div>
+  </div>
+
+  <div class="abs" id="pick"><h2 id="pickh"></h2><div id="tiles"></div></div>
+
+  <div class="abs" id="win">
+    <div class="bar"><i></i><i></i><i></i><span class="url" id="wurl"></span></div>
+    <div class="top"><span class="ic" id="wic"></span><b id="wname"></b><span id="wsub"></span></div>
+    <div id="side"></div>
+    <div id="main"><div id="crumb"></div><h3 id="wh"></h3><div id="wbody"></div></div>
+  </div>
+
+  <div class="abs" id="shop">
+    <div class="bar"><i></i><i></i><i></i><span class="url" id="surl"></span></div>
+    <div class="hd"><span class="logo" id="slogo"></span><span class="ph" style="width:90px;height:12px"></span><span class="ph" style="width:70px;height:12px"></span><span class="ph" style="width:80px;height:12px"></span><span class="ph" style="margin-left:auto;width:220px;height:34px;border-radius:99px"></span></div>
+    <div id="hero"><span class="ph" style="width:46%;height:26px"></span><span class="ph" style="width:30%;height:14px"></span></div>
+    <div class="grid"><div></div><div></div><div></div><div></div></div>
+  </div>
+  <div class="abs" id="bubble"><div class="who" id="bwho"></div><p id="btext"></p><div class="acts"><span class="pri" id="bb1"></span><span id="bb2"></span></div></div>
+  <div class="abs" id="mascot"></div>
+  <div class="abs" id="ok"></div>
+
+  <div class="abs" id="end"><h2 id="eh"></h2><div class="line" id="eline"></div><span class="cta" id="ecta"></span><div class="where" id="ewhere"></div><div class="mark serif">Sella</div></div>
+
+  <div class="abs" id="keys"><kbd>Ctrl</kbd> + <kbd>V</kbd></div>
+  <svg class="abs" id="cursor" viewBox="0 0 24 24"><path d="M4 2l15 9.5-6.6 1.4L16 21l-3 1.4-3.6-8.2L4 18.6z" fill="#2f3133" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  <div class="abs serif" id="cap"></div>
+  <div class="abs" id="progress"></div>
+  <div class="abs" id="grain" style="inset:0"></div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const LANG = params.get("lang") === "en" ? "en" : "cs";
+  // the code as the owner sees it in the overview (a made-up shop id)
+  const CODE = (id) => [["t", "<script"], ["", " "], ["a", "src"], ["", "="], ["s", '"https://ai-ptojekt.vercel.app/widget/prodavac.js"'], ["", " "],
+    ["a", "data-client"], ["", "="], ["s", `"${id}"`], ["", " "], ["a", "defer"], ["t", "><\/script>"]];
+  const T = {
+    cs: {
+      th: "Jak vložit Sellu na váš web", tag: "Návod · Shoptet · WordPress · Shopify · Tag Manager",
+      shopId: "vas-obchod",
+      sec: "Na vašem webu", secSub: "Kód pro vložení, kde prodavačka smí běžet, a vaše platby.",
+      cardH: "Kód pro váš web", cardHint: "Vložte ho na všechny stránky e-shopu, těsně před </body>.", copy: "Zkopírovat kód", copied: "Zkopírováno ✓",
+      pickH: "Kam ho vložit? Záleží, na čem váš e-shop běží.",
+      other: "Jiný web", otherSub: "vlastní web, Upgates, Webnode…",
+      saved: "Uloženo",
+      shop: "vas-obchod.cz", shopLogo: "Váš obchod", who: "Sella", greet: "Dobrý den! Chcete s něčím poradit, nebo se porozhlédnete sami?", b1: "Napsat", b2: "Jen se dívám",
+      ok: "✓ Sella na webu běží",
+      endH: "Nechce se vám do toho?", endLine: "Žádný problém. Vložíme Sellu na váš web za vás – ozveme se a domluvíme se, jak to uděláme.",
+      endCta: "Vložte to za mě", endWhere: "Tlačítko najdete ve svém přehledu, hned u kódu pro web.",
+      caps: {
+        title: "",
+        copy: "Kód pro web najdete ve svém přehledu Selly, v části Na vašem webu. Klikněte na Zkopírovat kód.",
+        pick: "Kam ho vložit, záleží na tom, na čem váš e-shop běží. Ukážeme si ty nejčastější.",
+        shoptet: "Shoptet: v administraci otevřete Vzhled a obsah → Editor → HTML kód. Kód vložte do pole Zápatí a uložte.",
+        wordpress: "WordPress a WooCommerce: nainstalujte zdarma plugin WPCode. V Code Snippets → Header & Footer vložte kód do pole Footer a uložte.",
+        shopify: "Shopify: Online Store → Themes → Edit code. V souboru theme.liquid vložte kód těsně nad řádek </body> a uložte.",
+        gtm: "Google Tag Manager: Značky → Nová → Vlastní HTML. Vložte kód, spouštěč Všechny stránky, uložte a změny zveřejněte tlačítkem Odeslat.",
+        other: "Jiný web? Kód patří na všechny stránky, těsně před </body>. Mnoho systémů na to má pole „vlastní kód do patičky“.",
+        check: "Hotovo. Otevřete svůj e-shop a vpravo dole se ozve vaše prodavačka. Kód funguje jen na doménách z vašeho nastavení.",
+        end: "",
+      },
+      P: {
+        shoptet: { name: "Shoptet", sub: "administrace", url: "vas-obchod.cz/admin", ic: "S", color: "#2c8a6e",
+          menu: ["Přehled", "Objednávky", "Produkty", "Zákazníci", "Vzhled a obsah", "Editor", "HTML kód", "Nastavení"], path: [4, 5, 6], nested: [5, 6],
+          h: "HTML kód", field: "Zápatí", save: "Uložit" },
+        wordpress: { name: "WordPress", sub: "nástěnka", url: "vas-obchod.cz/wp-admin", ic: "W", color: "#2b5d86",
+          menu: ["Nástěnka", "Příspěvky", "WooCommerce", "Produkty", "Code Snippets", "Header & Footer", "Pluginy", "Nastavení"], path: [4, 5], nested: [5],
+          h: "Header & Footer", field: "Footer", save: "Save Changes" },
+        shopify: { name: "Shopify", sub: "admin", url: "admin.shopify.com", ic: "S", color: "#3d6b3a",
+          menu: ["Home", "Orders", "Products", "Customers", "Online Store", "Themes", "Edit code", "Settings"], path: [4, 5, 6], nested: [5, 6],
+          h: "theme.liquid", file: "layout/theme.liquid", save: "Save" },
+        gtm: { name: "Tag Manager", sub: "pracovní prostor", url: "tagmanager.google.com", ic: "G", color: "#3b6fd1",
+          menu: ["Přehled", "Značky", "Nová", "Vlastní HTML", "Spouštěče", "Proměnné", "Složky", "Šablony"], path: [1, 2, 3], nested: [2, 3],
+          h: "Vlastní HTML – Sella", field: "HTML", trigger: "Spouštěč: Všechny stránky", save: "Uložit", submit: "Odeslat" },
+        other: { name: "Váš web", sub: "editor šablony", url: "vas-obchod.cz", ic: "</>", color: "#55595e",
+          menu: ["Stránky", "Šablona", "Patička", "Média", "Nastavení"], path: [1, 2], nested: [2],
+          h: "Šablona webu", file: "šablona · patička", save: "Uložit" },
+      },
+    },
+    en: {
+      th: "How to add Sella to your website", tag: "How-to · Shoptet · WordPress · Shopify · Tag Manager",
+      shopId: "your-shop",
+      sec: "On your website", secSub: "The embed code, where the assistant may run, and your payments.",
+      cardH: "Code for your website", cardHint: "Add it to every page of your shop, just before </body>.", copy: "Copy code", copied: "Copied ✓",
+      pickH: "Where does it go? That depends on what your shop runs on.",
+      other: "Any other site", otherSub: "custom site, Wix, Squarespace…",
+      saved: "Saved",
+      shop: "your-shop.com", shopLogo: "Your shop", who: "Sella", greet: "Hi! Can I help you find something, or would you rather browse?", b1: "Chat", b2: "Just looking",
+      ok: "✓ Sella is live on your site",
+      endH: "Rather not do it yourself?", endLine: "No problem. We'll add Sella to your website for you – we'll get in touch and agree on how.",
+      endCta: "Do it for me", endWhere: "You'll find the button in your dashboard, right next to the code.",
+      caps: {
+        title: "",
+        copy: "You'll find the code in your Sella dashboard, under On your website. Click Copy code.",
+        pick: "Where it goes depends on what your shop runs on. Here are the most common ones.",
+        shoptet: "Shoptet: in the admin open Appearance & content → Editor → HTML code. Paste the code into the Footer field and save.",
+        wordpress: "WordPress and WooCommerce: install the free WPCode plugin. In Code Snippets → Header & Footer, paste the code into Footer and save.",
+        shopify: "Shopify: Online Store → Themes → Edit code. In theme.liquid, paste the code just above the </body> line and save.",
+        gtm: "Google Tag Manager: Tags → New → Custom HTML. Paste the code, trigger All Pages, save, and publish with Submit.",
+        other: "Something else? The code goes on every page, just before </body>. Many systems have a “custom footer code” field for this.",
+        check: "Done. Open your shop and your assistant greets you in the bottom right. The code only works on the domains in your settings.",
+        end: "",
+      },
+      P: {
+        shoptet: { name: "Shoptet", sub: "admin", url: "your-shop.com/admin", ic: "S", color: "#2c8a6e",
+          menu: ["Overview", "Orders", "Products", "Customers", "Appearance & content", "Editor", "HTML code", "Settings"], path: [4, 5, 6], nested: [5, 6],
+          h: "HTML code", field: "Footer", save: "Save" },
+        wordpress: { name: "WordPress", sub: "dashboard", url: "your-shop.com/wp-admin", ic: "W", color: "#2b5d86",
+          menu: ["Dashboard", "Posts", "WooCommerce", "Products", "Code Snippets", "Header & Footer", "Plugins", "Settings"], path: [4, 5], nested: [5],
+          h: "Header & Footer", field: "Footer", save: "Save Changes" },
+        shopify: { name: "Shopify", sub: "admin", url: "admin.shopify.com", ic: "S", color: "#3d6b3a",
+          menu: ["Home", "Orders", "Products", "Customers", "Online Store", "Themes", "Edit code", "Settings"], path: [4, 5, 6], nested: [5, 6],
+          h: "theme.liquid", file: "layout/theme.liquid", save: "Save" },
+        gtm: { name: "Tag Manager", sub: "workspace", url: "tagmanager.google.com", ic: "G", color: "#3b6fd1",
+          menu: ["Overview", "Tags", "New", "Custom HTML", "Triggers", "Variables", "Folders", "Templates"], path: [1, 2, 3], nested: [2, 3],
+          h: "Custom HTML – Sella", field: "HTML", trigger: "Trigger: All Pages", save: "Save", submit: "Submit" },
+        other: { name: "Your website", sub: "template editor", url: "your-shop.com", ic: "</>", color: "#55595e",
+          menu: ["Pages", "Template", "Footer", "Media", "Settings"], path: [1, 2], nested: [2],
+          h: "Website template", file: "template · footer", save: "Save" },
+      },
+    },
+  }[LANG];
+  document.documentElement.lang = LANG;
+  document.title = LANG === "en" ? "Sella – how to add the code to your website" : "Sella – jak vložit kód na web";
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]);
+  // the code coloured, cut to the first `n` characters (it "types" or "pastes" in)
+  const codeHtml = (n = Infinity) => {
+    let left = n, html = "";
+    for (const [cls, text] of CODE(T.shopId)) {
+      if (left <= 0) break;
+      const part = esc(text.slice(0, left)); left -= text.length;
+      html += cls ? `<span class="${cls}">${part}</span>` : part;
+    }
+    return html;
+  };
+
+  // ---- static content
+  $("th").textContent = T.th; $("ttag").textContent = T.tag;
+  $("csec").innerHTML = `${esc(T.sec)}<small>${esc(T.secSub)}</small>`;
+  $("ch").textContent = T.cardH; $("chint").textContent = T.cardHint; $("csnip").innerHTML = codeHtml();
+  $("pickh").textContent = T.pickH;
+  const PLATFORMS = ["shoptet", "wordpress", "shopify", "gtm", "other"];
+  const tileName = { shoptet: "Shoptet", wordpress: "WordPress", shopify: "Shopify", gtm: "Tag Manager", other: T.other };
+  const tileSub = { shoptet: "", wordpress: "WooCommerce", shopify: "", gtm: "Google", other: T.otherSub };
+  $("tiles").innerHTML = PLATFORMS.map((p) => `<div class="tile" id="tile-${p}"><span class="ic" style="background:${T.P[p].color}">${esc(T.P[p].ic)}</span><b>${esc(tileName[p])}</b><small>${esc(tileSub[p]) || "&nbsp;"}</small></div>`).join("");
+  $("surl").textContent = T.shop; $("slogo").textContent = T.shopLogo;
+  $("bwho").textContent = T.who; $("bb1").textContent = T.b1; $("bb2").textContent = T.b2; $("ok").textContent = T.ok;
+  $("eh").textContent = T.endH; $("eline").textContent = T.endLine; $("ecta").textContent = T.endCta; $("ewhere").textContent = T.endWhere;
+
+  // Sella's own little character (what a shop without a logo of its own gets)
+  $("mascot").innerHTML = `<svg width="78" height="78" viewBox="0 0 100 100"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fb3d8"/><stop offset="1" stop-color="#3d68a6"/></linearGradient></defs>
+    <ellipse cx="50" cy="101" rx="36" ry="3.4" fill="rgba(15,24,73,.16)"/><rect x="5" y="5" width="90" height="90" rx="30" fill="url(#mg)"/>
+    <path d="M14 30 Q15 15 30 12" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="34" cy="46" r="11" fill="#fff"/><circle cx="66" cy="46" r="11" fill="#fff"/>
+    <g class="pupils"><circle cx="36" cy="47" r="6.5" fill="#1d2a45"/><circle cx="68" cy="47" r="6.5" fill="#1d2a45"/></g>
+    <path d="M37 67 Q50 76 63 67" fill="none" stroke="#1d2a45" stroke-width="3.6" stroke-linecap="round"/></svg>`;
+
+  // ---- timing helpers (as in film.html)
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  const out = (x) => 1 - Math.pow(1 - clamp(x), 3);
+  const io = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const on = (t, a, b, fi = 0.6, fo = 0.6) => Math.min(out((t - a) / fi), out((b - t) / fo));
+  const type = (text, t, a, cps = 38) => text.slice(0, Math.max(0, Math.floor((t - a) * cps)));
+  const set = (el, op, tf = "") => { el.style.opacity = op; el.style.transform = tf; el.style.visibility = op > 0.001 ? "visible" : "hidden"; };
+
+  // ---- what happens inside each system's admin, in seconds from the start of its scene
+  const STEP = 0.95;
+  function plan(p) {
+    const P = T.P[p];
+    const clickAt = P.path.map((_, i) => 0.9 + i * STEP);
+    const focusAt = clickAt.at(-1) + 1.1;      // click into the field / onto the </body> line
+    const pasteAt = focusAt + 0.7;              // Ctrl+V
+    const trigAt = P.trigger ? pasteAt + 1.2 : null;
+    const saveAt = (trigAt ?? pasteAt) + 1.5;   // click Save
+    const submitAt = P.submit ? saveAt + 1.3 : null;
+    return { clickAt, focusAt, pasteAt, trigAt, saveAt, submitAt, done: (submitAt ?? saveAt) + 1.6 };
+  }
+  const PLANS = Object.fromEntries(PLATFORMS.map((p) => [p, plan(p)]));
+
+  // scene lengths: long enough for the action and to read the subtitle (≈ 14 characters a second)
+  const NAMES = ["title", "copy", "pick", ...PLATFORMS, "check", "end"];
+  const read = (n) => (T.caps[n] ? T.caps[n].length / 14 + 1.4 : 0);
+  const MIN = { title: 5, copy: 7, pick: 7.5, check: 8, end: 9 };
+  const S = {};
+  let acc = 0;
+  for (const n of NAMES) { S[n] = acc; acc += Math.max(MIN[n] ?? 0, PLANS[n]?.done ?? 0, read(n)); }
+  S.len = acc;
+  const DURATION = S.len;
+  const sceneAt = (t) => { let i = NAMES.findIndex((n, k) => t >= S[n] && t < (S[NAMES[k + 1]] ?? DURATION + 99)); return i < 0 ? NAMES.length - 1 : i; };
+
+  // position of an element on the stage (offsets ignore the stage's scaling)
+  const stageXY = (el) => { let x = 0, y = 0; while (el && el.id !== "stage") { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; } return [x, y]; };
+
+  // the admin window shows one system at a time; it is rebuilt only when the system changes
+  let shown = null, geo = null;
+  function buildAdmin(p) {
+    const P = T.P[p];
+    $("win").style.setProperty("--pc", P.color);
+    $("wurl").textContent = P.url; $("wic").textContent = P.ic; $("wname").textContent = P.name; $("wsub").textContent = P.sub;
+    $("side").innerHTML = P.menu.map((m, i) => `<div class="mi${P.nested.includes(i) ? " sub" : ""}" id="mi${i}">${esc(m)}</div>`).join("");
+    $("wh").textContent = P.h;
+    const editor = Boolean(P.file);
+    $("wbody").innerHTML = editor
+      ? `<div class="lbl">${esc(P.file)}</div><div class="ed" id="ed"></div><span class="save" id="save">${esc(P.save)}</span><span class="saved" id="saved">✓ ${esc(T.saved)}</span>`
+      : `<div class="lbl">${esc(P.field)}</div><div class="field" id="field"></div>${P.trigger ? `<div class="trig" id="trig"><i>✓</i>${esc(P.trigger)}</div>` : ""}<span class="save" id="save">${esc(P.save)}</span>${P.submit ? ` <span class="save" id="submit" style="margin-left:10px">${esc(P.submit)}</span>` : ""}<span class="saved" id="saved">✓ ${esc(T.saved)}</span>`;
+    // where the cursor goes: the menu items, the field (or the </body> line), Save and Submit
+    renderEditor(false, false);
+    const mid = (el, dx = 0.5, dy = 0.5) => { const [x, y] = stageXY(el); return [x + el.offsetWidth * dx, y + el.offsetHeight * dy]; };
+    geo = {
+      items: P.path.map((i) => mid($("mi" + i), 0.35)),
+      field: editor ? mid($("ed").querySelector(".body"), 0.3) : mid($("field"), 0.3, 0.3),
+      trig: P.trigger ? mid($("trig"), 0.3) : null,
+      save: mid($("save")), submit: P.submit ? mid($("submit")) : null,
+    };
+    shown = p;
+  }
+  // a theme file: the code lands on its own line just above </body>
+  function renderEditor(pasted, mark) {
+    if (!$("ed")) return;
+    const lines = [
+      ["", '<span class="t">&lt;footer</span> <span class="a">class</span>=<span class="s">"site-footer"</span><span class="t">&gt;</span>'],
+      ["", '  {{ footer_menu }}'],
+      ["", '<span class="t">&lt;/footer&gt;</span>'],
+      ...(pasted ? [["new", codeHtml()]] : []),
+      [`body${mark ? " mark" : ""}`, "&lt;/body&gt;"],
+      ["", '<span class="t">&lt;/html&gt;</span>'],
+    ];
+    $("ed").innerHTML = lines.map(([cls, html], i) => `<div class="ln ${cls}"><u>${41 + i}</u><span style="white-space:pre-wrap">${html}</span></div>`).join("");
+  }
+
+  // cursor path within an admin scene
+  function adminCursor(p, u) {
+    const pl = PLANS[p];
+    const pts = [[0, 820, 520], ...pl.clickAt.map((a, i) => [a, ...geo.items[i]]), [pl.focusAt, ...geo.field]];
+    if (pl.trigAt) pts.push([pl.trigAt, ...geo.trig]);
+    pts.push([pl.saveAt, ...geo.save]);
+    if (pl.submitAt) pts.push([pl.submitAt, ...geo.submit]);
+    let i = pts.findIndex((q) => q[0] > u);
+    if (i === 0) return pts[0].slice(1);
+    if (i < 0) return pts.at(-1).slice(1);
+    const [t0, x0, y0] = pts[i - 1], [t1, x1, y1] = pts[i];
+    const k = io((u - t0 - 0.0) / Math.max(0.3, (t1 - t0) * 0.8));
+    return [lerp(x0, x1, k), lerp(y0, y1, k)];
+  }
+  const pressed = (u, at) => at != null && u > at && u < at + 0.22;
+
+  function render(t) {
+    $("c1").style.transform = `translate(${Math.sin(t / 9) * 40}px, ${Math.cos(t / 11) * 30}px)`;
+    $("c2").style.transform = `translate(${Math.sin(t / 9) * 44}px, ${Math.cos(t / 11) * 34}px)`;
+    $("c3").style.transform = `translate(${Math.cos(t / 7) * 30}px, ${Math.sin(t / 8) * 20}px)`;
+    let cur = null, cv = 0, click = false, keys = 0, keysAt = [0, 0];
+
+    // 1 · title
+    const tv = on(t, S.title, S.copy - 0.3, 0.9, 0.8);
+    set($("title"), tv, `translateY(${(1 - tv) * 24}px)`);
+
+    // 2 · copy the code in the overview
+    const u2 = t - S.copy;
+    const kv = on(t, S.copy, S.pick - 0.3, 0.7, 0.5);
+    set($("copy"), kv, `translateY(${(1 - kv) * 30}px)`);
+    const copied = u2 > 3.4;
+    $("copybtn").textContent = copied ? T.copied : T.copy; $("copybtn").classList.toggle("done", copied);
+    $("copybtn").style.transform = pressed(u2, 3.3) ? "scale(.96)" : "";
+    if (t >= S.copy && t < S.pick) {
+      const [bx, by] = stageXY($("copybtn"));
+      const k = io((u2 - 1.2) / 1.8);
+      cur = [lerp(820, bx + 60, k), lerp(600, by + 24, k)]; cv = on(t, S.copy + 0.9, S.pick - 0.5, 0.4, 0.4); click = pressed(u2, 3.3);
+    }
+
+    // 3 · which system
+    const u3 = t - S.pick;
+    const pv = on(t, S.pick, S[PLATFORMS[0]] - 0.3, 0.7, 0.5);
+    set($("pick"), pv, `translateY(${(1 - pv) * 30}px)`);
+    PLATFORMS.forEach((p, i) => {
+      const k = out((u3 - 0.4 - i * 0.12) / 0.6);
+      const el = $("tile-" + p);
+      el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * 20}px)`;
+      const hot = u3 > 2.2 + i * 0.9 && u3 < 2.2 + (i + 1) * 0.9;
+      el.classList.toggle("hot", hot);
+    });
+
+    // 4 · in each system's admin
+    const si = sceneAt(t), name = NAMES[si];
+    const wv = on(t, S[PLATFORMS[0]], S.check - 0.3, 0.7, 0.5);
+    set($("win"), wv, `translateY(${(1 - wv) * 36}px) scale(${0.97 + 0.03 * wv})`);
+    if (PLATFORMS.includes(name)) {
+      if (shown !== name) buildAdmin(name);
+      const P = T.P[name], pl = PLANS[name], u = t - S[name];
+      // the system changes: its contents fade in
+      const fade = out(u / 0.45);
+      $("main").style.opacity = fade; $("side").style.opacity = fade;
+      P.menu.forEach((_, i) => {
+        const step = P.path.indexOf(i);
+        const el = $("mi" + i);
+        el.classList.toggle("on", step >= 0 && u > pl.clickAt[step] + 0.1);
+        el.style.opacity = P.nested.includes(i) && step > 0 && u < pl.clickAt[step - 1] + 0.1 ? 0.35 : 1;
+      });
+      $("crumb").innerHTML = P.path.filter((_, k) => u > pl.clickAt[k] + 0.1).map((i, k, a) => (k === a.length - 1 ? `<b>${esc(P.menu[i])}</b>` : esc(P.menu[i]))).join(" › ");
+      $("wh").style.opacity = u > pl.clickAt.at(-1) + 0.2 ? 1 : 0;
+      $("wbody").style.opacity = out((u - pl.clickAt.at(-1) - 0.25) / 0.4);
+      const pasted = u > pl.pasteAt + 0.15;
+      if ($("ed")) renderEditor(pasted, u > pl.focusAt && !pasted);
+      else {
+        $("field").classList.toggle("focus", u > pl.focusAt && u < pl.saveAt);
+        $("field").innerHTML = pasted ? codeHtml() : u > pl.focusAt && Math.floor(t * 2) % 2 ? "|" : "";
+        if ($("trig")) $("trig").style.opacity = pl.trigAt != null ? out((u - pl.trigAt) / 0.35) : 1;
+      }
+      $("save").classList.toggle("press", pressed(u, pl.saveAt));
+      if ($("submit")) $("submit").classList.toggle("press", pressed(u, pl.submitAt));
+      $("saved").style.opacity = out((u - (pl.submitAt ?? pl.saveAt) - 0.25) / 0.3);
+      cur = adminCursor(name, u); cv = on(t, S[name] + 0.4, S[NAMES[si + 1]] - 0.3, 0.3, 0.3);
+      click = pl.clickAt.some((a) => pressed(u, a)) || pressed(u, pl.focusAt) || pressed(u, pl.trigAt) || pressed(u, pl.saveAt) || pressed(u, pl.submitAt);
+      keys = on(u, pl.pasteAt - 0.15, pl.pasteAt + 0.9, 0.15, 0.25); keysAt = [geo.field[0] + 30, geo.field[1] - 70];
+    }
+
+    // 5 · it works
+    const u5 = t - S.check;
+    const sv = on(t, S.check, S.end - 0.3, 0.8, 0.6);
+    set($("shop"), sv, `translateY(${(1 - sv) * 36}px)`);
+    const hopK = clamp((u5 - 1) / 0.9);
+    const mx = lerp(1180, 1030, hopK), my = lerp(640, 500, hopK) - 150 * 4 * hopK * (1 - hopK);
+    const land = clamp((u5 - 1.9) / 0.5), sq = u5 > 1.9 ? 1 - 0.18 * Math.exp(-6 * land) * Math.cos(land * 9) : 1;
+    set($("mascot"), on(t, S.check + 1, S.end - 0.3, 0.3, 0.5), `translate(${mx}px, ${my}px) scale(${2 - sq}, ${sq})`);
+    const bv = on(t, S.check + 2.2, S.end - 0.3, 0.5, 0.5);
+    set($("bubble"), bv, `scale(${0.6 + 0.4 * out((u5 - 2.2) / 0.5)})`);
+    $("btext").textContent = type(T.greet, t, S.check + 2.5, 45);
+    const okv = on(t, S.check + 4.2, S.end - 0.3, 0.5, 0.5);
+    set($("ok"), okv, `translateY(${(1 - okv) * 14}px)`);
+    $("mascot").querySelectorAll(".pupils").forEach((p) => { p.style.transform = `translate(${-2 + Math.sin(t * 1.3) * 1.5}px, ${-1}px)`; });
+
+    // 6 · we'll do it for you
+    const ev = on(t, S.end, DURATION + 5, 0.9, 0.1);
+    set($("end"), ev, `translateY(${(1 - ev) * 20}px)`);
+    $("ecta").style.transform = `scale(${1 + 0.035 * Math.sin(Math.max(0, t - S.end - 2) * 3.2) * (t > S.end + 2 ? 1 : 0)})`;
+
+    // the cursor and the paste shortcut
+    set($("cursor"), cur ? cv : 0, cur ? `translate(${cur[0]}px, ${cur[1]}px) scale(${click ? 0.85 : 1})` : "");
+    set($("keys"), keys, `translate(${keysAt[0]}px, ${keysAt[1] + (1 - keys) * 10}px)`);
+
+    // subtitles
+    const capText = T.caps[name] || "";
+    if ($("cap").dataset.i !== String(si)) { $("cap").textContent = capText; $("cap").dataset.i = si; }
+    const nextStart = S[NAMES[si + 1]] ?? DURATION + 1;
+    const capv = capText ? on(t, S[name] + 0.35, nextStart - 0.1, 0.4, 0.3) : 0;
+    set($("cap"), capv, `translateY(${(1 - capv) * 10}px)`);
+
+    $("progress").style.width = (t / DURATION) * 100 + "%";
+    $("progress").style.opacity = params.has("rec") ? 0 : 1;
+  }
+
+  const fit = () => { const k = Math.min(innerWidth / 1280, innerHeight / 720); $("stage").style.transform = `scale(${k})`; };
+  addEventListener("resize", fit); fit();
+
+  window.__duration = DURATION;
+  window.__scenes = NAMES.map((n) => S[n]);
+  window.__render = render;
+  window.__ready = document.fonts.ready.then(() => true);
+  if (!params.has("rec")) {
+    let t0 = null;
+    const loop = (now) => { t0 ??= now; render(((now - t0) / 1000) % DURATION); requestAnimationFrame(loop); };
+    window.__ready.then(() => requestAnimationFrame(loop));
+  } else render(0);
+</script>
+</body>
+</html>

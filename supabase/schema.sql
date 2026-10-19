@@ -54,6 +54,9 @@ alter table clients add column if not exists terms_accepted_ip text;
 alter table clients add column if not exists appearance jsonb;  -- {"color","theme","avatar":"auto|letter|image","letter","avatarColor","image"(data URL)}
 alter table clients add column if not exists persona jsonb;     -- {"tone":"friendly|professional|playful","gender":"f|m","instructions":"…"}
 
+-- The owner asks us to put the embed code on their website for them (v7): {"platform","contact","note","at","doneAt"}.
+alter table clients add column if not exists install_request jsonb;
+
 -- What the owner wants the assistant to know beyond the catalogue: texts and uploaded documents.
 create table if not exists knowledge (
   id          bigint generated always as identity primary key,

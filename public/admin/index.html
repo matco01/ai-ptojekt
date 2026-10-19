@@ -143,6 +143,30 @@
     .bstate.warn { background: rgba(183,122,29,.16); color: #8a5a12; }
     .bstate.bad { background: rgba(192,84,75,.14); color: #8f3a32; }
     .bstate.plain { background: rgba(47,49,51,.08); color: var(--ink-2); }
+    /* help with the embed code: the how-to video and "do it for me" */
+    .howto { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .howto p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
+    .howto .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .site .howto .btn { margin-top: 0; }
+    .howto .req { margin: 12px 0 0; font-size: 13.5px; color: #2f7a52; }
+    .help-box { width: min(560px, 100%); }
+    .help-box.video { width: min(960px, 100%); padding: 18px; }
+    .help-box .top { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .help-box.video .top { margin: 4px 6px 14px; }
+    .help-box .film { position: relative; border-radius: 18px; overflow: hidden; background: #d0d9e1; aspect-ratio: 16 / 9; }
+    .help-box video { display: block; width: 100%; height: 100%; }
+    .help-box .after { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 20px; text-align: center; background: #d0d9e1; }
+    .help-box .after[hidden] { display: none; }
+    .help-box .after b { font: 400 clamp(24px, 4vw, 40px)/1.1 var(--serif); }
+    .help-box .after p { margin: 0 0 6px; max-width: 520px; color: var(--ink-2); }
+    .help-box .after .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .help-box label { display: block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; margin: 0 0 6px; }
+    .help-box select, .help-box input, .help-box textarea { width: 100%; padding: 11px 14px; border: 0; border-radius: 12px; font: 400 15px var(--sans); color: var(--ink); background: #fff; box-shadow: inset 0 0 0 1px rgba(47,49,51,.14); margin-bottom: 14px; }
+    .help-box select, .help-box input { height: 44px; padding-top: 0; padding-bottom: 0; }
+    .help-box textarea { min-height: 84px; resize: vertical; }
+    .help-box :is(select, input, textarea):focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px rgba(78,127,180,.14); }
+    .help-box .note { font-size: 13.5px; color: var(--ink-3); margin: 0 0 16px; }
+    .help-box .send { height: 44px; }
     .toast { position: fixed; left: 50%; bottom: 26px; z-index: 60; transform: translate(-50%, 16px); opacity: 0; transition: opacity .35s, transform .35s; pointer-events: none;
       background: rgba(28,32,40,.92); color: #f4f6f8; padding: 12px 20px; border-radius: 99px; font-size: 14.5px; max-width: calc(100% - 32px); text-align: center; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -364,6 +388,16 @@
         "site.h": "Na vašem webu", "site.p": "Kód pro vložení, kde prodavačka smí běžet, a vaše platby.",
         embedH: "Kód pro váš web", embedP: "Vložte ho na všechny stránky e-shopu, těsně před </body>.", copy: "Zkopírovat kód", copied: "Zkopírováno ✓",
         embedOnly: (d) => `Funguje jen na: <b>${d}</b>`, embedLocked: "Kód se odemkne po zaplacení tarifu – bez platby prodavačka na webu nepoběží.",
+        howP: "Nevíte, kam kód vložit? Každý web to má jinak – ukážeme vám to, nebo to uděláme za vás.",
+        howVideo: "▶ Video návod", howDo: "Vložte to za mě", howVideoH: "Jak vložit Sellu na web", close: "Zavřít",
+        afterH: "Nechce se vám do toho?", afterP: "Vložíme Sellu na váš web za vás. Ozveme se a domluvíme se, jak to uděláme.", replay: "↻ Přehrát znovu",
+        reqSent: (d) => `✓ Žádost o vložení jsme dostali ${d}. Ozveme se vám.`, reqDone: (d) => `✓ Kód jsme vám vložili ${d}.`,
+        helpH: "Vložíme Sellu za vás", helpP: "Napište nám, na čem váš web běží a kde vás zastihneme. Ozveme se a domluvíme se, jak a kdy to uděláme.",
+        helpPlatform: "Na čem váš web běží", helpContact: "Telefon nebo e-mail", helpNote: "Poznámka (nepovinné)",
+        helpNotePh: "Např. web nám spravuje agentura, nejlépe volejte odpoledne…",
+        helpSafe: "Hesla k webu sem prosím nepište – přístup si domluvíme bezpečně, až se ozveme.",
+        helpSend: "Odeslat žádost", helpSending: "Odesílám…", helpThanks: "Díky! Žádost máme, brzy se vám ozveme.", helpErr: "Žádost se nepodařilo odeslat.",
+        plat: { shoptet: "Shoptet", wordpress: "WordPress / WooCommerce", shopify: "Shopify", upgates: "Upgates", gtm: "Máme Google Tag Manager", other: "Něco jiného / nevím" },
         setH: "Nastavení obchodu", setDomains: "Domény e-shopu", setFeed: "Produktový feed (XML) – nepovinné, bez něj čteme produkty přímo z webu", setFeedPh: "https://…/feed.xml", save: "Uložit", saving: "Ukládám…",
         saved: "Uloženo.", savedFeed: "Uloženo. Načítám produkty…", setDemo: "Ukázkový obchod – nastavení spravujeme my.", setDomainsHint: "Víc domén oddělte čárkou.",
         billH: "Platby", billManual: "Platíte na fakturu podle dohody s námi.", billUnpaid: "Zatím nezaplaceno.",
@@ -425,6 +459,16 @@
         "site.h": "On your website", "site.p": "The embed code, where the assistant may run, and your payments.",
         embedH: "Code for your website", embedP: "Add it to every page of your shop, just before </body>.", copy: "Copy code", copied: "Copied ✓",
         embedOnly: (d) => `Works only on: <b>${d}</b>`, embedLocked: "The code unlocks once you pay for a plan – without payment the assistant won't run on your site.",
+        howP: "Not sure where the code goes? Every website is different – we'll show you, or do it for you.",
+        howVideo: "▶ Video guide", howDo: "Do it for me", howVideoH: "How to add Sella to your website", close: "Close",
+        afterH: "Rather not do it yourself?", afterP: "We'll add Sella to your website for you. We'll get in touch and agree on how.", replay: "↻ Watch again",
+        reqSent: (d) => `✓ We got your request on ${d}. We'll be in touch.`, reqDone: (d) => `✓ We added the code for you on ${d}.`,
+        helpH: "We'll add Sella for you", helpP: "Tell us what your website runs on and how to reach you. We'll get in touch and agree on how and when.",
+        helpPlatform: "What your website runs on", helpContact: "Phone or e-mail", helpNote: "Note (optional)",
+        helpNotePh: "E.g. an agency manages our site, best to call in the afternoon…",
+        helpSafe: "Please don't write any website passwords here – we'll arrange access safely when we get in touch.",
+        helpSend: "Send request", helpSending: "Sending…", helpThanks: "Thanks! We've got your request and will be in touch soon.", helpErr: "Couldn't send the request.",
+        plat: { shoptet: "Shoptet", wordpress: "WordPress / WooCommerce", shopify: "Shopify", upgates: "Upgates", gtm: "We use Google Tag Manager", other: "Something else / not sure" },
         setH: "Shop settings", setDomains: "Shop domains", setFeed: "Product feed (XML) – optional, without it we read products straight from your website", setFeedPh: "https://…/feed.xml", save: "Save", saving: "Saving…",
         saved: "Saved.", savedFeed: "Saved. Loading products…", setDemo: "Demo shop – we manage its settings.", setDomainsHint: "Separate more domains with commas.",
         billH: "Payments", billManual: "You pay by invoice as agreed with us.", billUnpaid: "Not paid yet.",
@@ -688,7 +732,8 @@
           ? `<pre class="code locked" aria-hidden="true">&lt;script src="${location.origin}/widget/prodavac.js" data-client="••••••••" defer&gt;&lt;/script&gt;</pre><p class="lockmsg">${t("embedLocked")}</p>`
           : `<pre class="code" id="snippet">${esc(snippet)}</pre>
              <button class="btn dark" id="copy">${t("copy")}</button>
-             ${c.domains?.length ? `<p class="small">${t("embedOnly", c.domains.map(esc).join(", "))}</p>` : ""}`}`;
+             ${c.domains?.length ? `<p class="small">${t("embedOnly", c.domains.map(esc).join(", "))}</p>` : ""}`}
+        ${howto(c)}`;
 
       const locked = c.builtIn && !me.master;
       // keep what the owner is typing when the page re-renders (e.g. a language switch)
@@ -711,7 +756,70 @@
              ${b.canManage ? `<button class="btn ${b.status === "past_due" ? "dark" : "light"}" id="portal">${t("portal")}</button><p class="small">${t("portalP")}</p>`
                : b.payments === "simulated" ? `<p class="small">${t("simNote")}</p>` : b.payments === "demo" ? `<p class="small">${t("demoNote")}</p>` : ""}`}`;
     }
+    // ---- help with the embed code: every website is different, so a how-to video, or we do it for them
+    function howto(c) {
+      const r = c.installRequest;
+      const state = r?.doneAt ? t("reqDone", fmtDate(r.doneAt)) : r ? t("reqSent", fmtDate(r.at)) : "";
+      return `<div class="howto"><p>${t("howP")}</p>
+        <div class="row"><button class="btn light" data-howto-video>${t("howVideo")}</button>${r ? "" : `<button class="btn light" data-howto-help>${t("howDo")}</button>`}</div>
+        ${state ? `<p class="req">${state}</p>` : ""}</div>`;
+    }
+    function modal(cls, html) {
+      const bg = document.createElement("div");
+      bg.className = "plans-bg";
+      bg.innerHTML = `<div class="plans-box help-box ${cls}" role="dialog" aria-modal="true">${html}</div>`;
+      document.body.append(bg);
+      const onKey = (e) => { if (e.key === "Escape") close(); };
+      const close = () => { bg.remove(); removeEventListener("keydown", onKey); };
+      addEventListener("keydown", onKey);
+      bg.addEventListener("click", (e) => { if (e.target === bg || e.target.closest("[data-close]")) close(); });
+      return { box: bg.firstElementChild, close };
+    }
+    function openVideo() {
+      const { box, close } = modal("video", `
+        <div class="top"><h3>${t("howVideoH")}</h3><button class="btn light" data-close>${t("close")}</button></div>
+        <div class="film"><video controls autoplay playsinline preload="auto" poster="/sella/video/navod-${I.lang}.jpg" src="/sella/video/navod-${I.lang}.mp4"></video>
+          <div class="after" hidden><b>${t("afterH")}</b><p>${t("afterP")}</p>
+            <div class="row"><button class="btn light" data-replay>${t("replay")}</button>${last?.d.client.installRequest ? "" : `<button class="btn dark" data-help>${t("howDo")}</button>`}</div></div></div>`);
+      const video = box.querySelector("video"), after = box.querySelector(".after");
+      video.addEventListener("ended", () => { after.hidden = false; });
+      video.addEventListener("play", () => { after.hidden = true; });
+      box.querySelector("[data-replay]").onclick = () => { video.currentTime = 0; video.play().catch(() => {}); };
+      box.querySelector("[data-help]")?.addEventListener("click", () => { close(); openHelp(); });
+    }
+    function openHelp() {
+      const c = last?.d.client;
+      if (!c) return;
+      const { box, close } = modal("", `
+        <div class="top"><div><h3>${t("helpH")}</h3><p>${t("helpP")}</p></div><button class="btn light" data-close>${t("close")}</button></div>
+        <label for="help-platform">${t("helpPlatform")}</label>
+        <select id="help-platform">${Object.entries(t("plat")).map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join("")}</select>
+        <label for="help-contact">${t("helpContact")}</label>
+        <input id="help-contact" value="${esc(c.ownerEmail)}" autocomplete="email">
+        <label for="help-note">${t("helpNote")}</label>
+        <textarea id="help-note" maxlength="1000" placeholder="${esc(t("helpNotePh"))}"></textarea>
+        <p class="note">${t("helpSafe")}</p>
+        <button class="btn dark send" id="help-send">${t("helpSend")}</button>
+        <p class="plans-err" id="help-err"></p>`);
+      box.querySelector("#help-send").onclick = async (e) => {
+        const btn = e.target;
+        btn.disabled = true; btn.textContent = t("helpSending");
+        const r = await post("/api/analytics/install-help", {
+          platform: box.querySelector("#help-platform").value, contact: box.querySelector("#help-contact").value, note: box.querySelector("#help-note").value,
+        });
+        const res = await r.json().catch(() => ({}));
+        if (!r.ok) { btn.disabled = false; btn.textContent = t("helpSend"); box.querySelector("#help-err").textContent = res.error || t("helpErr"); return; }
+        close();
+        c.installRequest = res.installRequest;
+        renderSite(last.d, last.me);
+        toast(t("helpThanks"));
+      };
+      box.querySelector("#help-contact").focus();
+    }
+
     document.addEventListener("click", async (e) => {
+      if (e.target.closest("[data-howto-video]")) return openVideo();
+      if (e.target.closest("[data-howto-help]")) return openHelp();
       const btn = e.target.closest("#copy, #save-settings, #portal");
       if (!btn || btn.disabled) return;
       if (btn.id === "copy") {

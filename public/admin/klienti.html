@@ -50,6 +50,12 @@
     .err { color: #a3433a; font-size: 13px; width: 100%; }
     .client .go { display: flex; gap: 10px; flex-wrap: wrap; }
     .client .go .btn { height: 46px; padding: 0 22px; font-size: 15px; }
+    .install { background: rgba(183, 122, 29, .12); border-radius: 18px; padding: 14px 16px; font-size: 14.5px; display: grid; gap: 6px; }
+    .install b { color: #8a5a12; }
+    .install .k { color: var(--ink-3); font-size: 13px; }
+    .install .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .install.done { background: rgba(47, 138, 93, .1); }
+    .install.done b { color: #2f7a55; }
     .empty { padding: 40px; text-align: center; color: var(--ink-3); }
     .warn { padding: 14px 18px; margin-bottom: 18px; font-size: 14.5px; color: var(--ink-2); }
     @media (max-width: 620px) {
@@ -102,6 +108,8 @@
         nodb: "Bez databáze nejde ukládat nová hesla na serveru. Ukázkové obchody mají úvodní heslo odvozené z ADMIN_TOKEN – funguje i tak.",
         access: (name, id, url, pw) => `Dobrý den,\n\npřehled AI prodavačky pro ${name} najdete tady:\n${url}\n\nID obchodu: ${id}\nHeslo: ${pw}\n\nHeslo si prosím uložte do správce hesel.`,
         empty: "Zatím žádní klienti.",
+        installH: "Chce, abychom kód vložili za něj", installDone: (d) => `Kód vložen ${d}`, installAt: (d) => `žádost z ${d}`, installMark: "Vyřízeno",
+        plat: { shoptet: "Shoptet", wordpress: "WordPress / WooCommerce", shopify: "Shopify", upgates: "Upgates", gtm: "Google Tag Manager", other: "jiné / neví" },
       },
       en: {
         title: "All clients – Sella", manage: "Manage clients", logout: "Sign out", h1: "All <em>clients</em>", loading: "Loading…",
@@ -116,6 +124,8 @@
         nodb: "Without a database, new passwords can't be stored on the server. The demo shops have a starting password derived from ADMIN_TOKEN – that works regardless.",
         access: (name, id, url, pw) => `Hello,\n\nyou'll find the AI assistant insights for ${name} here:\n${url}\n\nShop ID: ${id}\nPassword: ${pw}\n\nPlease keep the password in a password manager.`,
         empty: "No clients yet.",
+        installH: "Wants us to add the code for them", installDone: (d) => `Code added on ${d}`, installAt: (d) => `requested ${d}`, installMark: "Done",
+        plat: { shoptet: "Shoptet", wordpress: "WordPress / WooCommerce", shopify: "Shopify", upgates: "Upgates", gtm: "Google Tag Manager", other: "other / not sure" },
       },
     });
     I.switcher($("lang"));
@@ -177,6 +187,7 @@
             <div class="stat"><div class="k">${t("questions")}</div><div class="v">${s ? nf(s.questions) : "–"}</div><div class="s">&nbsp;</div></div>
             <div class="stat"><div class="k">${t("plan")} · ${esc(I.plan(c.limits.planName))}</div><div class="v">${nf(c.usage.messages)}</div><div class="s">/ ${nf(c.limits.messages)}</div><div class="meter"><i style="width:${share * 100}%;${share >= 1 ? "background:#c0544b" : share >= 0.8 ? "background:#a8721c" : ""}"></i></div></div>
           </div>
+          ${install(c)}
           <div class="login">
             <span class="k">${t("id")}</span><code>${esc(c.id)}</code>
             <span class="k">${t("pw")}</span><div class="pw">${pw}</div>
@@ -187,11 +198,29 @@
       }).join("");
     }
 
+    // the owner asked us to put the embed code on their website ("Vložte to za mě" in their overview)
+    function install(c) {
+      const r = c.installRequest;
+      if (!r) return "";
+      const day = (iso) => new Date(iso).toLocaleDateString(I.locale(), { day: "numeric", month: "numeric", year: "numeric" });
+      if (r.doneAt) return `<div class="install done"><b>✓ ${t("installDone", day(r.doneAt))}</b></div>`;
+      return `<div class="install"><b>${t("installH")}</b>
+        <div>${esc(t("plat")[r.platform] ?? r.platform)} · <span class="k">${t("installAt", day(r.at))}</span></div>
+        <div class="row"><code>${esc(r.contact)}</code><button class="mini" data-copy="${esc(r.contact)}">${t("copy")}</button><button class="mini" data-done="${esc(c.id)}">${t("installMark")}</button></div>
+        ${r.note ? `<div class="k">${esc(r.note)}</div>` : ""}</div>`;
+    }
+
     const flash = (btn) => { const was = btn.textContent; btn.textContent = t("copied") + " ✓"; setTimeout(() => { btn.textContent = was; }, 1400); };
     $("grid").onclick = async (e) => {
       const b = e.target.closest("button");
       if (!b) return;
       if (b.dataset.reveal) { revealed[b.dataset.reveal] = !revealed[b.dataset.reveal]; render(); }
+      else if (b.dataset.done) {
+        b.disabled = true;
+        const r = await fetch(`/api/admin/clients/${encodeURIComponent(b.dataset.done)}/install-done`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+        const c = data.clients.find((x) => x.id === b.dataset.done);
+        if (r.ok) { c.installRequest = { ...c.installRequest, doneAt: new Date().toISOString() }; render(); } else b.disabled = false;
+      }
       else if (b.dataset.copy) { await navigator.clipboard.writeText(b.dataset.copy); flash(b); }
       else if (b.dataset.access) {
         const c = data.clients.find((x) => x.id === b.dataset.access);

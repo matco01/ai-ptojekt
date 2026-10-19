@@ -13,7 +13,7 @@ import { personaName } from "./lib/persona.js";
 import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
-  setBotSettings,
+  setBotSettings, setInstallRequest,
 } from "./lib/clients.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
 import { db } from "./lib/db.js";
@@ -432,7 +432,7 @@ app.get("/api/analytics", admin, async (req, res) => {
     const c = req.client;
     res.json({
       ...stats,
-      client: { id: c.id, name: c.name, active: c.active, domains: c.domains, feedUrl: c.feedUrl ?? "", ownerEmail: c.ownerEmail ?? "", builtIn: isBuiltIn(c.id) },
+      client: { id: c.id, name: c.name, active: c.active, domains: c.domains, feedUrl: c.feedUrl ?? "", ownerEmail: c.ownerEmail ?? "", builtIn: isBuiltIn(c.id), installRequest: c.installRequest ?? null },
       billing: billingView(c),
       catalog: catalogStatus(req.client),
       usage: usageView(req.client, await allowance(req.client), { master: req.isMaster }),
@@ -472,6 +472,24 @@ app.post("/api/analytics/settings", admin, rateLimit("settings", 20, 10 * 60e3, 
   try {
     await setOwnerSettings(req.client.id, { domains, feedUrl });
     res.json({ ok: true, domains, feedUrl });
+  } catch (err) { fail(res, err); }
+});
+
+// "Do it for me": the owner would rather we put the embed code on their website. We get an alert and
+// see the request on the All clients page; then we get in touch and agree on how (never passwords here).
+const INSTALL_PLATFORMS = ["shoptet", "wordpress", "shopify", "upgates", "gtm", "other"];
+app.post("/api/analytics/install-help", admin, rateLimit("install-help", 5, 60 * 60e3, { shared: true }), async (req, res) => {
+  if (isBuiltIn(req.client.id) && !req.isMaster) return res.status(403).json({ error: "Ukázkový obchod nelze měnit." });
+  const platform = INSTALL_PLATFORMS.includes(req.body?.platform) ? req.body.platform : "other";
+  const contact = str(req.body?.contact, 200).trim();
+  const note = str(req.body?.note, 1000).trim();
+  if (!contact) return res.status(400).json({ error: "Napište prosím telefon nebo e-mail, na kterém vás zastihneme.", code: "contact" });
+  const request = { platform, contact, note, lang: req.body?.lang === "en" ? "en" : "cs", at: new Date().toISOString() };
+  try {
+    await setInstallRequest(req.client.id, request);
+    const c = req.client;
+    alert(`install:${c.id}`, `${c.name} (${c.id}, ${c.domains.join(", ") || "bez domény"}) chce, abychom kód vložili za ně – ${platform}, kontakt: ${contact}${note ? `, poznámka: ${note}` : ""}`, { everyMs: 60e3 });
+    res.json({ ok: true, installRequest: request });
   } catch (err) { fail(res, err); }
 });
 
@@ -625,7 +643,7 @@ app.get("/api/admin/clients", async (req, res) => {
           agentName: c.agentName, description: c.description ?? "", feedUrl: c.feedUrl ?? "",
           info: c.info ?? {}, integration: c.integration ?? {}, freeShippingFrom: c.freeShippingFrom ?? null,
           plan: c.plan, monthlyMessageLimit: c.monthlyMessageLimit, ownerEmail: c.ownerEmail ?? "", notes: c.notes ?? "",
-          billing: c.billing, paidUntil: c.paidUntil ?? null, createdAt: c.createdAt ?? null,
+          billing: c.billing, paidUntil: c.paidUntil ?? null, createdAt: c.createdAt ?? null, installRequest: c.installRequest ?? null,
           hasPassword: Boolean(c.passwordHash || c.legacyToken || (isBuiltIn(c.id) && demoPassword(c.id))),
           // a showcase shop's starting password can be shown to us (it is derived, not stored)
           demoPassword: isBuiltIn(c.id) && !c.passwordHash && !c.legacyToken ? demoPassword(c.id) : null,
@@ -650,6 +668,16 @@ app.post("/api/admin/clients", async (req, res) => {
 });
 
 // sets the owner's password: a given one, or a generated one – shown only in this response
+// we've put the code on the shop's website: the request is done
+app.post("/api/admin/clients/:id/install-done", async (req, res) => {
+  try {
+    const c = await getClient(req.params.id, { includeInactive: true });
+    if (!c?.installRequest) return res.status(404).json({ error: "Žádost nenalezena." });
+    await setInstallRequest(c.id, { ...c.installRequest, doneAt: new Date().toISOString() });
+    res.json({ ok: true });
+  } catch (err) { fail(res, err); }
+});
+
 app.post("/api/admin/clients/:id/password", async (req, res) => {
   const client = await getClient(req.params.id, { includeInactive: true });
   if (!client) return res.status(404).json({ error: "Neznámý klient." });
