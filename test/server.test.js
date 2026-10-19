@@ -41,6 +41,12 @@ test("widget requests need a known client and an allowed site", async () => {
   const ok = await post("/api/persona", { client: "kavarna" }, own);
   assert.equal(ok.status, 200);
   assert.equal(ok.headers.get("access-control-allow-origin"), base);
+  // everything the widget calls from a shop's website must answer cross-origin, or the browser hides the answer
+  for (const path of ["/api/status", "/api/site-look"]) {
+    const pre = await fetch(base + path, { method: "OPTIONS", headers: { Origin: "https://shop.example", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type" } });
+    assert.equal(pre.status, 204, path);
+    assert.equal(pre.headers.get("access-control-allow-origin"), "https://shop.example", path);
+  }
 });
 
 test("chat without an API key answers in the simple mode", async () => {

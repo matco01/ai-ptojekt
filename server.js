@@ -61,7 +61,7 @@ app.use("/api/events", express.text({ type: "text/plain", limit: "20kb" }), (req
 
 // The widget runs on the shops' domains → its API answers cross-origin calls. Each endpoint then
 // checks that the calling site belongs to the client (withClient). No cookies are involved.
-const WIDGET_API = /^\/api\/(persona|resolve|tts|cart\/price|proactive|chat|events|health|catalog|img)\b/;
+const WIDGET_API = /^\/api\/(status|site-look|persona|resolve|tts|cart\/price|proactive|chat|events|health|catalog|img)\b/;
 app.use((req, res, next) => {
   if (!WIDGET_API.test(req.path)) return next();
   const origin = req.get("Origin");
