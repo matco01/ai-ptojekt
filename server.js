@@ -226,11 +226,12 @@ app.post("/api/cart/price", rateLimit("cart", 60, 60e3), withClient(), (req, res
 // is the shop's assistant switched on? (off once the plan's messages for the month are used up)
 app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req, res) => {
   const a = await allowance(req.client);
+  // noted before answering: on Vercel a function stops as soon as it has answered (the write is rare – once an hour at most)
+  await noteInstalled(req.client, req.get("Origin"), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
   res.json({
     on: a.chat && req.client.active !== false, look: widgetLook(req.client), starters: openingChips(req.cat, req.lang),
     lookSavedAt: req.client.siteLook?.at ?? null, // when the website's look was last saved (the widget sends it when it's missing or old)
   });
-  noteInstalled(req.client, req.get("Origin"), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
 });
 
 // The buttons under the assistant's first message: written for the shop's website when it was read;
@@ -284,17 +285,18 @@ function cleanSiteLook(raw = {}, host) {
   };
 }
 app.post("/api/site-look", rateLimit("site-look", 10, 60e3), withClient(), async (req, res) => {
-  res.json({ ok: true });
+  // saved before answering: on Vercel a function stops as soon as it has answered
   const host = shopHost(req.client, req.get("Origin"), req.get("Host"), { demos: true });
-  if (!host) return;
+  if (!host) return res.json({ saved: false });
   const look = cleanSiteLook(req.body?.look, host);
   const was = req.client.siteLook;
   // field by field: the database may hand the stored object back with its keys in another order
   const sig = (l) => JSON.stringify([l.host, l.mode, l.bg, l.text, l.brand, l.font, l.bfont, l.btt, l.bls, l.radius, l.fonts, l.logo?.image, l.logo?.letter, l.logo?.color, l.siteName, l.name]);
-  // unchanged: refreshed once a day at most
-  if (was && sig(was) === sig(look) && Date.now() - Date.parse(was.at) < 24 * 3600e3) return;
-  if (!(await once(`site-look:${req.client.id}`, 10 * 60e3))) return;
-  await setSiteLook(req.client.id, look).catch((err) => console.error("site look:", err.message));
+  // unchanged: refreshed once a day at most; several visitors at once: one write
+  if (was && sig(was) === sig(look) && Date.now() - Date.parse(was.at) < 24 * 3600e3) return res.json({ saved: false });
+  if (!(await once(`site-look:${req.client.id}`, 2 * 60e3))) return res.json({ saved: false });
+  try { await setSiteLook(req.client.id, look); res.json({ saved: true }); }
+  catch (err) { console.error("site look:", err.message); res.status(500).json({ saved: false }); }
 });
 
 // the plans shops can choose (Sella price list)
