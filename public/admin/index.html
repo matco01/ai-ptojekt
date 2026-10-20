@@ -546,7 +546,7 @@
       if (clientId) q.set("client", clientId);
       location.replace(`${LOGIN}?${q}`);
     }
-    $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = LOGIN; };
+    $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = "/"; }; // signed out → Sella's home page
     $("client-pick").onchange = (e) => { params.set("client", e.target.value); location.search = params; };
 
     // ---- small pieces

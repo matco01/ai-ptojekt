@@ -239,7 +239,7 @@
         render();
       }
     };
-    $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = "/sella/prihlaseni.html"; };
+    $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }); location.href = "/"; }; // signed out → Sella's home page
     I.onChange(render);
     load();
   </script>
