@@ -64,7 +64,8 @@
       fileFail: (n) => `Soubor ${n} se nepodařilo načíst.`, rmFile: "Odebrat přílohu", loadingFile: "Načítám přílohu", drop: "Pusťte soubor sem",
       tapTalk: "Klepněte pro mluvení / přerušení", preparing: "Připravuji…", toChat: "Raději budu psát",
       attach: "Přiložit fotku nebo soubor", attachTitle: "Přiložit fotku nebo PDF", placeholder: "Napište, co hledáte…", msgLabel: "Zpráva pro prodavačku",
-      legal: "Odpovídá umělá inteligence a může se splést", privacy: "Ochrana soukromí", addCart: "Do košíku", inCart: "V košíku",
+      legal: "Odpovídá umělá inteligence a může se splést", privacy: "Ochrana soukromí",
+      dataNote: "Když mi napíšete, obchod uvidí vaše dotazy a co si tu prohlížíte – bez jména a kontaktů.", optOut: "Nesouhlasím", optedOut: "Dobře, z rozhovoru si nic neukládám.", addCart: "Do košíku", inCart: "V košíku",
       thinking: (n) => `${n} přemýšlí…`, connFail: "Spojení se nezdařilo.", removed: (n) => `Odebráno z košíku: ${n}`, added: (n) => `Přidáno do košíku: ${n}`,
       addOnPage: (n) => `${n} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`, removeOnPage: (n) => `${n} se mi z košíku odebrat nepodařilo – odeberte ho prosím přímo v košíku.`, simple: "Teď odpovídám ve zjednodušeném režimu.",
       vListening: "Poslouchám vás…", vThinking: "Přemýšlím…", vSpeakTouch: "Mluvím… (klepnutím mě přerušíte)", vSpeak: "Mluvím… (klidně mi skočte do řeči)", vIdle: "Klepněte na mě a mluvte",
@@ -89,7 +90,8 @@
       fileFail: (n) => `Couldn't load ${n}.`, rmFile: "Remove attachment", loadingFile: "Loading attachment", drop: "Drop the file here",
       tapTalk: "Tap to talk / interrupt", preparing: "Getting ready…", toChat: "I'd rather type",
       attach: "Attach a photo or file", attachTitle: "Attach a photo or PDF", placeholder: "Type what you're looking for…", msgLabel: "Message to the assistant",
-      legal: "Answers come from AI and may be wrong", privacy: "Privacy", addCart: "Add to cart", inCart: "In cart",
+      legal: "Answers come from AI and may be wrong", privacy: "Privacy",
+      dataNote: "When you write to me, the shop sees your questions and what you look at here – no name or contact details.", optOut: "I don't agree", optedOut: "OK, I won't keep anything from our chat.", addCart: "Add to cart", inCart: "In cart",
       thinking: (n) => `${n} is thinking…`, connFail: "Couldn't connect.", removed: (n) => `Removed from cart: ${n}`, added: (n) => `Added to cart: ${n}`,
       addOnPage: (n) => `You can add ${n} to the cart on its product page – just click its card.`, removeOnPage: (n) => `I couldn't take ${n} out of the cart – please remove it in the cart itself.`, simple: "I'm answering in a simple mode right now.",
       vListening: "Listening…", vThinking: "Thinking…", vSpeakTouch: "Speaking… (tap to interrupt)", vSpeak: "Speaking… (feel free to interrupt)", vIdle: "Tap me and talk",
@@ -117,7 +119,17 @@
       return granted;
     } catch { return null; }
   }
-  const consent = () => consentOverride ?? detectConsent() ?? false;
+  // Our own consent, for shops without a cookie tool: a visitor who starts writing (or talking) to the
+  // assistant agrees that the shop sees their questions and what they look at – the chat says so right
+  // under the message box, with "I don't agree". A cookie tool's answer (or the shop's own) always wins.
+  const CHAT_CONSENT = `aip_${cfg.client}_chatConsent`;
+  let chatConsent = (() => { try { const v = localStorage.getItem(CHAT_CONSENT); return v === "1" ? true : v === "0" ? false : null; } catch { return null; } })();
+  const siteDecides = () => consentOverride != null || detectConsent() != null;
+  const consent = () => consentOverride ?? detectConsent() ?? chatConsent ?? false;
+  function setChatConsent(v) {
+    chatConsent = v;
+    try { localStorage.setItem(CHAT_CONSENT, v ? "1" : "0"); } catch {}
+  }
 
   // ------------------------------------------------------------- state ----
   // localStorage (remembered across visits) and the behaviour history are used only with consent;
@@ -944,6 +956,8 @@
     .note svg { color: var(--c2); }
     .legal { margin: -8px 14px 12px; text-align: center; font-size: 11.5px; color: var(--soft); }
     .legal a { color: inherit; text-decoration: underline; }
+    .legal.datanote { margin-top: -6px; line-height: 1.4; }
+    .legal .optout { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
     .msgs > .chips { align-self: flex-start; }
 
     /* product cards: white so the products stand out */
@@ -1782,6 +1796,19 @@
   const filesHtml = (files = []) => files.length ? `<div class="files">${files.map((f) => f.kind === "image" && f.thumb
     ? `<img src="${f.thumb}" alt="${esc(f.name)}" onerror="this.remove()">` : `<span class="fchip">${ICON.file}${esc(f.name)}</span>`).join("")}</div>` : "";
 
+  // what the chat keeps, said where the visitor types – only while our own consent is what counts
+  const dataNote = () => (siteDecides() || chatConsent === false ? "" : `<div class="legal datanote">${L("dataNote")} <button type="button" class="optout">${L("optOut")}</button></div>`);
+  function wireOptOut() {
+    const b = footer.querySelector(".optout");
+    if (!b) return;
+    b.onclick = () => {
+      setChatConsent(false);
+      queue = [];
+      try { for (const k of Object.keys(localStorage)) if (k.startsWith(PREFIX) && k !== CHAT_CONSENT) localStorage.removeItem(k); } catch {}
+      b.parentElement.textContent = L("optedOut");
+    };
+  }
+
   function renderFooter() {
     panel.querySelector('[data-a="switch"]').innerHTML = mode === "voice" ? ICON.keys : ICON.mic;
     if (mode === "voice") {
@@ -1791,7 +1818,8 @@
           <div class="vstat">${L("preparing")}</div>
           <div class="interim"></div>
           <button class="toChat">${ICON.keys} ${L("toChat")}</button>
-        </div>`;
+        </div>${dataNote()}`;
+      wireOptOut();
       // tap while she talks = interrupt and listen right away; tap while listening = cancel
       footer.querySelector(".orbbtn").onclick = () => {
         if (listening) { stopVoice(); setVoiceState("idle"); }
@@ -1810,7 +1838,8 @@
             <button class="send" type="submit" aria-label="Odeslat">${ICON.send}</button>
           </div>
         </form>
-        <div class="legal">${L("legal")} · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">${L("privacy")}</a></div>`;
+        <div class="legal">${L("legal")} · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">${L("privacy")}</a></div>${dataNote()}`;
+      wireOptOut();
       const form = footer.querySelector("form");
       const ta = form.querySelector("textarea");
       const picker = form.querySelector("input[type=file]");
@@ -1994,6 +2023,7 @@
   // -------------------------------------------------------------- chat ----
   let chatAbort = null; // lets a spoken interruption stop an answer that is still arriving
   async function send(text, { via, files = [] } = {}) {
+    if (chatConsent === null && !siteDecides()) { setChatConsent(true); api.track("session_start"); }
     busy = true;
     let closeAfter = false; // the customer asked her to switch off – close once she has said goodbye
     const ctrl = new AbortController();

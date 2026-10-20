@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { techmarket, techmarketEn } from "./lib/catalog.js";
 import { getCatalog, catalogStatus, storedStatuses, sourceOf } from "./lib/catalogs.js";
+import { SELLA_ID } from "./lib/sella.js";
 import { productSvg } from "./lib/images.js";
 import { feedXml as kavarnaFeed, kavarnaSvg } from "./catalog/kavarna.js";
 import { recordMany, summarize, purgeOld, EVENT_TYPES, NUDGE_LABELS, RETENTION_DAYS } from "./lib/analytics.js";
@@ -727,6 +728,10 @@ app.get("/api/admin/clients", async (req, res) => {
           limits: limitsFor(c),
           usage: { messages: u.messages, aiCalls: u.ai_calls, ttsChars: u.tts_chars, costUsd: Math.round(u.cost_usd * 100) / 100 },
           feed: c.catalog === "techmarket" ? { products: techmarket.products.length, demo: true } : feeds.get(c.id) ?? null,
+          // where the assistant's knowledge comes from: demo data, a built-in feed, Sella's own text, an XML feed or the website
+          source: c.catalog === "techmarket" ? "demo" : c.feedXml ? "builtin" : c.id === SELLA_ID ? "own" : sourceOf(c),
+          widgetSeen: c.widgetSeen ?? null, // the code last seen running on the shop's website
+          priceCzk: limitsFor(c).priceCzk,
         };
       }),
     });

@@ -249,12 +249,13 @@
 <body>
   <div class="wrap" id="main" hidden>
     <header class="bar">
-      <a class="wordmark home" id="home" href="/admin/" data-i18n-attr="title=home;aria-label=home">Sella</a>
+      <a class="wordmark home" id="home" href="/" data-i18n-attr="title=homeT;aria-label=homeT">Sella</a>
       <span class="sep"></span>
       <span class="shopname" id="shop-name"></span>
       <select id="client-pick" hidden data-i18n-attr="aria-label=pick"></select>
       <div class="tools">
         <span id="lang"></span>
+        <a class="btn light" href="/" id="home-link" data-i18n="homeBtn">← Domovská stránka</a>
         <a class="btn light" href="/admin/klienti.html" id="clients-link" hidden data-i18n="all">Všichni klienti</a>
         <button class="btn light" id="logout" hidden data-i18n="logout">Odhlásit</button>
       </div>
@@ -361,7 +362,7 @@
     };
     const t = I.use({
       cs: {
-        home: "Domů", pick: "Obchod", all: "Všichni klienti", logout: "Odhlásit", refresh: "↻ Obnovit", editBot: "Upravit prodavačku",
+        home: "Domů", homeT: "Sella – domovská stránka", homeBtn: "← Domovská stránka", pick: "Obchod", all: "Všichni klienti", logout: "Odhlásit", refresh: "↻ Obnovit", editBot: "Upravit prodavačku",
         morning: "Dobré ráno", day: "Dobrý den", evening: "Dobrý večer", period: (d) => `Přehled AI prodavačky · posledních ${d} dní`,
         running: "Prodavačka běží s AI", limited: "Prodavačka je vypnutá – limit tarifu vyčerpán",
         change: "Změnit tarif", upgrade: "Zvýšit tarif a zapnout prodavačku", offNote: (m) => `Tento měsíc jste vyčerpali všech ${m} zpráv, takže se prodavačka na vašem webu vypnula. Zapne se znovu 1. dne dalšího měsíce – nebo hned, když zvolíte vyšší tarif.`,
@@ -424,11 +425,13 @@
         helpSafe: "Hesla k webu sem prosím nepište – přístup si domluvíme bezpečně, až se ozveme.",
         helpSend: "Odeslat žádost", helpSending: "Odesílám…", helpThanks: "Díky! Žádost máme, brzy se vám ozveme.", helpErr: "Žádost se nepodařilo odeslat.",
         plat: { shoptet: "Shoptet", wordpress: "WordPress / WooCommerce", shopify: "Shopify", upgates: "Upgates", gtm: "Máme Google Tag Manager", other: "Něco jiného / nevím" },
-        suH: "Rozjeďte Sellu na svém webu", suP: "Pět kroků. Odškrtávají se samy, jak je uděláte.", suDoneH: "✓ Sella na vašem webu běží", suShow: "Zobrazit kroky", suHide: "Skrýt",
+        suH: "Rozjeďte Sellu na svém webu", suP: "Šest kroků. Odškrtávají se samy, jak je uděláte – stránka se sama obnovuje.", suDoneH: "✓ Sella na vašem webu běží", suShow: "Zobrazit kroky", suHide: "Skrýt",
         suProg: (a, b) => `${a} z ${b} hotovo`,
         s1: "Zkopírujte kód", s1p: "Jeden řádek pro váš web – najdete ho níže v části Na vašem webu.", s1Locked: "Kód se odemkne po zaplacení tarifu.", s1Go: "Ukázat kód",
         s2: "Vložte ho na svůj web", s2p: "Na všechny stránky, těsně před </body>. Ve videu je postup pro Shoptet, WordPress, Shopify i Google Tag Manager.",
-        s3: "Sella se ukáže na vašem webu", s3Wait: "Až kód vložíte, otevřete svůj web – tady se to pak samo odškrtne (obnovte stránku).",
+        s3: "Sella se ukáže na vašem webu", s3Wait: "Až kód vložíte, otevřete svůj web – tady se to do pár vteřin samo odškrtne.",
+        s6: "Přehled se plní daty", s6Wait: "Jakmile si zákazník s prodavačkou napíše, objeví se tu první čísla a jeho dotazy. Na webu bez cookie lišty se data sbírají od prvního dotazu – souhlas dává zákazník tím, že prodavačce napíše.",
+        s6Done: (n, q) => `Zaznamenáno <b>${n}</b> návštěv a <b>${q}</b> dotazů. Čísla níže se doplňují samy.`,
         s3Done: (h, d) => `Běží na <b>${h}</b> · naposledy ${d}`,
         s4: "Sella si přečte váš web", s4Wait: "Produkty a texty stránek čte sama, nejdéle pár minut. Pak každou noc znovu, ať zná vždy aktuální stav.",
         s4Done: (p, s) => [p ? `${p} produktů` : "", s ? `${s} stránek s informacemi` : ""].filter(Boolean).join(" a ") + " – znovu se načítá každou noc.",
@@ -443,7 +446,7 @@
         portal: "Faktury a platební karta", portalP: "Stáhnete faktury, změníte kartu nebo předplatné zrušíte.", simNote: "Simulovaná platba (vývoj).", demoNote: "Demo režim – zaplaceno jen naoko.",
       },
       en: {
-        home: "Home", pick: "Shop", all: "All clients", logout: "Sign out", refresh: "↻ Refresh", editBot: "Customise assistant",
+        home: "Home", homeT: "Sella – home page", homeBtn: "← Home page", pick: "Shop", all: "All clients", logout: "Sign out", refresh: "↻ Refresh", editBot: "Customise assistant",
         morning: "Good morning", day: "Hello", evening: "Good evening", period: (d) => `AI assistant insights · last ${d} days`,
         running: "The assistant runs with AI", limited: "The assistant is off – plan limit reached",
         change: "Change plan", upgrade: "Upgrade and switch the assistant on", offNote: (m) => `You've used all ${m} messages this month, so the assistant switched off on your site. It comes back on the 1st of next month – or right away when you pick a bigger plan.`,
@@ -506,11 +509,13 @@
         helpSafe: "Please don't write any website passwords here – we'll arrange access safely when we get in touch.",
         helpSend: "Send request", helpSending: "Sending…", helpThanks: "Thanks! We've got your request and will be in touch soon.", helpErr: "Couldn't send the request.",
         plat: { shoptet: "Shoptet", wordpress: "WordPress / WooCommerce", shopify: "Shopify", upgates: "Upgates", gtm: "We use Google Tag Manager", other: "Something else / not sure" },
-        suH: "Get Sella running on your website", suP: "Five steps. They tick themselves off as you go.", suDoneH: "✓ Sella is live on your website", suShow: "Show the steps", suHide: "Hide",
+        suH: "Get Sella running on your website", suP: "Six steps. They tick themselves off as you go – this page refreshes by itself.", suDoneH: "✓ Sella is live on your website", suShow: "Show the steps", suHide: "Hide",
         suProg: (a, b) => `${a} of ${b} done`,
         s1: "Copy the code", s1p: "One line for your website – you'll find it below under On your website.", s1Locked: "The code unlocks once you pay for a plan.", s1Go: "Show the code",
         s2: "Add it to your website", s2p: "On every page, just before </body>. The video shows how on Shoptet, WordPress, Shopify and Google Tag Manager.",
-        s3: "Sella shows up on your website", s3Wait: "Once the code is in, open your website – this ticks itself off (refresh this page).",
+        s3: "Sella shows up on your website", s3Wait: "Once the code is in, open your website – this ticks itself off within seconds.",
+        s6: "Your insights fill with data", s6Wait: "As soon as a customer writes to the assistant, the first numbers and their questions appear here. On a website without a cookie banner, data is collected from the first question – the customer agrees by writing to the assistant.",
+        s6Done: (n, q) => `<b>${n}</b> visits and <b>${q}</b> questions recorded. The numbers below update by themselves.`,
         s3Done: (h, d) => `Running on <b>${h}</b> · last seen ${d}`,
         s4: "Sella reads your website", s4Wait: "It reads your products and page texts by itself, in a few minutes at most. Then again every night, so it always knows what's current.",
         s4Done: (p, s) => [p ? `${p} products` : "", s ? `${s} pages of information` : ""].filter(Boolean).join(" and ") + " – read again every night.",
@@ -594,7 +599,9 @@
       const tt = d.totals, u = d.usage;
       document.title = `${d.client.name} – Sella`;
       $("clients-link").hidden = !me.master;
-      $("home").href = me.master ? "/admin/klienti.html" : "/admin/";
+      // for us the "home" of the dashboards is the list of all clients; for a shop owner, Sella's home page
+      $("home").href = $("home-link").href = me.master ? "/admin/klienti.html" : "/";
+      $("home-link").hidden = Boolean(me.master); // we have "All clients" right next to it
       $("logout").hidden = Boolean(me.dev);
       const h = new Date().getHours();
       $("greeting").textContent = t(h < 10 ? "morning" : h < 18 ? "day" : "evening");
@@ -827,6 +834,8 @@
           acts: cat?.error && !read ? `<button class="btn light" data-setup="reload">${t("s4Reload")}</button>` : "" },
         { done: c.named || c.styled, h: t("s5"), p: c.named || c.styled ? t("s5Done", esc(c.agentName)) : t("s5p", esc(c.agentName)),
           acts: `<a class="btn ${c.named || c.styled ? "light" : "dark"}" href="${esc($("edit-bot").href)}">${t("s5Go")}</a>` },
+        { done: d.totals.events > 0, h: t("s6"),
+          p: d.totals.events > 0 ? `<span class="state">✓ ${t("s6Done", nf(d.totals.sessions), nf(d.totals.userMessages))}</span>` : `<span class="wait">${t("s6Wait")}</span>` },
       ];
       const done = steps.filter((s) => s.done).length, all = done === steps.length;
       const now = steps.findIndex((s) => !s.done);
@@ -1006,6 +1015,19 @@
       b.disabled = false; b.textContent = t("ins.again");
     };
     $("refresh").onclick = load;
+    // The overview keeps itself current: every few seconds while the code isn't on the website yet (so
+    // the setup ticks off right after it's added), then every minute. Only while the page is in view.
+    let busyLoad = false;
+    const waiting = () => last && !last.d.client.builtIn && (!last.d.client.widgetSeen || !last.d.totals.events);
+    async function tick() {
+      if (!document.hidden && !busyLoad && !document.querySelector(".plans-bg") && !document.activeElement?.matches("input, textarea, select")) {
+        busyLoad = true;
+        try { await load(); } catch {} finally { busyLoad = false; }
+      }
+      setTimeout(tick, waiting() ? 8000 : 60000);
+    }
+    setTimeout(tick, 8000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && last) load().catch(() => {}); });
     load().then(async () => {
       // back from Stripe's payment page: Stripe confirms the payment to the server within moments
       if (!params.has("paid")) return;

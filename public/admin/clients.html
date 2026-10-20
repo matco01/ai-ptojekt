@@ -51,7 +51,12 @@
     /* the client list */
     .table-wrap { overflow-x: auto; margin: 0 -10px; }
     table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
-    th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-3); font-weight: 500; padding: 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-3); font-weight: 500; padding: 10px; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: bottom; }
+    th small { display: block; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 400; color: var(--ink-3); opacity: .85; margin-top: 3px; white-space: normal; min-width: 110px; }
+    .bar { height: 5px; border-radius: 5px; background: rgba(47,49,51,.08); overflow: hidden; margin-top: 6px; width: 110px; }
+    .bar i { display: block; height: 100%; border-radius: inherit; background: #4e7fb4; }
+    td .pill + small, td .pill + .pill { margin-top: 5px; }
+    td .src { font-weight: 500; }
     td { padding: 14px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
     tr:last-child td { border-bottom: 0; }
     td b { font-weight: 600; }
@@ -142,8 +147,16 @@
       <p class="hint" id="month-hint"></p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th data-i18n="thShop">Obchod</th><th data-i18n="thPlan">Tarif</th><th data-i18n="thMsgs">Zprávy</th><th data-i18n="thCost">Náklad AI</th><th data-i18n="thCat">Katalog</th><th data-i18n="thLogin">Přihlášení</th><th></th></tr></thead>
-          <tbody id="rows"><tr><td colspan="7" data-i18n="loading">Načítám…</td></tr></tbody>
+          <thead><tr>
+            <th><span data-i18n="thShop">Obchod</span><small data-i18n="thShopS">stav, ID a domény</small></th>
+            <th><span data-i18n="thPlan">Tarif</span><small data-i18n="thPlanS">cena a jak platí</small></th>
+            <th><span data-i18n="thMsgs">Zprávy od AI</span><small data-i18n="thMsgsS">tento měsíc z limitu tarifu</small></th>
+            <th><span data-i18n="thCost">Náš náklad</span><small data-i18n="thCostS">Claude API tento měsíc</small></th>
+            <th><span data-i18n="thCat">Co prodavačka zná</span><small data-i18n="thCatS">odkud má produkty a texty</small></th>
+            <th><span data-i18n="thWeb">Na webu</span><small data-i18n="thWebS">běží kód na webu obchodu?</small></th>
+            <th><span data-i18n="thLogin">Přihlášení</span><small data-i18n="thLoginS">heslo majitele do přehledu</small></th>
+            <th></th></tr></thead>
+          <tbody id="rows"><tr><td colspan="8" data-i18n="loading">Načítám…</td></tr></tbody>
         </table>
       </div>
       <div class="export">
@@ -177,11 +190,19 @@
       fInteg: "Úpravy napojení", fIntegS: "– jen pro neobvyklé weby, JSON", fNotes: "Interní poznámky", save: "Uložit", close: "Zavřít",
       embedH: "Kód pro web klienta", embedP: "Vloží se na všechny stránky obchodu – přímo, nebo přes Google Tag Manager.", copyCode: "Kopírovat kód", makeLogin: "Vytvořit nové přihlášení majitele",
       msgH: "Zpráva pro majitele", msgP: "Heslo se zobrazí jen teď – uloží se jen jeho otisk. Nové přihlášení zneplatní staré heslo.", copyMsg: "Kopírovat zprávu", openMail: "Otevřít v e-mailu",
-      listH: "Klienti", thShop: "Obchod", thPlan: "Tarif", thMsgs: "Zprávy", thCost: "Náklad AI", thCat: "Katalog", thLogin: "Přihlášení", loading: "Načítám…",
+      listH: "Klienti", thShop: "Obchod", thPlan: "Tarif", thMsgs: "Zprávy od AI", thCost: "Náš náklad", thCat: "Co prodavačka zná", thWeb: "Na webu", thLogin: "Přihlášení", loading: "Načítám…",
+      thShopS: "stav, ID a domény", thPlanS: "cena a jak platí", thMsgsS: "tento měsíc z limitu tarifu", thCostS: "Claude API tento měsíc", thCatS: "odkud má produkty a texty", thWebS: "běží kód na webu obchodu?", thLoginS: "heslo majitele do přehledu",
+      perMonth: (p) => `${p} / měsíc`, noCharge: "neplatí", byCard: "platí kartou", byInvoice: "na fakturu", unpaid: "čeká na platbu", pastDue: "platba selhala", canceled: "předplatné skončilo",
+      ofLimit: (p) => `${p} % limitu`, overLimit: "limit vyčerpán – bot vypnutý",
+      srcDemo: "Ukázková data", srcBuiltin: "Vestavěný feed (ukázka)", srcOwn: "Pevný text o Selle", srcOwnS: "web nečte – odkazuje na ukázky",
+      srcFeed: "XML feed", srcWeb: "Čte web obchodu", srcNone: "Nic", srcNoneS: "chybí doména i feed",
+      nProducts: (n) => `${n} produktů`, nPages: (n) => `${n} produktů / stránek`, updated: (d) => `načteno ${d}`, notRead: "ještě nenačteno",
+      live: (h) => `běží na ${h}`, seenAgo: (d) => `naposledy ${d}`, ourDemo: "naše ukázka (tento web)", notInstalled: "kód zatím nevložen", installAsked: "chce vložit od nás",
+      pwDemo: "úvodní heslo ukázky",
       export: "Export využití pro fakturaci", csv: "Stáhnout CSV", foot: "Sella · jen pro provozovatele",
-      monthHint: (m) => `Využití za ${m}. Náklad = cena volání Claude API (bez hlasu ElevenLabs).`, msgsN: (n) => `${n} zpráv`,
-      demoFeed: (n) => `ukázkový, ${n}`, builtIn: "vestavěný", noFeed: "bez feedu", notYet: "zatím nestaženo", feedErr: "chyba feedu", fromBefore: (n) => `${n} produktů z dřívějška`, products: (n) => `${n} produktů`,
-      inactive: "neaktivní", onlyDemos: "jen naše ukázky", voiceChars: (n) => `${n} znaků hlasem`, calls: (n) => `${n} volání`, pwSet: "nastaveno", pwMissing: "chybí",
+      monthHint: (m) => `Využití za ${m}. Zpráva od AI = odpověď v chatu, nabídka pomoci nebo doporučení pro majitele. Náš náklad = cena volání Claude API (bez hlasu ElevenLabs), majitel ho nevidí.`, msgsN: (n) => `${n} zpráv`,
+      demoFeed: (n) => `ukázkový, ${n}`, builtIn: "vestavěný", noFeed: "bez feedu", notYet: "zatím nestaženo", feedErr: "chyba načtení", fromBefore: (n) => `${n} produktů z dřívějška`, products: (n) => `${n} produktů`,
+      inactive: "neaktivní", onlyDemos: "běží jen na našem webu", voiceChars: (n) => `hlas ${n} znaků`, calls: (n) => `${n} volání Claude`, pwSet: "heslo nastaveno", pwMissing: "chybí – vytvořte",
       editBtn: "Upravit", overview: "Přehled", badJson: (l) => `${l}: neplatný JSON.`, saveFail: "Uložení se nepodařilo.", saved: "Uloženo.", nowLogin: " Teď vytvořte přihlášení majitele.",
       copied: "Zkopírováno ✓", relogin: (n) => `${n} už přihlášení má. Vytvořit nové heslo? Staré přestane platit.`, failed: "Nepodařilo se.",
       mailSubject: (n) => `AI prodavačka pro ${n} – přístup`,
@@ -200,11 +221,19 @@
       fInteg: "Integration tweaks", fIntegS: "– only for unusual sites, JSON", fNotes: "Internal notes", save: "Save", close: "Close",
       embedH: "Code for the client's website", embedP: "Goes on every page of the shop – directly or through Google Tag Manager.", copyCode: "Copy code", makeLogin: "Create a new owner login",
       msgH: "Message for the owner", msgP: "The password is shown only now – only its hash is stored. A new login invalidates the old password.", copyMsg: "Copy message", openMail: "Open in e-mail",
-      listH: "Clients", thShop: "Shop", thPlan: "Plan", thMsgs: "Messages", thCost: "AI cost", thCat: "Catalogue", thLogin: "Login", loading: "Loading…",
+      listH: "Clients", thShop: "Shop", thPlan: "Plan", thMsgs: "AI messages", thCost: "Our cost", thCat: "What the assistant knows", thWeb: "On the website", thLogin: "Login", loading: "Loading…",
+      thShopS: "state, ID and domains", thPlanS: "price and how they pay", thMsgsS: "this month, of the plan's limit", thCostS: "Claude API this month", thCatS: "where its products and texts come from", thWebS: "is the code running on the shop's site?", thLoginS: "the owner's password to the insights",
+      perMonth: (p) => `${p} / month`, noCharge: "no charge", byCard: "pays by card", byInvoice: "by invoice", unpaid: "waiting for payment", pastDue: "payment failed", canceled: "subscription ended",
+      ofLimit: (p) => `${p} % of the limit`, overLimit: "limit used up – bot off",
+      srcDemo: "Demo data", srcBuiltin: "Built-in feed (demo)", srcOwn: "Fixed text about Sella", srcOwnS: "doesn't read the site – it links to the demos",
+      srcFeed: "XML feed", srcWeb: "Reads the shop's website", srcNone: "Nothing", srcNoneS: "no domain and no feed",
+      nProducts: (n) => `${n} products`, nPages: (n) => `${n} products / pages`, updated: (d) => `read ${d}`, notRead: "not read yet",
+      live: (h) => `running on ${h}`, seenAgo: (d) => `last seen ${d}`, ourDemo: "our demo (this site)", notInstalled: "code not added yet", installAsked: "asked us to add it",
+      pwDemo: "demo starting password",
       export: "Usage export for invoicing", csv: "Download CSV", foot: "Sella · operator only",
-      monthHint: (m) => `Usage for ${m}. Cost = Claude API calls (without ElevenLabs voice).`, msgsN: (n) => `${n} messages`,
-      demoFeed: (n) => `demo, ${n}`, builtIn: "built-in", noFeed: "no feed", notYet: "not fetched yet", feedErr: "feed error", fromBefore: (n) => `${n} products from before`, products: (n) => `${n} products`,
-      inactive: "inactive", onlyDemos: "our demos only", voiceChars: (n) => `${n} voice characters`, calls: (n) => `${n} calls`, pwSet: "set", pwMissing: "missing",
+      monthHint: (m) => `Usage for ${m}. An AI message = a chat answer, an offer of help or advice for the owner. Our cost = Claude API calls (without ElevenLabs voice); owners don't see it.`, msgsN: (n) => `${n} messages`,
+      demoFeed: (n) => `demo, ${n}`, builtIn: "built-in", noFeed: "no feed", notYet: "not fetched yet", feedErr: "read error", fromBefore: (n) => `${n} products from before`, products: (n) => `${n} products`,
+      inactive: "inactive", onlyDemos: "runs only on our site", voiceChars: (n) => `voice ${n} chars`, calls: (n) => `${n} Claude calls`, pwSet: "password set", pwMissing: "missing – create one",
       editBtn: "Edit", overview: "Insights", badJson: (l) => `${l}: invalid JSON.`, saveFail: "Saving failed.", saved: "Saved.", nowLogin: " Now create a login for the owner.",
       copied: "Copied ✓", relogin: (n) => `${n} already has a login. Create a new password? The old one will stop working.`, failed: "That didn't work.",
       mailSubject: (n) => `AI shop assistant for ${n} – access`,
@@ -236,21 +265,41 @@
     if (plan) $("f-plan").value = plan;
     const month = new Date(data.month + "-01").toLocaleDateString(I.locale(), { month: "long", year: "numeric" });
     $("month-hint").textContent = t("monthHint", month);
+    const when = (iso) => new Date(iso).toLocaleString(I.locale(), { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+    const money = (n) => (I.lang === "cs" ? nf(n) + " Kč" : "CZK " + nf(n));
     $("rows").innerHTML = data.clients.map((c) => {
       const share = c.limits.messages ? c.usage.messages / c.limits.messages : 0;
-      const feed = c.feed?.demo ? `<span class="pill">${t("demoFeed", nf(c.feed.products))}</span>`
-        : !c.feedUrl && c.builtIn ? `<span class="pill">${t("builtIn")}</span>`
-        : !c.feedUrl ? `<span class="pill warn">${t("noFeed")}</span>`
-        : !c.feed ? `<small>${t("notYet")}</small>`
-        : c.feed.error ? `<span class="pill bad" title="${esc(c.feed.error)}">${t("feedErr")}</span><small>${t("fromBefore", nf(c.feed.products))}</small>`
-        : `<span class="pill">${t("products", nf(c.feed.products))}</span><small>${c.feed.updatedAt ? new Date(c.feed.updatedAt).toLocaleString(I.locale()) : ""}</small>`;
+      // the shop's state, in the same words as the overview of all clients
+      const state = !c.active && c.billing === "unpaid" ? `<span class="pill warn">${t("unpaid")}</span>`
+        : !c.active && c.billing === "canceled" ? `<span class="pill bad">${t("canceled")}</span>`
+        : !c.active ? `<span class="pill warn">${t("inactive")}</span>`
+        : c.billing === "past_due" ? `<span class="pill warn">${t("pastDue")}</span>` : "";
+      const pays = c.billing === "active" || c.billing === "past_due" ? t("byCard") : c.billing === "manual" ? (c.priceCzk ? t("byInvoice") : t("noCharge")) : "";
+      // what the assistant knows, and where from
+      const fd = c.feed;
+      const read = fd?.updatedAt ? t("updated", when(fd.updatedAt)) : t("notRead");
+      const knows = c.source === "demo" ? `<span class="src">${t("srcDemo")}</span><small>${t("nProducts", nf(fd?.products))}</small>`
+        : c.source === "builtin" ? `<span class="src">${t("srcBuiltin")}</span>`
+        : c.source === "own" ? `<span class="src">${t("srcOwn")}</span><small>${t("srcOwnS")}</small>`
+        : c.source === "none" ? `<span class="pill warn">${t("srcNone")}</span><small>${t("srcNoneS")}</small>`
+        : `<span class="src">${t(c.source === "feed" ? "srcFeed" : "srcWeb")}</span>`
+          + (fd?.error ? `<span class="pill bad" title="${esc(fd.error)}">${t("feedErr")}</span>` : "")
+          + `<small>${fd ? `${t(c.source === "feed" ? "nProducts" : "nPages", nf(fd.products))} · ${read}` : t("notRead")}</small>`;
+      // is the code on the shop's website?
+      const seen = c.widgetSeen;
+      const web = seen ? `<span class="pill">${t("live", esc(seen.host))}</span><small>${t("seenAgo", when(seen.at))}</small>`
+        : c.builtIn ? `<small>${t("ourDemo")}</small>`
+        : `<span class="pill warn">${t("notInstalled")}</span>${c.installRequest && !c.installRequest.doneAt ? `<small>${t("installAsked")}</small>` : ""}`;
       return `<tr>
-        <td><b>${esc(c.name)}</b>${c.active ? "" : ` <span class="pill warn">${t("inactive")}</span>`}<small>${esc(c.id)} · ${esc(c.domains.join(", ") || t("onlyDemos"))}</small></td>
-        <td>${esc(I.plan(c.limits.planName))}</td>
-        <td class="num"><span class="${share >= 1 ? "pill bad" : share >= 0.8 ? "pill warn" : ""}">${nf(c.usage.messages)} / ${nf(c.limits.messages)}</span><small>${t("voiceChars", nf(c.usage.ttsChars))}</small></td>
+        <td><b>${esc(c.name)}</b> ${state}<small>${esc(c.id)} · ${esc(c.domains.join(", ") || t("onlyDemos"))}</small></td>
+        <td>${esc(I.plan(c.limits.planName))}<small>${c.priceCzk ? t("perMonth", money(c.priceCzk)) : ""}${c.priceCzk && pays ? " · " : ""}${pays}</small></td>
+        <td class="num"><span class="${share >= 1 ? "pill bad" : share >= 0.8 ? "pill warn" : ""}">${nf(c.usage.messages)} / ${nf(c.limits.messages)}</span>
+          <div class="bar"><i style="width:${Math.min(share, 1) * 100}%;${share >= 1 ? "background:#c0544b" : share >= 0.8 ? "background:#a8721c" : ""}"></i></div>
+          <small>${share >= 1 ? t("overLimit") : t("ofLimit", nf(Math.round(share * 100)))} · ${t("voiceChars", nf(c.usage.ttsChars))}</small></td>
         <td class="num">$${c.usage.costUsd.toFixed(2)}<small>${t("calls", nf(c.usage.aiCalls))}</small></td>
-        <td>${feed}</td>
-        <td>${c.hasPassword ? `<span class="pill">${t("pwSet")}</span>` : `<span class="pill warn">${t("pwMissing")}</span>`}</td>
+        <td>${knows}</td>
+        <td>${web}</td>
+        <td>${c.demoPassword ? `<span class="pill">${t("pwSet")}</span><small>${t("pwDemo")}</small>` : c.hasPassword ? `<span class="pill">${t("pwSet")}</span>` : `<span class="pill warn">${t("pwMissing")}</span>`}</td>
         <td><div class="actions"><button class="mini" data-edit="${esc(c.id)}">${t("editBtn")}</button><a class="mini" href="/admin/?client=${encodeURIComponent(c.id)}">${t("overview")}</a></div></td>
       </tr>`;
     }).join("");
