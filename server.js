@@ -229,7 +229,7 @@ app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req,
   const a = await allowance(req.client);
   // noted before answering: on Vercel a function stops as soon as it has answered (the write is rare – once an hour at most)
   // (the owner's preview on the settings page isn't the shop's website)
-  if (!req.query.preview) await noteInstalled(req.client, req.get("Origin"), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
+  if (!req.query.preview) await noteInstalled(req.client, pageOrigin(req), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
   res.json({
     on: a.chat && req.client.active !== false, look: widgetLook(req.client), starters: openingChips(req.cat, req.lang),
     lookSavedAt: req.client.siteLook?.at ?? null, // when the website's look was last saved (the widget sends it when it's missing or old)
@@ -245,12 +245,17 @@ const NEUTRAL_CHIPS = {
 };
 const openingChips = (cat, lang) => cat.store.starters?.[lang] ?? (cat.products.length ? null : NEUTRAL_CHIPS[lang]);
 
+// The website the widget runs on. A browser leaves out Origin when a page calls its own server with GET
+// (Sella's own website and its API share one address), so the Referer stands in there.
+const pageOrigin = (req) => req.get("Origin") || (() => { try { return new URL(req.get("Referer")).origin; } catch { return null; } })();
+
 // The widget started on the shop's own website: the code is in place. Shown in the owner's
 // step-by-step setup ("Sella běží na vašem webu"); written at most once an hour per shop.
 // The widget's website, or null when it isn't one to note: a developer's own computer, or – for the
 // "installed" step – our demo shops running on our own site (Sella's own website on it counts). A demo's
 // look is noted all the same: its demo page is its website.
 function shopHost(client, origin, ownHost, { demos = false } = {}) {
+  if (!origin) return null;
   let host;
   try { host = new URL(origin).hostname; } catch { return null; }
   if (host === "localhost" || host === "127.0.0.1") return null;
@@ -288,7 +293,7 @@ function cleanSiteLook(raw = {}, host) {
 }
 app.post("/api/site-look", rateLimit("site-look", 10, 60e3), withClient(), async (req, res) => {
   // saved before answering: on Vercel a function stops as soon as it has answered
-  const host = shopHost(req.client, req.get("Origin"), req.get("Host"), { demos: true });
+  const host = shopHost(req.client, pageOrigin(req), req.get("Host"), { demos: true });
   if (!host) return res.json({ saved: false });
   const look = cleanSiteLook(req.body?.look, host);
   const was = req.client.siteLook;
