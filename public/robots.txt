@@ -1,0 +1,10 @@
+# Sella – https://sella.chat
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /sella/prihlaseni.html
+Disallow: /sella/film.html
+Disallow: /sella/navod.html
+
+Sitemap: https://sella.chat/sitemap.xml

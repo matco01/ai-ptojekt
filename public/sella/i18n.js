@@ -8,12 +8,26 @@
   const read = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
   const saved = LANGS.includes(read()) ? read() : null;
   const guess = /^(cs|sk)\b/i.test(navigator.language || "") ? "cs" : "en";
+  // A page with its own address per language (the home page: / and /en/) always shows that language,
+  // so search engines index each one; the switch then goes to the other address. Marked on <html>:
+  // data-url-lang="cs" data-alt-cs="/" data-alt-en="/en/" (+ data-lang-default on the main one).
+  const root = document.documentElement;
+  const pinned = LANGS.includes(root.dataset.urlLang) ? root.dataset.urlLang : null;
+  const altUrl = (lang) => root.dataset["alt" + lang[0].toUpperCase() + lang.slice(1)];
+  // someone who chose English before and opens the main address goes to the English one (people only:
+  // crawlers keep no choice, so they always see each address in its own language)
+  if (pinned && saved && saved !== pinned && root.hasAttribute("data-lang-default") && altUrl(saved)) location.replace(altUrl(saved) + location.search + location.hash);
+  // going on from a language's own address (to sign up, sign in…) keeps that language on the next page
+  if (pinned) addEventListener("click", (e) => {
+    const a = e.target.closest?.("a[href]");
+    if (a && a.origin === location.origin && !a.getAttribute("href").startsWith("#")) { try { localStorage.setItem(KEY, pinned); } catch {} }
+  }, true);
   const dict = { cs: {}, en: {} };
   const listeners = [];
 
   const I = {
-    lang: saved || guess,
-    chosen: Boolean(saved),
+    lang: pinned || saved || guess,
+    chosen: Boolean(saved || pinned),
     locale: () => (I.lang === "cs" ? "cs-CZ" : "en-GB"),
     use(d) { for (const l of LANGS) Object.assign(dict[l], d[l] || {}); I.apply(); return I.t; },
     t(key, ...args) {
@@ -35,6 +49,7 @@
     set(lang) {
       if (!LANGS.includes(lang)) return;
       try { localStorage.setItem(KEY, lang); } catch {}
+      if (pinned && lang !== pinned && altUrl(lang)) { location.href = altUrl(lang) + location.hash; return; }
       const changed = lang !== I.lang;
       I.lang = lang; I.chosen = true;
       I.apply();

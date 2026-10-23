@@ -1,0 +1,71 @@
+# Sella
+
+> An AI shop assistant for your online store: it asks customers if they'd like help, recommends from your catalogue, adds to the cart and shows you what people look for. Shoptet, WordPress, Shopify. From CZK 990 a month.
+
+Sella is an AI salesperson (an AI chatbot and shop assistant) for online shops, made in the Czech Republic. It runs on any shop website from one line of code and answers in Czech and English, by chat or voice.
+
+## Pages
+- [Sella – home (Czech)](https://sella.chat/): what Sella does, demos, pricing, questions
+- [Sella – home (English)](https://sella.chat/en/)
+- [Sign up](https://sella.chat/sella/registrace.html): create an account, pay for a plan, get the embed code
+- [Demo: electronics shop](https://sella.chat/techmarket/) and [demo: coffee roastery](https://sella.chat/kavarna) – Sella running on two sample shops
+- [Terms](https://sella.chat/podminky.html), [Data processing agreement](https://sella.chat/zpracovani-udaju.html), [Privacy](https://sella.chat/soukromi.html)
+
+## Pricing (monthly, excluding VAT, billed by card)
+- Start: CZK 990 – 2,000 AI messages and 100,000 characters of natural voice
+- Standard: CZK 2,990 – 10,000 AI messages and 300,000 characters of natural voice (most popular)
+- Pro: CZK 9,990 – 50,000 AI messages and 1,000,000 characters of natural voice
+
+When a plan's messages run out, the assistant switches itself off until the month ends, so a shop never pays more.
+
+## Questions
+### What is Sella?
+Sella is an AI salesperson for online shops – a chatbot that behaves like a good shop assistant. It greets customers when they arrive, asks if they'd like help, recommends products from your catalogue, compares them and adds them to the cart. It chats and speaks, in Czech and English.
+
+### Which online shops does Sella work with?
+Shoptet, WordPress with WooCommerce, Shopify, Upgates and any custom website – you add one line of code, directly or through Google Tag Manager. A video guide shows every system step by step, and if you'd rather not, we'll add it for you.
+
+### How much does Sella cost?
+Plans start at CZK 990 a month excluding VAT and differ only in AI messages and voice. You pay monthly by card, the invoice arrives by e-mail, and you can change or cancel any time. When the messages run out, the assistant switches off until the month ends – you never pay more.
+
+### Where does it get my products from?
+From the XML feed you already have for Heureka, Zboží.cz or Google Merchant. Without a feed, it reads your products and page texts straight from your website – again every night, so it knows current prices and stock.
+
+### Won't it make things up?
+It recommends only products from your catalogue, with prices and stock from your feed. Questions about delivery, payment and returns are answered only from the information you give it and the documents you upload. It doesn't invent discounts or specifications.
+
+### Is Sella GDPR compliant?
+Yes. Visitor behaviour and questions are stored only with consent – from the shop's cookie banner, or when the customer writes to the assistant. E-mails and phone numbers in questions are masked, data is deleted after 90 days, and every shop gets a data processing agreement.
+
+### What will I see in my dashboard?
+How many visitors used the assistant, how many of them bought compared with the rest, the average order, what customers ask, what they search for and don't find, and which products they view but don't buy. Plus AI advice on what to focus on.
+
+### How quickly can I get it running?
+In minutes. Sign up, pay for a plan, add the code to your website and Sella reads the site by itself. Name, look, tone and shop information are set in your dashboard – it takes your colours and logo from your website on its own.
+
+## Česky
+AI prodavačka pro váš e-shop: zeptá se zákazníka, jestli chce poradit, doporučí z vašeho katalogu, přidá do košíku a ukáže vám, co lidé hledají. Shoptet, WordPress, Shopify. Od 990 Kč měsíčně.
+
+### Co je Sella?
+Sella je AI prodavačka pro e-shopy – chatbot, který se chová jako dobrá prodavačka v obchodě. Zákazníka po příchodu pozdraví, zeptá se, jestli chce poradit, doporučí mu produkty z vašeho katalogu, porovná je a přidá do košíku. Píše i mluví hlasem, česky i anglicky.
+
+### Na jakém e-shopu Sella funguje?
+Na Shoptetu, WordPressu s WooCommerce, Shopify, Upgates i na vlastním webu – stačí vložit jeden řádek kódu, přímo nebo přes Google Tag Manager. Videonávod ukazuje každý systém krok za krokem, a když se vám nechce, vložíme ho za vás.
+
+### Kolik Sella stojí?
+Tarify začínají na 990 Kč měsíčně bez DPH a liší se jen počtem zpráv od AI a hlasu. Platíte kartou měsíčně, faktura přijde e-mailem a tarif změníte nebo zrušíte kdykoli. Když se zprávy vyčerpají, prodavačka se do konce měsíce vypne – nikdy nezaplatíte víc.
+
+### Odkud zná moje produkty?
+Z XML feedu, který už máte pro Heureku, Zboží.cz nebo Google Merchant. Když feed nemáte, přečte si produkty i texty stránek přímo z vašeho webu. Každou noc si je načte znovu, takže zná aktuální ceny a dostupnost.
+
+### Nebude si vymýšlet?
+Doporučuje jen produkty z vašeho katalogu, s cenami a dostupností z vašeho feedu. Na otázky o dopravě, platbě a vrácení odpovídá jen z informací, které jí zadáte, a dokumentů, které jí nahrajete. Slevy ani parametry si nevymýšlí.
+
+### Je Sella v souladu s GDPR?
+Ano. Chování návštěvníků a jejich dotazy ukládá jen se souhlasem – z cookie lišty obchodu, nebo když zákazník prodavačce sám napíše. E-maily a telefony v dotazech skryje, data po 90 dnech maže a s každým e-shopem uzavíráme smlouvu o zpracování osobních údajů.
+
+### Co uvidím v přehledu?
+Kolik návštěvníků prodavačku využilo, kolik z nich nakoupilo ve srovnání s ostatními, průměrnou objednávku, na co se zákazníci ptají, co hledají a nenajdou a které produkty si prohlížejí, ale nekupují. K tomu doporučení od AI, na co se zaměřit.
+
+### Jak rychle ji rozjedu?
+Za pár minut. Zaregistrujete se, zaplatíte tarif, vložíte kód na web a Sella si web sama přečte. Jméno, vzhled, tón řeči a informace o obchodě si nastavíte v přehledu – barvy a logo převezme z vašeho webu sama.

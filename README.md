@@ -22,6 +22,15 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 - **Vložte to za mě:** v přehledu u kódu majitel vyplní, na čem web běží, kontakt a poznámku. Přijde upozornění (`ALERT_WEBHOOK_URL`) a žádost se ukáže na stránce **Všichni klienti**, kde ji po vložení označíte **Vyřízeno**. Potřebuje sloupec `install_request` – spusťte znovu `supabase/schema.sql`.
 - **Nahrání videí:** s běžící aplikací (`npm start`) a nástroji jen pro tento skript (`npm i --no-save puppeteer-core ffmpeg-static`): `node scripts/record-film.mjs navod cs` (resp. `en`, nebo `film`). Vytvoří MP4 i náhledový obrázek; namluvený hlas jde přidat `--audio hlas.mp3`.
 
+## Web a vyhledávače (SEO)
+
+- **Dvě adresy, dva jazyky:** `/` je česky, `/en/` anglicky. Obě stránky píše `node scripts/build-home.mjs` z jedné šablony (`public/index.html`) a jednoho souboru textů (`public/sella/home-text.js`), takže texty, ceník (z `lib/plans.js`) i časté otázky jsou přímo v HTML – vyhledávače i AI roboti, kteří nespouštějí JavaScript, čtou celou stránku ve správném jazyce. **Po změně textu nebo ceny spusťte skript znovu** (test to hlídá).
+- **Hlavička stránky** (generuje skript): titulek a popis, `canonical`, `hreflang` cs/en/x-default, Open Graph a Twitter karty s obrázky `public/og/sella-cs.png` a `-en.png`, strukturovaná data JSON-LD (Organization, WebSite, WebPage, SoftwareApplication s tarify a cenami, VideoObject úvodního videa, FAQPage).
+- **Soubory:** `robots.txt` (bez /admin/ a /api/), `sitemap.xml` s jazykovými verzemi, `llms.txt` (shrnutí pro AI vyhledávače, generuje skript), `site.webmanifest`, ikony v `public/icons/` a `favicon.svg`.
+- **Co se neindexuje:** přehledy, přihlášení a natáčecí stránky videí (`noindex`), ukázkové obchody (`noindex, follow` – vymyšlené zboží nemá být ve výsledcích hledání) a celá adresa `ai-ptojekt.vercel.app` (hlavička `X-Robots-Tag: noindex` ve `vercel.json` – widget tam dál funguje, indexuje se jen sella.chat).
+- **Jazyk podle adresy:** na `/` a `/en/` rozhoduje adresa, ne prohlížeč; přepínač CS | EN přejde na druhou adresu a kdo si dřív vybral angličtinu, toho `/` pošle na `/en/`.
+- Po spuštění domény přidejte `sella.chat` do Google Search Console a Bing Webmaster Tools a odešlete `https://sella.chat/sitemap.xml`.
+
 ## Registrace a platby (Stripe)
 
 Obchod si Sellu založí sám, zaplatí kartou a teprve pak mu funguje kód pro web:
