@@ -64,7 +64,8 @@
       fileFail: (n) => `Soubor ${n} se nepodařilo načíst.`, rmFile: "Odebrat přílohu", loadingFile: "Načítám přílohu", drop: "Pusťte soubor sem",
       tapTalk: "Klepněte pro mluvení / přerušení", preparing: "Připravuji…", toChat: "Raději budu psát",
       attach: "Přiložit fotku nebo soubor", attachTitle: "Přiložit fotku nebo PDF", placeholder: "Napište, co hledáte…", msgLabel: "Zpráva pro prodavačku",
-      legal: "Odpovídá umělá inteligence a může se splést", privacy: "Ochrana soukromí",
+      legal: "Odpovídá umělá inteligence a může se splést", privacy: "Ochrana soukromí", more: "Více",
+      greetData: "Obchod uvidí, na co se ptáte a co si prohlížíte – bez jména a kontaktů.",
       dataNote: "Když mi napíšete, obchod uvidí vaše dotazy a co si tu prohlížíte – bez jména a kontaktů.", optOut: "Nesouhlasím", optedOut: "Dobře, z rozhovoru si nic neukládám.", addCart: "Do košíku", inCart: "V košíku",
       thinking: (n) => `${n} přemýšlí…`, connFail: "Spojení se nezdařilo.", removed: (n) => `Odebráno z košíku: ${n}`, added: (n) => `Přidáno do košíku: ${n}`,
       addOnPage: (n) => `${n} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`, removeOnPage: (n) => `${n} se mi z košíku odebrat nepodařilo – odeberte ho prosím přímo v košíku.`, simple: "Teď odpovídám ve zjednodušeném režimu.",
@@ -92,7 +93,8 @@
       fileFail: (n) => `Couldn't load ${n}.`, rmFile: "Remove attachment", loadingFile: "Loading attachment", drop: "Drop the file here",
       tapTalk: "Tap to talk / interrupt", preparing: "Getting ready…", toChat: "I'd rather type",
       attach: "Attach a photo or file", attachTitle: "Attach a photo or PDF", placeholder: "Type what you're looking for…", msgLabel: "Message to the assistant",
-      legal: "Answers come from AI and may be wrong", privacy: "Privacy",
+      legal: "Answers come from AI and may be wrong", privacy: "Privacy", more: "More",
+      greetData: "The shop sees what you ask and look at – no name or contact details.",
       dataNote: "When you write to me, the shop sees your questions and what you look at here – no name or contact details.", optOut: "I don't agree", optedOut: "OK, I won't keep anything from our chat.", addCart: "Add to cart", inCart: "In cart",
       thinking: (n) => `${n} is thinking…`, connFail: "Couldn't connect.", removed: (n) => `Removed from cart: ${n}`, added: (n) => `Added to cart: ${n}`,
       addOnPage: (n) => `You can add ${n} to the cart on its product page – just click its card.`, removeOnPage: (n) => `I couldn't take ${n} out of the cart – please remove it in the cart itself.`, simple: "I'm answering in a simple mode right now.",
@@ -889,6 +891,9 @@
     .g-btn svg { font-size: 18px; }
     .g-btn:hover { background: ${mix("--c", 12)}; } .g-btn:active { transform: scale(.97); }
     .g-btn.pri { background: var(--c); color: #fff; } .g-btn.pri:hover { filter: brightness(1.08); }
+    .g-data { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--edge); font-size: 12.5px; line-height: 1.45; color: var(--soft); text-align: center; }
+    .g-data a, .g-data button { color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 2px; background: none; border: 0; padding: 0; cursor: pointer; }
+    .g-data a:hover, .g-data button:hover { color: var(--ink); }
     .g-skip { grid-column: 1 / -1; justify-self: center; border: 0; background: none; padding: 8px 10px 2px; color: var(--soft); font-size: 14px; transition: color .15s; }
     .g-skip:hover { color: var(--strong); }
     .landed .g-acts > * { animation: rise .35s cubic-bezier(.2,.8,.2,1) both; }
@@ -1508,11 +1513,15 @@
               <button class="g-btn" data-m="voice">${ICON.mic}${L("talk")}</button>
               <button class="g-skip" data-m="no">${L("skip")}</button>
             </div>
+            ${siteDecides() || chatConsent !== null ? "" : `<p class="g-data">${L("greetData")} <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">${L("more")}</a> · <button type="button" class="g-optout">${L("optOut")}</button></p>`}
           </div>
           <div class="hop">${avatar(96)}<span class="ground"></span></div>
         </div>
       </div>`);
     root.append(stage);
+    // what the chat keeps, said where the visitor first meets her – with "I don't agree" right there
+    const optout = stage.querySelector(".g-optout");
+    if (optout) optout.onclick = () => { setChatConsent(false); queue = []; optout.parentElement.textContent = L("optedOut"); };
     const hop = stage.querySelector(".hop"), av = hop.querySelector(".av");
 
     // jump from where the mascot sits in the corner (or from off-screen if it isn't there)
