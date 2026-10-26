@@ -70,6 +70,8 @@
       addOnPage: (n) => `${n} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`, removeOnPage: (n) => `${n} se mi z košíku odebrat nepodařilo – odeberte ho prosím přímo v košíku.`, simple: "Teď odpovídám ve zjednodušeném režimu.",
       vListening: "Poslouchám vás…", vThinking: "Přemýšlím…", vSpeakTouch: "Mluvím… (klepnutím mě přerušíte)", vSpeak: "Mluvím… (klidně mi skočte do řeči)", vIdle: "Klepněte na mě a mluvte",
       micDenied: "Mikrofon není povolen. Povolte ho v prohlížeči, nebo přepněte na psaní.",
+      dictationOff: "Rozpoznávání řeči je v telefonu vypnuté. Na iPhonu ho zapnete v Nastavení → Obecné → Klávesnice → Diktování, nebo přepněte na psaní.",
+      voiceFail: "Teď vás neslyším. Klepněte na mě a zkuste to znovu, nebo přepněte na psaní.",
       offNote: "Prodavačka je teď nedostupná. Děkujeme za pochopení.", attached: "přiloženo",
       prevCards: "Předchozí produkty", nextCards: "Další produkty",
     },
@@ -96,6 +98,8 @@
       addOnPage: (n) => `You can add ${n} to the cart on its product page – just click its card.`, removeOnPage: (n) => `I couldn't take ${n} out of the cart – please remove it in the cart itself.`, simple: "I'm answering in a simple mode right now.",
       vListening: "Listening…", vThinking: "Thinking…", vSpeakTouch: "Speaking… (tap to interrupt)", vSpeak: "Speaking… (feel free to interrupt)", vIdle: "Tap me and talk",
       micDenied: "The microphone isn't allowed. Allow it in your browser, or switch to typing.",
+      dictationOff: "Speech recognition is off on this phone. On an iPhone turn on Settings → General → Keyboard → Dictation, or switch to typing.",
+      voiceFail: "I can't hear you right now. Tap me and try again, or switch to typing.",
       offNote: "The shop assistant isn't available right now. Thanks for understanding.", attached: "attached",
       prevCards: "Previous products", nextCards: "More products",
     },
@@ -1823,7 +1827,7 @@
       // tap while she talks = interrupt and listen right away; tap while listening = cancel
       footer.querySelector(".orbbtn").onclick = () => {
         if (listening) { stopVoice(); setVoiceState("idle"); }
-        else { if (speaking) stopVoice(); listen(); }
+        else { if (speaking) stopVoice(); listen(true); }
       };
       footer.querySelector(".toChat").onclick = () => { stopVoice(); openPanel("chat"); };
       updateEyes();
@@ -2465,8 +2469,13 @@
     setVoiceState("listening");
   }
 
-  function listen() {
+  // Phones (iPhone above all) only open the microphone on a tap – started by itself after she has
+  // spoken, recognition fails there. So on phones she finishes and waits for a tap ("Tap me and talk");
+  // on a computer the conversation flows hands-free.
+  let recWatchdog = 0;
+  function listen(fromTap = false) {
     if (mode !== "voice" || busy || !Recognition) return;
+    if (!fromTap && touchDevice) { stopSpeech(); setVoiceState("idle"); return; }
     stopSpeech();
     rec = new Recognition();
     rec.lang = cfg.lang;
@@ -2480,9 +2489,16 @@
       if (interim) interim.textContent = t || finalText;
     };
     rec.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") addNote(L("micDenied"));
+      if (e.error === "not-allowed") addNote(L("micDenied"));
+      else if (e.error === "service-not-allowed") addNote(L(touchDevice ? "dictationOff" : "micDenied"));
+      else if (e.error === "network" || e.error === "audio-capture") addNote(L("voiceFail"));
+      // "no-speech" / "aborted": nothing said – she just waits for the next tap
     };
+    // some phones never end recognition by themselves – stop after 15 s
+    clearTimeout(recWatchdog);
+    recWatchdog = setTimeout(() => { if (rec && listening) try { rec.stop(); } catch {} }, 15000);
     rec.onend = () => {
+      clearTimeout(recWatchdog);
       listening = false;
       if (interim) interim.textContent = "";
       if (mode !== "voice") return;
@@ -2494,6 +2510,7 @@
   function stopVoice() {
     barged = false;
     stopSpeech();
+    clearTimeout(recWatchdog);
     if (rec) { rec.onend = null; try { rec.abort(); } catch {} rec = null; }
     listening = false;
   }

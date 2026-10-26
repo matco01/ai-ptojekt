@@ -137,7 +137,17 @@
     .faq h3 { margin: 0; font: 400 clamp(21px, 2.2vw, 25px)/1.25 var(--serif); }
     .faq p { margin: 0; padding: 0 26px 24px; color: var(--ink-2); font-size: 16.5px; line-height: 1.65; max-width: 46em; }
     .nav .signin, .nav .btn { white-space: nowrap; }
-    @media (max-width: 440px) { .nav .signin { display: none; } .nav #lang { margin-left: auto; } }
+    /* phones: the sign-in stays – the language switch shrinks to one button with the other language */
+    @media (max-width: 440px) {
+      .nav .wrap { gap: 12px; }
+      .nav .wrap .wordmark { font-size: 26px; }
+      .nav .wrap #lang { margin-left: auto; }
+      .nav .wrap .sella-lang { margin-left: 0; }
+      .nav .wrap .sella-lang button[aria-pressed="true"] { display: none; }
+      .nav .wrap .sella-lang button { padding: 7px 9px; }
+      .nav .wrap .signin { margin-left: 0; font-size: 14.5px; }
+      .nav .wrap .btn { height: 38px; padding: 0 14px; font-size: 14px; }
+    }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     .closing { text-align: center; }
     .closing .title { font-size: clamp(44px, 7vw, 92px); }
