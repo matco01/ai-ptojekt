@@ -55,6 +55,16 @@ Volitelně `STRIPE_TRIAL_DAYS=14` dá novým obchodům zkušební dny zdarma (ka
 
 **Demo režim pro testování:** s `PAYMENTS=demo` (proměnná prostředí na Vercelu) se nový účet hned po „Vytvořit účet“ počítá jako zaplacený na měsíc, bez karty a bez Stripe; stejně tak změna tarifu v přehledu. Přehled to označí „Demo režim“. Jen pro testování – s opravdovými zákazníky ho vypněte, jinak by Sellu měli zadarmo.
 
+## E-mail majitele a zapomenuté heslo
+
+S `RESEND_API_KEY` (a ověřenou doménou sella.chat v Resendu, viz `.env.example`) platí:
+
+- **Potvrzení e-mailu:** po registraci přijde odkaz (platí 7 dní). Dokud ho majitel neotevře, v přehledu vidí upozornění s tlačítkem **Poslat znovu** a nemůže zaplatit tarif. Nepotvrzený a nezaplacený účet nedrží svůj e-mail – nová registrace se stejným e-mailem ho nahradí – a noční úloha ho po 14 dnech smaže. Účty založené před zapnutím, klienti na fakturu a ukázkové obchody se počítají jako potvrzené.
+- **Doména:** samotné zadání domény při registraci nic neblokuje. Doménu „drží“ až obchod, který platí (nebo je na fakturu), případně ten, jehož widget na ní už běží. Jiný účet pak tuto doménu nemůže zaregistrovat, přidat si v Nastavení ani za ni zaplatit.
+- **Zapomenuté heslo:** odkaz z přihlášení vede na `/sella/zapomenute-heslo.html`. Přijde e-mail s odkazem na nové heslo (platí hodinu a jen jednou; odpověď je stejná, ať účet existuje, nebo ne). Po uložení je majitel rovnou přihlášený.
+
+Bez klíče se nic z toho nezapíná a stránka se zapomenutým heslem odkáže na kontaktní e-mail. Potřebuje sloupec `email_verified_at` – spusťte znovu `supabase/schema.sql`.
+
 ## Klienti (více e-shopů)
 
 Každý e-shop, který prodavačku používá, je klient s vlastním ID. Ukázkové weby jsou klienti `techmarket` a `kavarna`.
@@ -127,7 +137,7 @@ Vzhled dorazí do widgetu spolu se startovní kontrolou (`/api/status` → `look
 Projekt běží na Vercelu bez dalšího nastavení (Express se detekuje sám ze `server.js`).
 
 1. **Import repozitáře:** ve Vercelu zvolte Add New → Project, vyberte repozitář a nechte výchozí nastavení (Framework Preset: Express / Other, žádný build command).
-2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN`, `CRON_SECRET`, pro platby `STRIPE_SECRET_KEY` a `STRIPE_WEBHOOK_SECRET` a doporučeně `ALERT_WEBHOOK_URL`; volitelně `ELEVENLABS_API_KEY` (vše viz `.env.example`). Soubor `.env.local` se na Vercel nenahrává.
+2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN`, `CRON_SECRET`, pro platby `STRIPE_SECRET_KEY` a `STRIPE_WEBHOOK_SECRET` pro e-maily `RESEND_API_KEY` a `MAIL_FROM`, doporučeně `ALERT_WEBHOOK_URL`; volitelně `ELEVENLABS_API_KEY` (vše viz `.env.example`). Soubor `.env.local` se na Vercel nenahrává.
 3. **Databáze:** spusťte `supabase/schema.sql` v Supabase → SQL Editor – poprvé i po každé aktualizaci (přidá jen to, co chybí, a smaže dřívější simulovaná demo data).
 4. **Deploy.** Každý push na `main` nasadí novou verzi.
 

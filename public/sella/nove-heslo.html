@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nové heslo – Sella</title>
+  <meta name="theme-color" content="#d0d9e1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="robots" content="noindex">
+  <!-- the link's secret is in the #fragment, so it never leaves this browser except to our API -->
+  <meta name="referrer" content="no-referrer">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="sella.css">
+  <link rel="stylesheet" href="account.css">
+</head>
+<body>
+  <div class="top">
+    <a href="/sella/prihlaseni.html" data-i18n="back">← Zpět na přihlášení</a>
+    <span id="lang"></span>
+  </div>
+
+  <main>
+    <div class="stack">
+      <p class="wordmark" aria-hidden="true">Sella</p>
+      <form class="pane" id="form" novalidate>
+        <h1 data-i18n="h1">Nové heslo</h1>
+        <p class="sub" data-i18n="sub">Aspoň 10 znaků. Pak vás rovnou přihlásíme.</p>
+        <div class="field">
+          <input id="password" name="password" type="password" autocomplete="new-password" placeholder=" " minlength="10" required>
+          <label for="password" data-i18n="pw">Nové heslo</label>
+          <button class="peek" type="button" id="peek" data-i18n="show">Ukázat</button>
+        </div>
+        <p class="err" id="err" role="alert"></p>
+        <button class="btn dark" type="submit" id="go"><span data-i18n="go">Uložit a přihlásit se</span> <span class="arr">→</span></button>
+        <p class="help" data-i18n-html="again" id="again" hidden><a href="/sella/zapomenute-heslo.html">Poslat nový odkaz</a></p>
+      </form>
+    </div>
+  </main>
+
+  <footer><a href="/podminky.html" data-i18n="terms_link">Obchodní podmínky</a> · <a href="/soukromi.html" data-i18n="privacy">Ochrana soukromí</a> · © 2026 Sella<br><span data-op="line"></span></footer>
+
+  <script src="i18n.js"></script>
+  <script src="/legal/provozovatel.js"></script>
+  <script src="sella.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const I = SellaI18n;
+    const t = I.use({
+      cs: {
+        title: "Nové heslo – Sella", back: "← Zpět na přihlášení", h1: "Nové heslo", sub: "Aspoň 10 znaků. Pak vás rovnou přihlásíme.",
+        pw: "Nové heslo", show: "Ukázat", hide: "Skrýt", go: "Uložit a přihlásit se", again: "<a href=\"/sella/zapomenute-heslo.html\">Poslat nový odkaz</a>",
+        short: "Heslo musí mít aspoň 10 znaků.", link: "Odkaz už neplatí (platí hodinu a jen jednou). Pošlete si prosím nový.",
+        many: "Příliš mnoho pokusů, zkuste to za 15 minut.", failed: "Nepodařilo se, zkuste to prosím znovu.",
+        privacy: "Ochrana soukromí", terms_link: "Obchodní podmínky",
+      },
+      en: {
+        title: "New password – Sella", back: "← Back to sign in", h1: "New password", sub: "At least 10 characters. Then we'll sign you in.",
+        pw: "New password", show: "Show", hide: "Hide", go: "Save and sign in", again: "<a href=\"/sella/zapomenute-heslo.html\">Send a new link</a>",
+        short: "The password needs at least 10 characters.", link: "This link no longer works (it's valid for an hour and once). Please send yourself a new one.",
+        many: "Too many attempts, please try again in 15 minutes.", failed: "That didn't work, please try again.",
+        privacy: "Privacy", terms_link: "Terms",
+      },
+    });
+    const retitle = () => { document.title = t("title"); };
+    retitle(); I.onChange(retitle);
+    I.switcher($("lang"));
+
+    // the link's secret: from the #fragment, then out of the address bar and history
+    const token = new URLSearchParams(location.hash.slice(1)).get("t") || "";
+    if (location.hash) history.replaceState(null, "", location.pathname);
+    const linkGone = () => { $("err").textContent = t("link"); $("again").hidden = false; $("go").disabled = true; };
+    if (!token) linkGone(); else $("password").focus();
+
+    $("peek").onclick = () => {
+      const show = $("password").type === "password";
+      $("password").type = show ? "text" : "password";
+      $("peek").dataset.i18n = show ? "hide" : "show";
+      I.apply($("form"));
+    };
+    $("form").onsubmit = async (e) => {
+      e.preventDefault();
+      $("err").textContent = "";
+      const password = $("password").value;
+      if (password.length < 10) return ($("err").textContent = t("short"));
+      $("go").disabled = true;
+      try {
+        const r = await fetch("/api/password/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, password }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          if (d.code === "link") return linkGone();
+          throw new Error(r.status === 429 ? t("many") : d.code === "password" ? t("short") : t("failed"));
+        }
+        location.assign("/admin/");
+      } catch (err) {
+        $("err").textContent = err instanceof TypeError ? t("failed") : err.message;
+        $("go").disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

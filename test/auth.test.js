@@ -55,3 +55,20 @@ test("showcase shops get a stable, readable starting password derived from our s
     if (saved.a === undefined) delete process.env.ADMIN_TOKEN; else process.env.ADMIN_TOKEN = saved.a;
   }
 });
+
+test("e-mailed links are signed for one purpose and expire", async () => {
+  const { createLink, readLink, passwordStamp } = await import("../lib/auth.js");
+  const now = Date.now();
+  const link = createLink("reset", { c: "datart", s: "abc" }, 60e3, now);
+  assert.deepEqual(readLink("reset", link, now), { c: "datart", s: "abc", exp: now + 60e3 });
+  assert.equal(readLink("reset", link, now + 61e3), null);  // expired
+  assert.equal(readLink("verify", link, now), null);        // a reset link doesn't confirm an e-mail
+  assert.equal(readLink("reset", createSession("datart", now), now), null); // nor is a session cookie a link
+  const [payload, sig] = link.split(".");
+  const forged = Buffer.from(JSON.stringify({ c: "*", s: "abc", exp: now + 1e9 })).toString("base64url");
+  assert.equal(readLink("reset", `${forged}.${sig}`, now), null);
+  assert.equal(readLink("reset", `${payload}.`, now), null);
+  for (const junk of [undefined, null, "", "x", 42]) assert.equal(readLink("reset", junk, now), null);
+  // the password stamp changes with the password (a reset link works once)
+  assert.notEqual(passwordStamp(hashPassword("a-long-password")), passwordStamp(hashPassword("a-long-password")));
+});

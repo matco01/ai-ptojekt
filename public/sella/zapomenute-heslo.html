@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zapomenuté heslo – Sella</title>
+  <meta name="theme-color" content="#d0d9e1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="sella.css">
+  <link rel="stylesheet" href="account.css">
+</head>
+<body>
+  <div class="top">
+    <a href="/sella/prihlaseni.html" data-i18n="back">← Zpět na přihlášení</a>
+    <span id="lang"></span>
+  </div>
+
+  <main>
+    <div class="stack">
+      <p class="wordmark" aria-hidden="true">Sella</p>
+      <form class="pane" id="form" novalidate>
+        <h1 data-i18n="h1">Zapomenuté heslo</h1>
+        <p class="sub" data-i18n="sub">Pošleme vám odkaz, kterým si nastavíte nové.</p>
+        <div class="field">
+          <input id="email" name="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder=" " required>
+          <label for="email" data-i18n="email">E-mail, se kterým jste se registrovali</label>
+        </div>
+        <p class="err" id="err" role="alert"></p>
+        <button class="btn dark" type="submit" id="go"><span data-i18n="go">Poslat odkaz</span> <span class="arr">→</span></button>
+      </form>
+      <div class="pane done" id="done" hidden role="status">
+        <h1 id="done-h" data-i18n="doneH">Zkontrolujte e-mail</h1>
+        <p id="done-text"></p>
+        <p class="help" id="done-help" data-i18n-html="doneHelp">E-mail nepřišel? Podívejte se do spamu, nebo to zkuste znovu za pár minut.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer><a href="/podminky.html" data-i18n="terms_link">Obchodní podmínky</a> · <a href="/soukromi.html" data-i18n="privacy">Ochrana soukromí</a> · © 2026 Sella<br><span data-op="line"></span></footer>
+
+  <script src="i18n.js"></script>
+  <script src="/legal/provozovatel.js"></script>
+  <script src="sella.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const I = SellaI18n;
+    const contact = () => window.SELLA_OPERATOR?.email || "";
+    const t = I.use({
+      cs: {
+        title: "Zapomenuté heslo – Sella", back: "← Zpět na přihlášení", h1: "Zapomenuté heslo", sub: "Pošleme vám odkaz, kterým si nastavíte nové.",
+        email: "E-mail, se kterým jste se registrovali", go: "Poslat odkaz", doneH: "Zkontrolujte e-mail", manualH: "Napište nám",
+        sent: (e) => `Pokud u nás máte účet s e-mailem ${e}, právě jsme vám na něj poslali odkaz. Platí hodinu.`,
+        manual: (c) => `Napište nám prosím${c ? ` na ${c}` : ""} z e-mailu, se kterým jste se registrovali, a nové heslo vám pošleme.`,
+        doneHelp: "E-mail nepřišel? Podívejte se do spamu, nebo to zkuste znovu za pár minut.",
+        empty: "Zadejte prosím svůj e-mail.", many: "Příliš mnoho pokusů, zkuste to za 15 minut.", failed: "Nepodařilo se, zkuste to prosím znovu.",
+        privacy: "Ochrana soukromí", terms_link: "Obchodní podmínky",
+      },
+      en: {
+        title: "Forgotten password – Sella", back: "← Back to sign in", h1: "Forgotten password", sub: "We'll send you a link to set a new one.",
+        email: "The e-mail you signed up with", go: "Send the link", doneH: "Check your e-mail", manualH: "Write to us",
+        sent: (e) => `If there's an account with ${e}, we've just sent a link there. It's valid for an hour.`,
+        manual: (c) => `Please write to us${c ? ` at ${c}` : ""} from the e-mail you signed up with and we'll send you a new password.`,
+        doneHelp: "No e-mail? Check your spam folder, or try again in a few minutes.",
+        empty: "Please enter your e-mail.", many: "Too many attempts, please try again in 15 minutes.", failed: "That didn't work, please try again.",
+        privacy: "Privacy", terms_link: "Terms",
+      },
+    });
+    const retitle = () => { document.title = t("title"); };
+    retitle(); I.onChange(retitle);
+    I.switcher($("lang"));
+    $("email").focus();
+
+    $("form").onsubmit = async (e) => {
+      e.preventDefault();
+      $("err").textContent = "";
+      const email = $("email").value.trim();
+      if (!email) return ($("err").textContent = t("empty"));
+      $("go").disabled = true;
+      try {
+        const r = await fetch("/api/password/forgot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, lang: I.lang }) });
+        if (r.status === 429) throw new Error(t("many"));
+        if (!r.ok) throw new Error(t("failed"));
+        const d = await r.json();
+        $("done-text").textContent = d.mail ? t("sent", email) : t("manual", contact());
+        if (!d.mail) { $("done-h").dataset.i18n = "manualH"; $("done-help").hidden = true; I.apply($("done")); }
+        $("form").hidden = true;
+        $("done").hidden = false;
+      } catch (err) {
+        $("err").textContent = err instanceof TypeError ? t("failed") : err.message;
+        $("go").disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

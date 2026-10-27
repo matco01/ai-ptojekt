@@ -15,7 +15,9 @@ import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
   setBotSettings, setInstallRequest, setWidgetSeen, setSiteLook,
+  setEmailVerified, unconfirmed, domainHolder, deleteUnconfirmed,
 } from "./lib/clients.js";
+import { mailEnabled, sendAccountMail } from "./lib/mail.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
 import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
@@ -28,7 +30,7 @@ import { TERMS_VERSION } from "./lib/legal.js";
 import { validateBot, widgetLook, avatarImage, listDocs, addDoc, deleteDoc, fileText, LIMITS as BOT_LIMITS } from "./lib/bot.js";
 import {
   MASTER, isProduction, hashPassword, verifyPassword, safeEqual, generatePassword, demoPassword,
-  createSession, readSession, sessionCookie, readCookie,
+  createSession, readSession, sessionCookie, readCookie, createLink, readLink, passwordStamp,
 } from "./lib/auth.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -515,7 +517,8 @@ app.get("/api/analytics", admin, async (req, res) => {
       ...stats,
       client: { id: c.id, name: c.name, active: c.active, domains: c.domains, feedUrl: c.feedUrl ?? "", ownerEmail: c.ownerEmail ?? "", builtIn: isBuiltIn(c.id), installRequest: c.installRequest ?? null,
         // for the step-by-step setup: is the code on the website, and has the owner named the assistant
-        widgetSeen: c.widgetSeen ?? null, agentName: agentName(c), named: Boolean(c.agentName), styled: Object.keys(c.appearance ?? {}).length > 0 },
+        widgetSeen: c.widgetSeen ?? null, agentName: agentName(c), named: Boolean(c.agentName), styled: Object.keys(c.appearance ?? {}).length > 0,
+        emailVerified: emailOk(c), mail: mailEnabled() },
       billing: billingView(c),
       catalog: catalogStatus(req.client),
       usage: usageView(req.client, await allowance(req.client), { master: req.isMaster }),
@@ -550,6 +553,8 @@ app.post("/api/analytics/settings", admin, rateLimit("settings", 20, 10 * 60e3, 
     if (!domains.includes(n)) domains.push(n);
   }
   if (!domains.length) return res.status(400).json({ error: "Zadejte aspoň jednu doménu obchodu.", code: "domain" });
+  const taken = await takenDomain(req.client, domains);
+  if (taken && !req.isMaster) return res.status(409).json({ error: `Doménu ${taken} už používá jiný obchod. Ozvěte se nám, pokud jde o omyl.`, code: "domain" });
   const feedUrl = str(req.body?.feedUrl, 1000).trim();
   if (feedUrl && !/^https?:\/\/\S+$/i.test(feedUrl)) return res.status(400).json({ error: "Adresa feedu musí začínat https://", code: "feed" });
   try {
@@ -637,6 +642,9 @@ const pageUrl = (req, p) => `${req.protocol}://${req.get("Host")}${p}`;
 // pay for a plan: Stripe's payment page (or done at once – a plan change, or simulated locally)
 app.post("/api/billing/checkout", admin, rateLimit("checkout", 10, 10 * 60e3, { shared: true }), async (req, res) => {
   if (req.client.billing === "manual") return res.status(400).json({ error: "Tento obchod platí na fakturu – tarif změníte přímo." });
+  if (!emailOk(req.client) && !req.isMaster) return res.status(403).json({ code: "verify", error: "Nejdřív prosím potvrďte svůj e-mail – odkaz jsme vám poslali." });
+  const taken = await takenDomain(req.client, req.client.domains);
+  if (taken) return res.status(409).json({ code: "domain", error: `Doménu ${taken} už používá jiný obchod – v Nastavení zadejte svou. Ozvěte se nám, pokud jde o omyl.` });
   const lang = req.body?.lang === "en" ? "en" : "cs";
   const back = `/admin/${req.isMaster ? `?client=${req.client.id}` : ""}`;
   try {
@@ -649,6 +657,72 @@ app.post("/api/billing/checkout", admin, rateLimit("checkout", 10, 10 * 60e3, { 
 app.post("/api/billing/portal", admin, async (req, res) => {
   try {
     res.json(await billingPortal(req.client, { lang: req.body?.lang, returnUrl: pageUrl(req, `/admin/${req.isMaster ? `?client=${req.client.id}` : ""}`) }));
+  } catch (err) { fail(res, err); }
+});
+
+// --- the owner's e-mail address and password (links e-mailed through lib/mail.js) ---
+// With e-mail switched on (RESEND_API_KEY) a sign-up confirms its address before it can pay; accounts
+// from before, the ones we manage and the demo shops count as confirmed.
+const emailOk = (c) => !mailEnabled() || Boolean(c.emailVerifiedAt) || c.billing === "manual" || isBuiltIn(c.id);
+// links in e-mails always lead to our own domain (never to a temporary Vercel address)
+const siteBase = (req) => (process.env.SITE_URL || (isProduction() ? "https://sella.chat" : `${req.protocol}://${req.get("Host")}`)).replace(/\/$/, "");
+const mailLang = (v) => (v === "en" ? "en" : "cs");
+// the first of these domains that another shop holds (pays for it, or its widget runs there)
+async function takenDomain(client, domains) {
+  const others = (await listClients()).filter((c) => c.id !== client.id);
+  return domains.find((d) => domainHolder(others, d)) ?? null;
+}
+
+function sendVerifyMail(c, req, lang) {
+  const link = `${siteBase(req)}/api/account/verify?t=${createLink("verify", { c: c.id, e: c.ownerEmail }, 7 * 864e5)}`;
+  return sendAccountMail("verify", { to: c.ownerEmail, shop: c.name, link, lang: mailLang(lang) });
+}
+
+// the link in the confirmation e-mail
+app.get("/api/account/verify", async (req, res) => {
+  const d = readLink("verify", req.query.t);
+  const c = d && (await getClient(d.c, { includeInactive: true }));
+  if (!c || c.ownerEmail?.toLowerCase() !== String(d.e ?? "").toLowerCase()) return res.redirect(302, "/admin/?verified=0");
+  try { if (!c.emailVerifiedAt) await setEmailVerified(c.id); } catch (err) { console.error("verify:", err.message); return res.redirect(302, "/admin/?verified=0"); }
+  res.redirect(302, "/admin/?verified=1");
+});
+
+app.post("/api/account/verify/resend", sameOrigin, admin, rateLimit("verify-resend", 3, 60 * 60e3, { shared: true }), async (req, res) => {
+  const c = req.client;
+  if (!mailEnabled()) return res.status(503).json({ error: "Posílání e-mailů zatím není zapnuté." });
+  if (emailOk(c)) return res.json({ ok: true, already: true });
+  if (!c.ownerEmail) return res.status(400).json({ error: "U účtu chybí e-mail." });
+  try { await sendVerifyMail(c, req, req.body?.lang); res.json({ ok: true, to: c.ownerEmail }); } catch (err) { fail(res, err); }
+});
+
+// "Forgot your password?" – the same answer whether or not such an account exists
+app.post("/api/password/forgot", sameOrigin, rateLimit("forgot", 5, 15 * 60e3, { shared: true }), async (req, res) => {
+  if (!mailEnabled()) return res.json({ ok: true, mail: false }); // the page then points to our contact e-mail
+  const login = str(req.body?.email, 200).trim().toLowerCase();
+  if (login && (await hit(`forgot:${login}`, 60 * 60e3, 3))) {
+    const c = (await listClients()).find((x) => x.ownerEmail?.toLowerCase() === login || x.id === login);
+    if (c?.ownerEmail && c.passwordHash && !isBuiltIn(c.id)) {
+      // in the address's #fragment: the link's secret never reaches a server log or another site's Referer
+      const link = `${siteBase(req)}/sella/nove-heslo.html#t=${createLink("reset", { c: c.id, s: passwordStamp(c.passwordHash) }, 60 * 60e3)}`;
+      await sendAccountMail("reset", { to: c.ownerEmail, shop: c.name, link, lang: mailLang(req.body?.lang) })
+        .catch((err) => console.error("reset mail:", err.message));
+    }
+  }
+  res.json({ ok: true, mail: true });
+});
+
+// the new password from the e-mailed link: valid an hour, and only until the password changes (so once)
+app.post("/api/password/reset", sameOrigin, rateLimit("reset", 10, 15 * 60e3, { shared: true }), async (req, res) => {
+  const d = readLink("reset", req.body?.token);
+  const c = d && (await getClient(d.c, { includeInactive: true }));
+  if (!c || d.s !== passwordStamp(c.passwordHash)) return res.status(400).json({ code: "link", error: "Odkaz už neplatí – požádejte prosím o nový." });
+  const password = str(req.body?.password, 200);
+  if (password.length < 10) return res.status(400).json({ code: "password", error: "Heslo musí mít aspoň 10 znaků." });
+  try {
+    await setPasswordHash(c.id, hashPassword(password));
+    if (!c.emailVerifiedAt) await setEmailVerified(c.id); // the link came to their inbox – the address is theirs
+    res.set("Set-Cookie", sessionCookie(createSession(c.id), { secure: req.secure }));
+    res.json({ ok: true });
   } catch (err) { fail(res, err); }
 });
 
@@ -675,16 +749,23 @@ app.post("/api/signup", sameOrigin, rateLimit("signup-form", 40, 10 * 60e3, { sh
   if (b.terms !== true) return bad("terms", "Potvrďte prosím podmínky.");
   try {
     const clients = await listClients();
-    if (clients.some((c) => c.ownerEmail?.toLowerCase() === email)) return res.status(409).json({ code: "email", error: "S tímto e-mailem už účet existuje – přihlaste se." });
-    if (clients.some((c) => c.domains.includes(domain))) return res.status(409).json({ code: "domain", error: "Tento e-shop už Sellu má. Ozvěte se nám, pokud jde o omyl." });
+    // an account nobody confirmed and nobody paid for doesn't hold its e-mail: the new sign-up replaces it
+    const sameEmail = clients.find((c) => c.ownerEmail?.toLowerCase() === email);
+    if (sameEmail && !(mailEnabled() && unconfirmed(sameEmail))) return res.status(409).json({ code: "email", error: "S tímto e-mailem už účet existuje – přihlaste se." });
+    // a domain is taken only by a shop that pays or whose widget runs there – typing it in holds nothing
+    if (domainHolder(clients, domain)) return res.status(409).json({ code: "domain", error: "Tento e-shop už Sellu má. Ozvěte se nám, pokud jde o omyl." });
     // at most a few new accounts per network and hour (checked only once the form is valid)
     if (!(await hit(`signup:${req.ip}`, 60 * 60e3, 5))) return res.status(429).json({ error: "Příliš mnoho registrací, zkuste to prosím později." });
+    if (sameEmail) await deleteUnconfirmed(sameEmail.id);
     const id = await createSignedUpClient({ name, domain, email, passwordHash: hashPassword(password), plan, feedUrl,
       terms: { version: TERMS_VERSION, at: new Date().toISOString(), ip: str(req.ip, 64) } });
     await activateDemoAccount(id, plan); // PAYMENTS=demo: counts as paid right away
     alert(`signup:${id}`, `Nová registrace: ${name} (${domain}, ${email}), tarif ${PLANS[plan].name}.`);
+    // the confirmation e-mail goes out before answering (on Vercel the function stops right after)
+    if (mailEnabled()) await sendVerifyMail(await getClient(id, { includeInactive: true }), req, b.lang)
+      .catch((err) => alert(`mail:${id}`, `Ověřovací e-mail pro ${email} se nepodařilo poslat: ${err.message}`));
     res.set("Set-Cookie", sessionCookie(createSession(id), { secure: req.secure }));
-    res.json({ ok: true, id });
+    res.json({ ok: true, id, verify: mailEnabled() });
   } catch (err) { fail(res, err); }
 });
 
@@ -804,6 +885,13 @@ app.get("/api/cron/daily", async (req, res) => {
   try {
     report.purgedEvents = await purgeOld();
     if (db) await db.from("rate_limits").delete().lt("window_start", Date.now() - 32 * 864e5);
+    // sign-ups nobody confirmed (and nobody paid for) within 14 days
+    if (mailEnabled()) {
+      report.removedUnconfirmed = 0;
+      for (const c of await listClients()) {
+        if (unconfirmed(c) && Date.parse(c.createdAt) < Date.now() - 14 * 864e5 && (await deleteUnconfirmed(c.id))) report.removedUnconfirmed++;
+      }
+    }
     // feeds first (quick), then shops read from their websites (a minute or two each) while time is left
     const started = Date.now();
     const shops = (await listClients()).filter((c) => c.active && !c.feedXml && c.catalog !== "techmarket" && sourceOf(c) !== "none")

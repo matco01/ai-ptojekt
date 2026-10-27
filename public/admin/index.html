@@ -127,6 +127,8 @@
     .activate .plans-err { margin-top: 10px; min-height: 0; }
     .activate .pl .btn.light { box-shadow: inset 0 0 0 1px rgba(47,49,51,.2); }
     .activate .pl .btn.light:hover { box-shadow: inset 0 0 0 1px rgba(47,49,51,.4); }
+    .verify { margin: 0 0 26px; padding: 18px 22px; display: flex; gap: 14px 22px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .verify p { margin: 0; color: var(--ink-2); max-width: 720px; }
 
     /* on your website: embed code, settings, payments */
     .site { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 14px; align-items: start; }
@@ -279,6 +281,11 @@
 
     <section class="pane activate" id="activate" hidden></section>
 
+    <section class="pane verify" id="verify" hidden role="status">
+      <p id="verify-text"></p>
+      <button class="btn light" id="verify-send" data-i18n="verifySend">Poslat znovu</button>
+    </section>
+
     <section class="pane setup" id="setup" hidden></section>
 
     <div class="kpis" id="kpis"></div>
@@ -417,6 +424,9 @@
         noteStripe: (e) => `Platbu bezpečně zpracuje Stripe. Každý měsíc se strhne sama a faktura přijde na ${e}. Zrušit můžete kdykoli.`,
         noteSim: "Vývojový režim bez Stripe – platba se jen nasimuluje.", noteDemo: "Demo režim – platba se jen nasimuluje, kartu nezadáváte.", noteOff: "Platby zatím nejsou zapnuté – ozvěte se nám prosím.",
         paid: "Děkujeme! Platba proběhla a Sella na vašem webu běží.", paidWait: "Děkujeme! Čekáme na potvrzení platby…", payErr: "Platbu se nepodařilo zahájit.",
+        verifyText: (e) => `Potvrďte prosím svůj e-mail – odkaz jsme poslali na <b>${e}</b>. Bez potvrzení nejde zaplatit tarif a nepotvrzený účet po 14 dnech smažeme.`,
+        verifySend: "Poslat znovu", verifyMany: "Odkaz už jsme poslali několikrát – zkuste to prosím za hodinu.", verifySent: (e) => `Odkaz jsme znovu poslali na ${e}.`, verifyOk: "Hotovo, e-mail je potvrzený.",
+        verifyBad: "Odkaz pro potvrzení e-mailu neplatí – pošlete si prosím nový.", verifyFirst: "Nejdřív prosím potvrďte svůj e-mail – odkaz máte ve schránce.",
         plansPStripe: "Rozdíl v ceně se doúčtuje (nebo vrátí) hned. Když se vyčerpají zprávy tarifu, prodavačka se do konce měsíce vypne.",
         "site.h": "Na vašem webu", "site.p": "Kód pro vložení, kde prodavačka smí běžet, a vaše platby.",
         embedH: "Kód pro váš web", embedP: "Vložte ho na všechny stránky e-shopu, těsně před </body>.", copy: "Zkopírovat kód", copied: "Zkopírováno ✓",
@@ -501,6 +511,9 @@
         noteStripe: (e) => `The payment is handled securely by Stripe. It renews every month and the invoice goes to ${e}. Cancel any time.`,
         noteSim: "Development mode without Stripe – the payment is only simulated.", noteDemo: "Demo mode – the payment is only simulated, no card needed.", noteOff: "Payments aren't switched on yet – please get in touch.",
         paid: "Thank you! The payment went through and Sella runs on your site.", paidWait: "Thank you! Waiting for the payment to be confirmed…", payErr: "Couldn't start the payment.",
+        verifyText: (e) => `Please confirm your e-mail – we sent a link to <b>${e}</b>. Until then you can't pay for a plan, and an unconfirmed account is deleted after 14 days.`,
+        verifySend: "Send again", verifyMany: "We have sent the link several times already – please try again in an hour.", verifySent: (e) => `We've sent the link to ${e} again.`, verifyOk: "Done, your e-mail is confirmed.",
+        verifyBad: "The confirmation link doesn't work – please send yourself a new one.", verifyFirst: "Please confirm your e-mail first – the link is in your inbox.",
         plansPStripe: "The price difference is charged (or refunded) right away. When the plan's messages run out, the assistant switches off until the month ends.",
         "site.h": "On your website", "site.p": "The embed code, where the assistant may run, and your payments.",
         embedH: "Code for your website", embedP: "Add it to every page of your shop, just before </body>.", copy: "Copy code", copied: "Copied ✓",
@@ -624,6 +637,7 @@
       $("status").querySelector("span").textContent = b.needsPayment ? t(b.status === "canceled" ? "ended" : "awaiting")
         : b.status === "past_due" ? t("pastDue") : limited ? t("limited") : t("running");
       renderActivate(d);
+      renderVerify(d);
       renderSetup(d, me);
       renderSite(d, me);
 
@@ -718,10 +732,27 @@
     async function pay(plan) {
       const r = await post("/api/billing/checkout", { plan });
       const res = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(res.error || t("payErr"));
+      if (!r.ok) throw new Error(res.code === "verify" ? t("verifyFirst") : res.error || t("payErr"));
       if (res.url) { toast(t("paying")); location.assign(res.url); return false; }
       return true;
     }
+
+    // a new sign-up confirms its e-mail (the link from lib/mail.js) before it can pay
+    function renderVerify(d) {
+      const show = d.client.emailVerified === false && !last?.me.master;
+      $("verify").hidden = !show;
+      if (show) $("verify-text").innerHTML = t("verifyText", esc(d.client.ownerEmail || "e-mail"));
+    }
+    $("verify-send").onclick = async () => {
+      $("verify-send").disabled = true;
+      try {
+        const r = await post("/api/account/verify/resend", {});
+        const res = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(r.status === 429 ? t("verifyMany") : res.error || `HTTP ${r.status}`);
+        if (res.already) { toast(t("verifyOk")); await load(); } else toast(t("verifySent", res.to));
+      } catch (err) { toast(err.message); }
+      setTimeout(() => { $("verify-send").disabled = false; }, 30e3);
+    };
 
     // a shop that signed up (or whose subscription ended) pays here before anything works
     function renderActivate(d) {
@@ -1035,6 +1066,12 @@
     setTimeout(tick, 8000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden && last) load().catch(() => {}); });
     load().then(async () => {
+      // back from the link in the confirmation e-mail
+      if (params.has("verified")) {
+        toast(t(params.get("verified") === "1" ? "verifyOk" : "verifyBad"));
+        params.delete("verified");
+        history.replaceState(null, "", location.pathname + (params.size ? "?" + params : ""));
+      }
       // back from Stripe's payment page: Stripe confirms the payment to the server within moments
       if (!params.has("paid")) return;
       params.delete("paid");

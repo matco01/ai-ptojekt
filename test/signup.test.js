@@ -61,9 +61,12 @@ test("a signed-up shop sees its overview, but its widget works only after paying
   const cookie = r.headers.get("set-cookie").split(";")[0];
   const asOwner = { Cookie: cookie };
 
-  // the same e-mail or shop can't sign up twice
+  // the same e-mail can't sign up twice (without e-mail confirmation switched on)…
   assert.equal((await post("/api/signup", { ...shop, name: "Jiná" })).status, 409);
-  assert.equal((await post("/api/signup", { ...shop, email: "jiny@ulipy.cz" })).status, 409);
+  // …but typing in a shop's domain holds nothing until that shop pays or its widget runs there
+  const squat = await post("/api/signup", { ...shop, name: "Někdo cizí", email: "cizi@example.com" });
+  assert.equal(squat.status, 200);
+  const asSquatter = { Cookie: squat.headers.get("set-cookie").split(";")[0] };
 
   // overview: waiting for payment
   let d = await (await fetch(`${base}/api/analytics`, { headers: asOwner })).json();
@@ -95,10 +98,28 @@ test("a signed-up shop sees its overview, but its widget works only after paying
   assert.equal((await status.json()).on, true);
   assert.equal((await fetch(`${base}/api/status?client=${id}`, { headers: { Origin: "https://evil.example" } })).status, 403);
 
+  // now the domain is the paying shop's: no new sign-up, no paying for it and no adding it elsewhere
+  assert.equal((await post("/api/signup", { ...shop, email: "jiny@ulipy.cz" })).status, 409);
+  assert.equal((await post("/api/billing/checkout", { plan: "standard" }, asSquatter)).status, 409);
+  assert.equal((await post("/api/analytics/settings", { domains: "www.ulipy.cz", feedUrl: "" }, asSquatter)).status, 409);
+  assert.equal((await post("/api/analytics/settings", { domains: "cizi-obchod.cz", feedUrl: "" }, asSquatter)).status, 200);
+
   // the owner moves the shop to a new domain
   assert.equal((await post("/api/analytics/settings", { domains: "ulipy.cz, kava-ulipy.cz", feedUrl: "" }, asOwner)).status, 200);
   assert.equal((await fetch(`${base}/api/status?client=${id}`, { headers: { Origin: "https://kava-ulipy.cz" } })).status, 200);
   assert.equal((await post("/api/analytics/settings", { domains: "", feedUrl: "" }, asOwner)).status, 400);
+});
+
+test("without e-mail set up, a forgotten password goes through our contact e-mail", async () => {
+  assert.deepEqual(await (await post("/api/password/forgot", { email: "majitel@ulipy.cz" })).json(), { ok: true, mail: false });
+  assert.equal((await post("/api/password/forgot", { email: "x@y.cz" }, { Origin: "https://evil.example" })).status, 403);
+  // a made-up reset link is refused
+  assert.equal((await (await post("/api/password/reset", { token: "abc.def", password: "nove-heslo-123" })).json()).code, "link");
+  // with e-mail off every account counts as confirmed
+  const login = await post("/api/admin/login", { client: "majitel@ulipy.cz", password: shop.password });
+  const d = await (await fetch(`${base}/api/analytics`, { headers: { Cookie: login.headers.get("set-cookie").split(";")[0] } })).json();
+  assert.equal(d.client.emailVerified, true);
+  assert.equal(d.client.mail, false);
 });
 
 test("owners can't change the showcase shops; webhooks need Stripe set up", async () => {

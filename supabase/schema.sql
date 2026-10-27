@@ -62,6 +62,11 @@ alter table clients add column if not exists widget_seen jsonb;
 -- The settings page's preview shows them instead of a sample page's.
 alter table clients add column if not exists site_look jsonb;
 
+-- The owner confirmed their e-mail address (v10). Accounts from before e-mails were checked count as confirmed
+-- (the date is fixed, so running this file again never confirms a newer account).
+alter table clients add column if not exists email_verified_at timestamptz;
+update clients set email_verified_at = created_at where email_verified_at is null and created_at < '2026-10-27T12:00:00Z';
+
 -- What the owner wants the assistant to know beyond the catalogue: texts and uploaded documents.
 create table if not exists knowledge (
   id          bigint generated always as identity primary key,
