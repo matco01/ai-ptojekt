@@ -128,6 +128,7 @@
     .activate .pl .btn.light { box-shadow: inset 0 0 0 1px rgba(47,49,51,.2); }
     .activate .pl .btn.light:hover { box-shadow: inset 0 0 0 1px rgba(47,49,51,.4); }
     .verify { margin: 0 0 26px; padding: 18px 22px; display: flex; gap: 14px 22px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .verify { box-shadow: inset 3px 0 0 var(--accent); }
     .verify p { margin: 0; color: var(--ink-2); max-width: 720px; }
 
     /* on your website: embed code, settings, payments */
@@ -279,12 +280,13 @@
       </div>
     </section>
 
-    <section class="pane activate" id="activate" hidden></section>
-
+    <!-- first: without a confirmed e-mail the plans below can't be paid -->
     <section class="pane verify" id="verify" hidden role="status">
       <p id="verify-text"></p>
       <button class="btn light" id="verify-send" data-i18n="verifySend">Poslat znovu</button>
     </section>
+
+    <section class="pane activate" id="activate" hidden></section>
 
     <section class="pane setup" id="setup" hidden></section>
 
