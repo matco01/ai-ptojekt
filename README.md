@@ -137,7 +137,7 @@ Vzhled dorazí do widgetu spolu se startovní kontrolou (`/api/status` → `look
 Projekt běží na Vercelu bez dalšího nastavení (Express se detekuje sám ze `server.js`).
 
 1. **Import repozitáře:** ve Vercelu zvolte Add New → Project, vyberte repozitář a nechte výchozí nastavení (Framework Preset: Express / Other, žádný build command).
-2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN`, `CRON_SECRET`, pro platby `STRIPE_SECRET_KEY` a `STRIPE_WEBHOOK_SECRET` pro e-maily `RESEND_API_KEY` a `MAIL_FROM`, doporučeně `ALERT_WEBHOOK_URL`; volitelně `ELEVENLABS_API_KEY` (vše viz `.env.example`). Soubor `.env.local` se na Vercel nenahrává.
+2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN`, `CRON_SECRET`, pro platby `STRIPE_SECRET_KEY` a `STRIPE_WEBHOOK_SECRET` pro e-maily `RESEND_API_KEY` a `MAIL_FROM`, doporučeně `ALERT_WEBHOOK_URL`; pro přirozený hlas `AZURE_SPEECH_KEY` a `AZURE_SPEECH_REGION` (vše viz `.env.example`). Soubor `.env.local` se na Vercel nenahrává.
 3. **Databáze:** spusťte `supabase/schema.sql` v Supabase → SQL Editor – poprvé i po každé aktualizaci (přidá jen to, co chybí, a smaže dřívější simulovaná demo data).
 4. **Deploy.** Každý push na `main` nasadí novou verzi.
 
@@ -276,7 +276,7 @@ Postavička mrká, sleduje kurzor a zvedá obočí, když přemýšlí. **Pusu o
 Ruční nastavení je volitelné: `data-name`, `data-brand`, `data-avatar-color`, `data-letter`, `data-avatar-image`.
 
 **Hlas:**
-- **Přirozený hlas (doporučeno):** s `ELEVENLABS_API_KEY` v `.env.local` mluví neuronovým hlasem ElevenLabs (česky, výchozí hravý hlas „Jessica“, jde změnit přes `ELEVENLABS_VOICE_ID`). Klíč zdarma na elevenlabs.io, zhruba 10 000 znaků měsíčně.
+- **Přirozený hlas (doporučeno):** s `AZURE_SPEECH_KEY` a `AZURE_SPEECH_REGION` mluví neuronovým hlasem Azure AI Speech – rodilá čeština (Vlasta, mužská prodavačka Antonín) i angličtina (Ava, Andrew), podle jazyka stránky a pohlaví prodavačky v nastavení. Cena ≈ $16 za milion znaků; tarif Free (F0) má 500 000 znaků měsíčně zdarma, ale jen 20 požadavků za minutu – pro provoz tarif Standard (S0). Klíč: portal.azure.com → Create a resource → Speech → Keys and Endpoint.
 - **Bez klíče:** použije nejlepší hlas prohlížeče (v Edge „Vlasta Online (Natural)“).
 - **Emoji a formátování se nikdy nečtou nahlas.**
 

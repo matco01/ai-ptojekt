@@ -189,17 +189,17 @@ app.post("/api/resolve", rateLimit("resolve", 120, 60e3), withClient(), (req, re
   });
 });
 
-// Natural voice (ElevenLabs). 404 when not configured or the shop's voice allowance is used up →
+// Natural voice (Azure AI Speech, lib/tts.js). 404 when not configured or the shop's voice allowance is used up →
 // the widget uses the browser voice.
 app.post("/api/tts", rateLimit("tts", 120, 60e3, { shared: true }), withClient(), async (req, res) => {
-  if (ttsProvider() !== "elevenlabs") return res.status(404).json({ error: "TTS not configured" });
+  if (ttsProvider() === "browser") return res.status(404).json({ error: "TTS not configured" });
   const text = str(req.body?.text, 600).trim();
   if (!text) return res.status(400).json({ error: "text is required" });
   if (!(await allowance(req.client)).tts) return res.status(404).json({ error: "TTS limit reached" });
   const abort = new AbortController();
   res.on("close", () => { if (!res.writableEnded) abort.abort(); });
   try {
-    await streamSpeech(text, res, abort.signal);
+    await streamSpeech(text, res, abort.signal, { lang: req.body?.lang === "en" ? "en" : "cs", gender: req.client.persona?.gender });
     await recordUsage(req.client, { ttsChars: text.length });
   } catch (err) {
     if (abort.signal.aborted) return;

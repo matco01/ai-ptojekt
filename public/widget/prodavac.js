@@ -1368,10 +1368,10 @@
     if (!b) return "Bip";
     return b[0].toUpperCase() + (b.slice(1).match(/[aeiouy]/i)?.[0] || "i").toLowerCase() + "ko";
   }
-  let ttsServer = false; // true when the server has a natural neural voice (ElevenLabs)
+  let ttsServer = false; // true when the server has a natural neural voice (Azure)
   async function loadName() {
     AV ??= detectPersona();
-    fetch(cfg.api + "/api/health").then((r) => r.json()).then((h) => { ttsServer = h.tts === "elevenlabs"; }).catch(() => {});
+    fetch(cfg.api + "/api/health").then((r) => r.json()).then((h) => { ttsServer = Boolean(h.tts) && h.tts !== "browser"; }).catch(() => {});
     const key = "agent-name:" + cfg.client;
     const cached = look.name || script.dataset.name || ls.get(key);
     // until the server answers: the same kind of name it makes from the shop's name (lib/persona.js)
@@ -2162,7 +2162,7 @@
   }
 
   // ------------------------------------------------------------- voice ----
-  // Voice: a natural neural voice from the server (ElevenLabs) when configured, otherwise the
+  // Voice: a natural neural voice from the server (Azure) when configured, otherwise the
   // best voice the browser has. The mouth follows the sound (loudness from the audio, or word
   // boundaries from the browser), and the customer can cut in by simply talking.
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2254,9 +2254,9 @@
     if (!busy) cb?.();
   }
 
-  // ---- natural neural voice from the server (ElevenLabs): sentences are fetched ahead and played in order ----
-  // At most 2 requests run at once – the ElevenLabs free plan refuses more in parallel, and every
-  // refused sentence used to be read by the browser voice, so the voice kept switching.
+  // ---- natural neural voice from the server (Azure): sentences are fetched ahead and played in order ----
+  // At most 2 requests run at once – a refused sentence would be read by the browser voice, and the
+  // voice would keep switching; "too busy" is retried instead.
   const TTS_PARALLEL = 2;
   // Phones only play sound started by a tap, and each sentence arrives later, after a fetch. So one
   // audio element is unlocked on the customer's tap and then reused for every sentence.
@@ -2277,7 +2277,7 @@
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   async function fetchSpeech(text, signal) {
     for (let attempt = 0; ; attempt++) {
-      const r = await fetch(cfg.api + "/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client: cfg.client, text }), signal });
+      const r = await fetch(cfg.api + "/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client: cfg.client, text, lang: cfg.lang.slice(0, 2).toLowerCase() }), signal });
       if (r.ok) return r.blob();
       // busy (too many requests at once) – wait a moment and try again
       if (r.status === 429 && attempt < 5) { await wait(350 * 2 ** attempt); continue; }
