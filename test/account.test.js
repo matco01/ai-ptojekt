@@ -113,3 +113,22 @@ test("a forgotten password is set again through a one-off e-mailed link", async 
   assert.equal((await post("/api/admin/login", { client: shop.email, password: shop.password })).status, 401);
   assert.equal((await post("/api/admin/login", { client: shop.email, password: "nove-heslo-456" })).status, 200);
 });
+
+test("the confirm-your-e-mail screen: where the link went, and fixing a typo", async () => {
+  const r = await post("/api/signup", { ...shop, name: "Sýrárna", domain: "syrarna.cz", email: "syry@syrarna.cz" });
+  const asOwner = cookieOf(r);
+  assert.deepEqual(await (await fetch(`${base}/api/account`, { headers: asOwner })).json(), { email: "syry@syrarna.cz", verified: false, mail: true });
+  assert.equal((await fetch(`${base}/api/account`)).status, 401);
+
+  assert.equal((await (await post("/api/account/email", { email: "nope" }, asOwner)).json()).code, "email");
+  assert.equal((await (await post("/api/account/email", { email: shop.email }, asOwner)).json()).code, "taken");
+  assert.deepEqual(await (await post("/api/account/email", { email: "Syrarna@Example.cz" }, asOwner)).json(), { ok: true, to: "syrarna@example.cz" });
+  assert.deepEqual(outbox.at(-1).to, ["syrarna@example.cz"]);
+  // the link sent to the old address no longer confirms anything
+  const old = outbox.findLast((m) => m.to[0] === "syry@syrarna.cz");
+  assert.equal((await fetch(linkIn(old), { redirect: "manual" })).headers.get("location"), "/admin/?verified=0");
+  await fetch(linkIn(outbox.at(-1)), { redirect: "manual" });
+  assert.equal((await (await fetch(`${base}/api/account`, { headers: asOwner })).json()).verified, true);
+  // once confirmed, the address is changed only with us
+  assert.equal((await post("/api/account/email", { email: "jiny@example.cz" }, asOwner)).status, 400);
+});

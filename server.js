@@ -15,7 +15,7 @@ import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
   setBotSettings, setInstallRequest, setWidgetSeen, setSiteLook,
-  setEmailVerified, unconfirmed, domainHolder, deleteUnconfirmed,
+  setEmailVerified, setOwnerEmail, unconfirmed, domainHolder, deleteUnconfirmed,
 } from "./lib/clients.js";
 import { mailEnabled, sendAccountMail } from "./lib/mail.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
@@ -693,6 +693,27 @@ app.post("/api/account/verify/resend", sameOrigin, admin, rateLimit("verify-rese
   if (emailOk(c)) return res.json({ ok: true, already: true });
   if (!c.ownerEmail) return res.status(400).json({ error: "U účtu chybí e-mail." });
   try { await sendVerifyMail(c, req, req.body?.lang); res.json({ ok: true, to: c.ownerEmail }); } catch (err) { fail(res, err); }
+});
+
+// the "Confirm your e-mail" screen: where the link went, and whether it was opened (maybe on the phone)
+app.get("/api/account", admin, (req, res) => {
+  res.json({ email: req.client.ownerEmail ?? null, verified: emailOk(req.client), mail: mailEnabled() });
+});
+
+// a typo at sign-up: an address that wasn't confirmed yet can be corrected, and the link goes to the new one
+app.post("/api/account/email", sameOrigin, admin, rateLimit("account-email", 5, 60 * 60e3, { shared: true }), async (req, res) => {
+  const c = req.client;
+  if (!mailEnabled() || emailOk(c)) return res.status(400).json({ error: "E-mail je už potvrzený." });
+  const email = str(req.body?.email, 200).trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ code: "email", error: "Zadejte platný e-mail." });
+  if ((await listClients()).some((x) => x.id !== c.id && x.ownerEmail?.toLowerCase() === email)) {
+    return res.status(409).json({ code: "taken", error: "S tímto e-mailem už účet existuje." });
+  }
+  try {
+    await setOwnerEmail(c.id, email);
+    await sendVerifyMail({ ...c, ownerEmail: email }, req, req.body?.lang);
+    res.json({ ok: true, to: email });
+  } catch (err) { fail(res, err); }
 });
 
 // "Forgot your password?" – the same answer whether or not such an account exists

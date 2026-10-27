@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Potvrďte e-mail – Sella</title>
+  <meta name="theme-color" content="#d0d9e1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="sella.css">
+  <link rel="stylesheet" href="account.css">
+  <style>
+    .mail-icon { display: block; width: 46px; height: 46px; margin: 0 0 16px; color: var(--accent); }
+    .pane p.lead { margin: 0 0 6px; color: var(--ink-2); font-size: 15.5px; line-height: 1.6; }
+    .pane p.lead b { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+    .pane .sub { margin-bottom: 20px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row .btn { flex: 1 1 auto; }
+    .pane .err, .ok { min-height: 0; margin: 12px 2px 0; }
+    .ok { color: #2f6b45; font-size: 14px; }
+    .err:empty, .ok:empty { display: none; }
+    #change { margin-top: 18px; }
+    .waiting { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 18px 0 0; font-size: 13.5px; color: var(--ink-3); }
+    .waiting i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .25; } }
+    .linkish { border: 0; padding: 0; background: none; font: inherit; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <button class="linkish" id="logout" type="button" data-i18n="logout">Odhlásit se</button>
+    <span id="lang"></span>
+  </div>
+
+  <main>
+    <div class="stack">
+      <p class="wordmark" aria-hidden="true">Sella</p>
+      <div class="pane" id="pane" hidden>
+        <svg class="mail-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="5" y="10" width="38" height="28" rx="5"/><path d="m7 13 17 13 17-13"/>
+        </svg>
+        <h1 data-i18n="h1">Potvrďte svůj e-mail</h1>
+        <p class="lead" id="lead"></p>
+        <p class="sub" data-i18n="sub">Otevřete odkaz v e-mailu a pustíme vás do přehledu. Odkaz platí 7 dní.</p>
+        <div class="row">
+          <button class="btn light" type="button" id="resend" data-i18n="resend">Poslat znovu</button>
+        </div>
+        <p class="err" id="err" role="alert"></p>
+        <p class="ok" id="ok" role="status"></p>
+
+        <p class="help" id="change-open"><span data-i18n="wrong">Překlep v e-mailu?</span> <button class="linkish" type="button" id="change-btn" data-i18n="changeIt">Změnit</button></p>
+        <form id="change" hidden novalidate>
+          <div class="field">
+            <input id="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder=" " required>
+            <label for="email" data-i18n="newEmail">Správný e-mail</label>
+          </div>
+          <button class="btn dark" type="submit" id="change-go"><span data-i18n="changeGo">Změnit a poslat odkaz</span> <span class="arr">→</span></button>
+        </form>
+
+        <p class="waiting" aria-hidden="true"><i></i><span data-i18n="waiting">Čekáme na potvrzení…</span></p>
+      </div>
+    </div>
+  </main>
+
+  <footer><a href="/podminky.html" data-i18n="terms_link">Obchodní podmínky</a> · <a href="/soukromi.html" data-i18n="privacy">Ochrana soukromí</a> · © 2026 Sella<br><span data-op="line"></span></footer>
+
+  <script src="i18n.js"></script>
+  <script src="/legal/provozovatel.js"></script>
+  <script src="sella.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const I = SellaI18n;
+    const t = I.use({
+      cs: {
+        title: "Potvrďte e-mail – Sella", logout: "Odhlásit se", h1: "Potvrďte svůj e-mail",
+        lead: (e) => `Poslali jsme vám odkaz na <b>${e}</b>.`,
+        sub: "Otevřete odkaz v e-mailu a pustíme vás do přehledu. Odkaz platí 7 dní.",
+        resend: "Poslat znovu", sent: (e) => `Odkaz jsme znovu poslali na ${e}. Podívejte se i do spamu.`,
+        wrong: "Překlep v e-mailu?", changeIt: "Změnit", newEmail: "Správný e-mail", changeGo: "Změnit a poslat odkaz",
+        waiting: "Čekáme na potvrzení…", badLink: "Tento odkaz neplatí (nebo už vypršel) – pošlete si prosím nový.",
+        badEmail: "Zadejte prosím platný e-mail.", taken: "S tímto e-mailem už účet existuje – přihlaste se jím.",
+        many: "Odkaz už jsme poslali několikrát – zkuste to prosím za hodinu.", failed: "Nepodařilo se, zkuste to prosím znovu.",
+        privacy: "Ochrana soukromí", terms_link: "Obchodní podmínky",
+      },
+      en: {
+        title: "Confirm your e-mail – Sella", logout: "Sign out", h1: "Confirm your e-mail",
+        lead: (e) => `We've sent a link to <b>${e}</b>.`,
+        sub: "Open the link in the e-mail and we'll take you to your overview. It's valid for 7 days.",
+        resend: "Send again", sent: (e) => `We've sent the link to ${e} again. Check your spam folder too.`,
+        wrong: "A typo in the address?", changeIt: "Change it", newEmail: "The right e-mail", changeGo: "Change and send the link",
+        waiting: "Waiting for the confirmation…", badLink: "This link doesn't work (or has expired) – please send yourself a new one.",
+        badEmail: "Please enter a valid e-mail.", taken: "There's already an account with this e-mail – sign in with it.",
+        many: "We have sent the link several times already – please try again in an hour.", failed: "That didn't work, please try again.",
+        privacy: "Privacy", terms_link: "Terms",
+      },
+    });
+    let email = "";
+    const showLead = () => { if (email) $("lead").innerHTML = t("lead", esc(email)); };
+    const retitle = () => { document.title = t("title"); showLead(); };
+    retitle(); I.onChange(retitle);
+    I.switcher($("lang"));
+    if (new URLSearchParams(location.search).get("link") === "0") $("err").textContent = t("badLink");
+
+    const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, lang: I.lang }) });
+    const answer = async (r) => {
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) return d;
+      throw new Error(r.status === 429 ? t("many") : d.code === "email" ? t("badEmail") : d.code === "taken" ? t("taken") : d.error || t("failed"));
+    };
+    const say = (ok, err = "") => { $("ok").textContent = ok; $("err").textContent = err; };
+
+    // confirmed (maybe on the phone) → on to the overview
+    async function check() {
+      const r = await fetch("/api/account").catch(() => null);
+      if (!r) return;
+      if (r.status === 401) return location.replace("/sella/prihlaseni.html");
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d.verified) return location.replace("/admin/?verified=1");
+      email = d.email || "";
+      showLead();
+      $("pane").hidden = false;
+    }
+    check();
+    setInterval(() => { if (!document.hidden) check(); }, 5000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
+
+    $("resend").onclick = async () => {
+      $("resend").disabled = true;
+      try { const d = await answer(await post("/api/account/verify/resend", {})); if (d.already) return check(); say(t("sent", d.to)); }
+      catch (err) { say("", err.message); }
+      setTimeout(() => { $("resend").disabled = false; }, 30e3);
+    };
+    $("change-btn").onclick = () => { $("change").hidden = false; $("change-open").hidden = true; $("email").value = email; $("email").focus(); };
+    $("change").onsubmit = async (e) => {
+      e.preventDefault();
+      const next = $("email").value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) return say("", t("badEmail"));
+      $("change-go").disabled = true;
+      try {
+        const d = await answer(await post("/api/account/email", { email: next }));
+        email = d.to; showLead();
+        $("change").hidden = true; $("change-open").hidden = false;
+        say(t("sent", d.to));
+      } catch (err) { say("", err.message); }
+      $("change-go").disabled = false;
+    };
+    $("logout").onclick = async () => { await fetch("/api/admin/logout", { method: "POST" }).catch(() => {}); location.href = "/"; };
+  </script>
+</body>
+</html>

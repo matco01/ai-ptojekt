@@ -272,7 +272,9 @@
         if (r.status === 429) throw { msg: t("many") };
         if (!r.ok) throw { msg: d.error || t("failed") };
         document.body.classList.add("leaving");
-        setTimeout(() => location.assign("/admin/?welcome=1"), Sella.reduced ? 0 : 420);
+        // with e-mail switched on, the address is confirmed first (the dashboard would send them there anyway)
+        const next = d.verify ? "/sella/potvrdte-email.html" : "/admin/?welcome=1";
+        setTimeout(() => location.assign(next), Sella.reduced ? 0 : 420);
       } catch (err) {
         fail(err.code, err instanceof TypeError ? t("offline") : err.msg || t("failed"));
         $("go").disabled = false;
