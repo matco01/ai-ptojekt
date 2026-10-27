@@ -375,7 +375,9 @@
     $("form-err").innerHTML = `<span class="ok">${t("saved")}</span>${wasNew ? t("nowLogin") : ""}`;
   };
 
-  const embedFor = (id) => `<script src="${location.origin}/widget/prodavac.js" data-client="${id}" defer><\/script>`;
+  // the embed code always points at our own domain – never at a temporary Vercel address the owner happened to open
+  const EMBED_ORIGIN = /\.vercel\.app$/.test(location.hostname) ? "https://sella.chat" : location.origin;
+  const embedFor = (id) => `<script src="${EMBED_ORIGIN}/widget/prodavac.js" data-client="${id}" defer><\/script>`;
   function showOnboard(id) {
     $("onboard").hidden = !id;
     if (id) $("embed").textContent = embedFor(id);

@@ -26,7 +26,7 @@ Sella is an AI salesperson for online shops – a chatbot that behaves like a go
 Shoptet, WordPress with WooCommerce, Shopify, Upgates and any custom website – you add one line of code, directly or through Google Tag Manager. A video guide shows every system step by step, and if you'd rather not, we'll add it for you.
 
 ### How much does Sella cost?
-Plans start at CZK 990 a month excluding VAT and differ only in AI messages and voice. You pay monthly by card, the invoice arrives by e-mail, and you can change or cancel any time. When the messages run out, the assistant switches off until the month ends – you never pay more.
+Plans start at CZK 990 a month (final price – we are not VAT registered) and differ only in AI messages and voice. You pay monthly by card, the invoice arrives by e-mail, and you can change or cancel any time. When the messages run out, the assistant switches off until the month ends – you never pay more.
 
 ### Where does it get my products from?
 From the XML feed you already have for Heureka, Zboží.cz or Google Merchant. Without a feed, it reads your products and page texts straight from your website – again every night, so it knows current prices and stock.
@@ -53,7 +53,7 @@ Sella je AI prodavačka pro e-shopy – chatbot, který se chová jako dobrá pr
 Na Shoptetu, WordPressu s WooCommerce, Shopify, Upgates i na vlastním webu – stačí vložit jeden řádek kódu, přímo nebo přes Google Tag Manager. Videonávod ukazuje každý systém krok za krokem, a když se vám nechce, vložíme ho za vás.
 
 ### Kolik Sella stojí?
-Tarify začínají na 990 Kč měsíčně bez DPH a liší se jen počtem zpráv od AI a hlasu. Platíte kartou měsíčně, faktura přijde e-mailem a tarif změníte nebo zrušíte kdykoli. Když se zprávy vyčerpají, prodavačka se do konce měsíce vypne – nikdy nezaplatíte víc.
+Tarify začínají na 990 Kč měsíčně (konečná cena, nejsme plátci DPH) a liší se jen počtem zpráv od AI a hlasu. Platíte kartou měsíčně, faktura přijde e-mailem a tarif změníte nebo zrušíte kdykoli. Když se zprávy vyčerpají, prodavačka se do konce měsíce vypne – nikdy nezaplatíte víc.
 
 ### Odkud zná moje produkty?
 Z XML feedu, který už máte pro Heureku, Zboží.cz nebo Google Merchant. Když feed nemáte, přečte si produkty i texty stránek přímo z vašeho webu. Každou noc si je načte znovu, takže zná aktuální ceny a dostupnost.

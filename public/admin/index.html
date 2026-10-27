@@ -347,6 +347,8 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    // the embed code always points at our own domain – never at a temporary Vercel address the owner happened to open
+    const EMBED_ORIGIN = /.vercel.app$/.test(location.hostname) ? "https://sella.chat" : location.origin;
     const params = new URLSearchParams(location.search);
     // passwords never belong in a URL – drop one left over from an old link
     if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "")); }
@@ -786,10 +788,10 @@
     const fmtDate = (iso) => new Date(iso).toLocaleDateString(I.locale(), { day: "numeric", month: "long", year: "numeric" });
     function renderSite(d, me) {
       const c = d.client, b = d.billing || {};
-      const snippet = `<script src="${location.origin}/widget/prodavac.js" data-client="${c.id}" defer><\/script>`;
+      const snippet = `<script src="${EMBED_ORIGIN}/widget/prodavac.js" data-client="${c.id}" defer><\/script>`;
       $("embed").innerHTML = `<h3>${t("embedH")}</h3><p class="hint">${esc(t("embedP"))}</p>
         ${b.needsPayment
-          ? `<pre class="code locked" aria-hidden="true">&lt;script src="${location.origin}/widget/prodavac.js" data-client="••••••••" defer&gt;&lt;/script&gt;</pre><p class="lockmsg">${t("embedLocked")}</p>`
+          ? `<pre class="code locked" aria-hidden="true">&lt;script src="${EMBED_ORIGIN}/widget/prodavac.js" data-client="••••••••" defer&gt;&lt;/script&gt;</pre><p class="lockmsg">${t("embedLocked")}</p>`
           : `<pre class="code" id="snippet">${esc(snippet)}</pre>
              <button class="btn dark" id="copy">${t("copy")}</button>
              ${c.domains?.length ? `<p class="small">${t("embedOnly", c.domains.map(esc).join(", "))}</p>` : ""}`}

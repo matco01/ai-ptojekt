@@ -291,7 +291,7 @@
   const params = new URLSearchParams(location.search);
   const LANG = params.get("lang") === "en" ? "en" : "cs";
   // the code as the owner sees it in the overview (a made-up shop id)
-  const CODE = (id) => [["t", "<script"], ["", " "], ["a", "src"], ["", "="], ["s", '"https://ai-ptojekt.vercel.app/widget/prodavac.js"'], ["", " "],
+  const CODE = (id) => [["t", "<script"], ["", " "], ["a", "src"], ["", "="], ["s", '"https://sella.chat/widget/prodavac.js"'], ["", " "],
     ["a", "data-client"], ["", "="], ["s", `"${id}"`], ["", " "], ["a", "defer"], ["t", "><\/script>"]];
   // The texts of the overview and of "Upravit prodavačku" are the app's own (public/admin/index.html,
   // public/admin/prodavacka.html), so the film shows exactly what the owner will see.
