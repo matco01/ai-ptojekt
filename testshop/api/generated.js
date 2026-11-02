@@ -13,8 +13,8 @@ export default function handler(req, res) {
   }
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
   if (kind === "sitemap") {
-    const urls = ["/", ...Object.keys(CATS).map((c) => `/kategorie/${c}`), ...PRODUCTS.map((p) => `/produkt/${p.slug}`), ...Object.keys(INFO).map((i) => `/info/${i}`), "/blog", ...BLOG.map((b) => `/blog/${b[0]}`)];
+    const urls = ["/", ...Object.keys(CATS).map((c) => `/kategorie/${c}`), "/vyprodej", "/znacka/alpina", "/znacka/norden", "/znacka/severka", ...PRODUCTS.map((p) => `/produkt/${p.slug}`), ...Object.keys(INFO).map((i) => `/info/${i}`), "/blog", ...BLOG.map((b) => `/blog/${b[0]}`)];
     return res.end(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((u) => `<url><loc>${origin}${u}</loc></url>`).join("")}</urlset>`);
   }
-  res.end(`<?xml version="1.0" encoding="utf-8"?><SHOP>${PRODUCTS.map((p) => `<SHOPITEM><ITEM_ID>${p.id}</ITEM_ID><PRODUCTNAME>${esc(p.name)}</PRODUCTNAME><DESCRIPTION>${esc(p.desc)}</DESCRIPTION><URL>${origin}/produkt/${p.slug}</URL><IMGURL>${origin}/img/${p.slug}.svg</IMGURL><PRICE_VAT>${p.price}</PRICE_VAT><MANUFACTURER>${esc(p.brand)}</MANUFACTURER><CATEGORYTEXT>${esc(CATS[p.cat])}</CATEGORYTEXT><DELIVERY_DATE>${p.stock ? 0 : 30}</DELIVERY_DATE></SHOPITEM>`).join("")}</SHOP>`);
+  res.end(`<?xml version="1.0" encoding="utf-8"?><SHOP>${PRODUCTS.map((p) => `<SHOPITEM><ITEM_ID>${p.id}</ITEM_ID><PRODUCTNAME>${esc(p.name)}</PRODUCTNAME><DESCRIPTION>${esc(p.desc)}</DESCRIPTION><URL>${origin}/produkt/${p.slug}</URL><IMGURL>${origin}/img/${p.slug}-1.svg</IMGURL><PRICE_VAT>${p.price}</PRICE_VAT><MANUFACTURER>${esc(p.brand)}</MANUFACTURER><CATEGORYTEXT>${esc(CATS[p.cat])}</CATEGORYTEXT><DELIVERY_DATE>${p.stock ? 0 : 30}</DELIVERY_DATE></SHOPITEM>`).join("")}</SHOP>`);
 }
