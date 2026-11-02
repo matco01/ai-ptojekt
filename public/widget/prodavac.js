@@ -67,7 +67,7 @@
       legal: "Odpovídá umělá inteligence a může se splést", privacy: "Ochrana soukromí", more: "Více",
       greetData: "Obchod uvidí, na co se ptáte a co si prohlížíte – bez jména a kontaktů.",
       dataNote: "Když mi napíšete, obchod uvidí vaše dotazy a co si tu prohlížíte – bez jména a kontaktů.", optOut: "Nesouhlasím", optedOut: "Dobře, z rozhovoru si nic neukládám.", addCart: "Do košíku", inCart: "V košíku",
-      thinking: (n) => `${n} přemýšlí…`, connFail: "Spojení se nezdařilo.", removed: (n) => `Odebráno z košíku: ${n}`, added: (n) => `Přidáno do košíku: ${n}`,
+      thinking: (n) => `${n} přemýšlí…`, connFail: "Spojení se nezdařilo.", removed: (n) => `Odebráno z košíku: ${n}`, added: (n) => `Přidáno do košíku: ${n}`, addOpening: (n) => `Otevírám ${n} a přidávám do košíku…`, addFailed: (n) => `${n} se mi přidat nepodařilo – přidejte prosím tlačítkem na stránce produktu.`,
       addOnPage: (n) => `${n} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`, removeOnPage: (n) => `${n} se mi z košíku odebrat nepodařilo – odeberte ho prosím přímo v košíku.`, simple: "Teď odpovídám ve zjednodušeném režimu.",
       vListening: "Poslouchám vás…", vThinking: "Přemýšlím…", vSpeakTouch: "Mluvím… (klepnutím mě přerušíte)", vSpeak: "Mluvím… (klidně mi skočte do řeči)", vIdle: "Klepněte na mě a mluvte",
       micDenied: "Mikrofon není povolen. Povolte ho v prohlížeči, nebo přepněte na psaní.",
@@ -96,7 +96,7 @@
       legal: "Answers come from AI and may be wrong", privacy: "Privacy", more: "More",
       greetData: "The shop sees what you ask and look at – no name or contact details.",
       dataNote: "When you write to me, the shop sees your questions and what you look at here – no name or contact details.", optOut: "I don't agree", optedOut: "OK, I won't keep anything from our chat.", addCart: "Add to cart", inCart: "In cart",
-      thinking: (n) => `${n} is thinking…`, connFail: "Couldn't connect.", removed: (n) => `Removed from cart: ${n}`, added: (n) => `Added to cart: ${n}`,
+      thinking: (n) => `${n} is thinking…`, connFail: "Couldn't connect.", removed: (n) => `Removed from cart: ${n}`, added: (n) => `Added to cart: ${n}`, addOpening: (n) => `Opening ${n} and adding it to the cart…`, addFailed: (n) => `I couldn't add ${n} – please use the button on its product page.`,
       addOnPage: (n) => `You can add ${n} to the cart on its product page – just click its card.`, removeOnPage: (n) => `I couldn't take ${n} out of the cart – please remove it in the cart itself.`, simple: "I'm answering in a simple mode right now.",
       vListening: "Listening…", vThinking: "Thinking…", vSpeakTouch: "Speaking… (tap to interrupt)", vSpeak: "Speaking… (feel free to interrupt)", vIdle: "Tap me and talk",
       micDenied: "The microphone isn't allowed. Allow it in your browser, or switch to typing.",
@@ -445,7 +445,8 @@
   const shown = (b) => b.getClientRects().length > 0 && !b.disabled && getComputedStyle(b).visibility !== "hidden";
   const area = (b) => { const r = b.getBoundingClientRect(); return r.width * r.height; };
   function findAddButton(item) {
-    if (integ.addToCart && auto.productId === item.id) {
+    const onItsPage = auto.productId === item.id || (item.url && urlKey(item.url) === urlKey(location.href));
+    if (integ.addToCart && onItsPage) {
       const b = document.querySelector(integ.addToCart);
       if (b && shown(b)) return b;
     }
@@ -455,13 +456,14 @@
     const named = all.find((b) => plainText(labelOf(b)).includes(name));
     if (named) return named;
     // the product's own card: the largest block around the button that holds no other add button
-    const inCard = all.find((b) => {
+    // (with a single button the "card" would be the whole page – and "goes well with it" lists other products there)
+    const inCard = all.length > 1 && all.find((b) => {
       let box = b;
       while (box.parentElement && box.parentElement !== document.body && all.filter((x) => box.parentElement.contains(x)).length === 1) box = box.parentElement;
       return plainText(box.textContent).includes(name) || (item.url && [...box.querySelectorAll("a[href]")].some((a) => urlKey(a.href) === urlKey(item.url)));
     });
     if (inCard) return inCard;
-    return auto.productId === item.id ? all.sort((a, b) => area(b) - area(a))[0] : null; // the page's main button
+    return onItsPage ? all.sort((a, b) => area(b) - area(a))[0] : null; // the page's main button
   }
   /** Adds to the shop's cart: through the shop's JS hook, or by pressing its button. False = not possible here. */
   function addToShopCart(item) {
@@ -469,11 +471,44 @@
     const btn = findAddButton(item);
     if (!btn) return false;
     pendingAdd = { id: item.id, until: Date.now() + 4000 };
-    btn.click();
+    const qty = Math.max(1, item.quantity || 1);
+    const input = qty > 1 ? qtyInputNear(btn) : null;
+    if (input) { input.value = qty; input.dispatchEvent(new Event("input", { bubbles: true })); input.dispatchEvent(new Event("change", { bubbles: true })); }
+    for (let i = input ? 1 : qty; i > 0; i--) btn.click();
     const line = autoCart.find((c) => c.id === item.id);
     if (line) line.quantity += item.quantity || 1; else autoCart.push({ id: item.id, quantity: item.quantity || 1 });
     saveAutoCart();
     return true;
+  }
+  const qtyInputNear = (btn) => {
+    let box = btn.parentElement;
+    for (let depth = 0; box && box !== document.body && depth < 3; depth++, box = box.parentElement) {
+      const input = box.querySelector('input[type="number"], input[inputmode="numeric"], input[name*="qty" i], input[name*="quantity" i], input[name*="mnozstvi" i], input[name*="amount" i]');
+      if (input) return input;
+    }
+    return null;
+  };
+  // Many shops have the button only on the product's own page: the product is opened and the button pressed on
+  // arrival (widget on every page of the shop). False = there is nowhere to go: no address, or we're already there.
+  const canOpenToAdd = (item) => Boolean(item.url) && urlKey(item.url) !== urlKey(location.href);
+  function openToAdd(items) {
+    const queue = items.filter(canOpenToAdd);
+    if (!queue.length) return false;
+    ss.set("addQueue", queue);
+    if (mode && !phone.matches) ss.set("reopen", mode); // on a computer the chat reopens next to the product
+    location.assign(queue[0].url);
+    return true;
+  }
+  function finishAdding() {
+    const [item, ...rest] = ss.get("addQueue") || [];
+    if (!item) return;
+    ss.set("addQueue", null); // first, so a failure can't send the customer round in circles
+    if (addToShopCart(item)) {
+      if (item.source) api.track("add_to_cart", { productId: item.id, quantity: item.quantity || 1, source: item.source });
+      addNote(L("added", item.name));
+      if (panel) setMood("happy");
+    } else addNote(L("addFailed", item.name));
+    if (rest.length) setTimeout(() => openToAdd(rest), 900);
   }
   // ---- the shop's own cart, read off its page (mini-cart, cart drawer or cart page) ----
   // Shops without analytics events don't tell us what is in the cart, so its lines are read from the
@@ -1929,9 +1964,9 @@
       const openIt = () => openProduct(p);
       card.querySelector(".name").onclick = openIt;
       card.querySelector(".img").onclick = openIt;
-      // on a shop we only watch, a product whose "add" button isn't on this page is opened instead
-      const canAdd = hostIntegrated() || Boolean(findAddButton(p));
-      if (!canAdd && p.url) card.querySelector(".add").innerHTML = `Zobrazit produkt`;
+      // on a shop we only watch, a product whose "add" button isn't on this page is opened and added there
+      const canAdd = hostIntegrated() || Boolean(findAddButton(p)) || canOpenToAdd(p);
+      if (!canAdd) card.querySelector(".add").hidden = true;
       // 3D tilt + light that follows the cursor
       if (!reduced) {
         card.addEventListener("pointermove", (e) => {
@@ -1943,7 +1978,8 @@
       }
       card.querySelector(".add").onclick = (e) => {
         const btn = e.currentTarget;
-        if (!addToShopCart({ id: p.id, name: p.name, price: p.price, quantity: 1, url: p.url })) return openProduct(p);
+        const item = { id: p.id, name: p.name, price: p.price, quantity: 1, url: p.url };
+        if (!addToShopCart(item)) { if (openToAdd([{ ...item, source: "ai_card" }])) addNote(L("addOpening", p.name)); else addNote(L("addFailed", p.name)); return; }
         api.track("add_to_cart", { productId: p.id, quantity: 1, source: "ai_card" });
         btn.innerHTML = `${ICON.check} ${L("inCart")}`;
         btn.disabled = true;
@@ -2038,6 +2074,7 @@
   async function send(text, { via, files = [] } = {}) {
     if (chatConsent === null && !siteDecides()) { setChatConsent(true); api.track("session_start"); }
     busy = true;
+    const addLater = []; // products whose button is on their own page: opened once the answer is finished
     let closeAfter = false; // the customer asked her to switch off – close once she has said goodbye
     const ctrl = new AbortController();
     chatAbort = ctrl;
@@ -2122,7 +2159,8 @@
               flyToCart(msgs.querySelector(`.pc[data-id="${CSS.escape(ev.item.id)}"] .img img`));
               setMood("happy");
             } else {
-              addNote(L("addOnPage", ev.item.name));
+              if (canOpenToAdd(ev.item)) { addLater.push(ev.item); addNote(L("addOpening", ev.item.name)); }
+              else addNote(L("addFailed", ev.item.name));
             }
           } else if (ev.type === "replace") {
             turnEls.forEach((n) => n.remove());
@@ -2150,7 +2188,12 @@
       lastChatActivity = Date.now();
       if (sendBtn) sendBtn.disabled = false;
       if (chatAbort === ctrl) chatAbort = null;
-      if (closeAfter && !ctrl.signal.aborted) {
+      // the answer first (out loud in voice mode), then to the product's page
+      if (addLater.length && !ctrl.signal.aborted) {
+        const go = () => openToAdd(addLater);
+        if (mode === "voice") afterSpeech(go); else setTimeout(go, 1200);
+      }
+      else if (closeAfter && !ctrl.signal.aborted) {
         // say goodbye first (out loud in voice mode), then step back into the corner
         if (mode === "voice") afterSpeech(() => setTimeout(closePanel, 300));
         else setTimeout(() => { if (panel && !busy) closePanel(); }, 1800);
@@ -2581,6 +2624,7 @@
     // the blob's shape comes from her name: once the server has confirmed it, she takes her own shape
     nameReady.then(() => root.querySelectorAll(".av.blob").forEach((av) => poseBlob(av, Object.keys(BLOB_EXPR).find((m) => av.classList.contains(m)) || "")));
     const pageReady = autoInit().catch(() => {});
+    pageReady.then(finishAdding); // a product opened to be added to the cart
     launcher.innerHTML = avatar(60) + `<span class="launch-label">${L("launch")}</span>`;
     nameReady.then(() => { launcher.setAttribute("aria-label", L("openNamed", cfg.name)); reportLook(); });
     document.body.append(host);
