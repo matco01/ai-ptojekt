@@ -1,0 +1,12 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/robots.txt", "destination": "/api/generated?f=robots" },
+    { "source": "/sitemap.xml", "destination": "/api/generated?f=sitemap" },
+    { "source": "/xml/produkty-feed.xml", "destination": "/api/generated?f=feed" }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] }
+  ]
+}

@@ -1,0 +1,22 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Vrácení zboží | Horský Svět</title>
+<meta name="description" content="Vybavení na hory: stany, spacáky, batohy, obuv a oblečení od rodinného obchodu z Brna."><meta name="robots" content="noindex"><meta property="og:site_name" content="Horský Svět"><link rel="icon" href="/logo.svg">
+<style>:root{--g:#2f6b4f}*{box-sizing:border-box}body{margin:0;font:16px/1.55 system-ui,"Segoe UI",Arial,sans-serif;color:#1f2a24;background:#f6f7f4}a{color:var(--g)}
+.note{background:#1f2a24;color:#fff;font-size:13px;text-align:center;padding:5px 12px}
+header{background:var(--g);color:#fff;padding:14px 24px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}header a{color:#fff;text-decoration:none}.logo{font-weight:800;font-size:22px}
+nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14.5px}main{max-width:1100px;margin:0 auto;padding:24px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 3px #0002}.card img,.pimg{width:100%;border-radius:8px;background:#e7ece6}.price{font-weight:700;font-size:18px}.old{text-decoration:line-through;color:#888;margin-left:8px;font-weight:400}
+.detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}@media(max-width:700px){.detail{grid-template-columns:1fr}}
+button.add-to-cart,.btn{background:var(--g);color:#fff;border:0;border-radius:8px;padding:11px 18px;font-size:15px;cursor:pointer;text-decoration:none;display:inline-block}button[disabled]{background:#aaa}
+footer{padding:24px;text-align:center;color:#667;font-size:14px}footer a{margin:0 6px}table{border-collapse:collapse}td,th{border:1px solid #ccd;padding:6px 10px}form.s{margin-left:auto}input{padding:8px;border:1px solid #ccd;border-radius:6px}</style></head><body>
+<div class="note">Testovací e-shop k vyzkoušení Selly. Firma je smyšlená, nic se tu neprodává a objednávky nikam nejdou.</div>
+<script>window.dataLayer=window.dataLayer||[];</script>
+<header><a class="logo" href="/">Horský Svět</a><nav><a href="/kategorie/stany">Stany</a><a href="/kategorie/spacaky">Spacáky</a><a href="/kategorie/batohy">Batohy</a><a href="/kategorie/obuv">Turistická obuv</a><a href="/kategorie/bundy">Bundy a softshelly</a><a href="/kategorie/lezeni">Lezení a ferraty</a><a href="/kategorie/vareni">Vaření v přírodě</a><a href="/kategorie/doplnky">Doplňky a navigace</a></nav><form class="s" action="/hledat"><input name="q" placeholder="Hledat…" aria-label="Hledat"></form><a href="/kosik" class="cart-link">Košík (<span id="cc">0</span>)</a></header>
+<main><h1>Vrácení zboží</h1><p>Zboží zakoupené na e-shopu můžete bez udání důvodu vrátit do 30 dnů od převzetí (zákon dává 14 dní, my dáváme 30). Zboží musí být nepoužité, obuv nenošená venku.</p>
+    <p>Peníze vracíme do 14 dnů stejným způsobem, jakým jste platili. Poštovné za vrácení hradí zákazník. Dehydrované jídlo a hygienické zboží po rozbalení vrátit nelze.</p><p>Výměna velikosti je zdarma: pošleme novou velikost a poštovné hradíme my.</p></main><footer><a href="/info/doprava-a-platba">Doprava a platba</a><a href="/info/vraceni-zbozi">Vrácení zboží</a><a href="/info/reklamace">Reklamace a záruka</a><a href="/info/o-nas">O nás</a><a href="/info/kontakt">Kontakt</a><a href="/info/prodejny">Naše prodejny</a><a href="/info/pujcovna">Půjčovna vybavení</a><a href="/info/vernostni-program">Věrnostní program</a><a href="/info/velikostni-tabulky">Velikostní tabulky</a><a href="/info/faq">Časté dotazy</a><a href="/info/obchodni-podminky">Obchodní podmínky</a><a href="/blog">Blog</a></footer>
+<script>
+const cart=()=>JSON.parse(localStorage.getItem("hs-cart")||"[]");const setCart=(c)=>{localStorage.setItem("hs-cart",JSON.stringify(c));document.getElementById("cc").textContent=c.reduce((n,i)=>n+i.q,0)};setCart(cart());
+document.addEventListener("click",(e)=>{const b=e.target.closest(".add-to-cart");if(!b)return;const c=cart(),l=c.find(i=>i.id===b.dataset.id);if(l)l.q++;else c.push({id:b.dataset.id,name:b.dataset.name,price:+b.dataset.price,q:1});setCart(c);
+window.dataLayer.push({event:"add_to_cart",ecommerce:{currency:"CZK",items:[{item_id:b.dataset.id,item_name:b.dataset.name,price:+b.dataset.price,quantity:1}]}});b.textContent="Přidáno ✓"});
+</script>
+
+</body></html>
