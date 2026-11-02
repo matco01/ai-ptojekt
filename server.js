@@ -16,7 +16,7 @@ import { personaName } from "./lib/persona.js";
 import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
-  setBotSettings, setInstallRequest, setWidgetSeen, setSiteLook,
+  setBotSettings, setInstallRequest, setWidgetSeen, setSiteLook, deleteClient,
   setEmailVerified, setOwnerEmail, unconfirmed, domainHolder, deleteUnconfirmed, setTwoFactor, clearClientCache,
 } from "./lib/clients.js";
 import { mailEnabled, sendAccountMail } from "./lib/mail.js";
@@ -947,6 +947,15 @@ app.post("/api/admin/clients", async (req, res) => {
 });
 
 // sets the owner's password: a given one, or a generated one – shown only in this response
+// removes a shop for good (not one with a live subscription: that would go on being charged)
+app.post("/api/admin/clients/:id/delete", async (req, res) => {
+  const client = await getClient(req.params.id, { includeInactive: true });
+  if (!client) return res.status(404).json({ error: "Neznámý klient." });
+  if (isBuiltIn(client.id) || client.id === SELLA_ID) return res.status(400).json({ error: "Ukázkové obchody a Sellu nelze smazat." });
+  if (client.stripeSubscriptionId && !client.stripeSubscriptionId.startsWith("sim_") && client.billing !== "canceled") return res.status(400).json({ error: "Klient má předplatné ve Stripe – nejdřív ho tam zrušte." });
+  try { await deleteClient(client.id); res.json({ ok: true }); } catch (err) { fail(res, err); }
+});
+
 // we've put the code on the shop's website: the request is done
 app.post("/api/admin/clients/:id/install-done", async (req, res) => {
   try {
