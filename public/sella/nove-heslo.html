@@ -92,7 +92,7 @@
           if (d.code === "link") return linkGone();
           throw new Error(r.status === 429 ? t("many") : d.code === "password" ? t("short") : t("failed"));
         }
-        location.assign("/admin/");
+        location.assign(d.signIn ? "/sella/prihlaseni.html" : "/admin/"); // with 2FA on, the new password signs in as usual
       } catch (err) {
         $("err").textContent = err instanceof TypeError ? t("failed") : err.message;
         $("go").disabled = false;

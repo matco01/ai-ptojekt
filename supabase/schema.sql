@@ -67,6 +67,9 @@ alter table clients add column if not exists site_look jsonb;
 alter table clients add column if not exists email_verified_at timestamptz;
 update clients set email_verified_at = created_at where email_verified_at is null and created_at < '2026-10-27T12:00:00Z';
 
+-- Optional two-step sign-in of the owner (v11): encrypted secret, hashed recovery codes. See lib/twofactor.js.
+alter table clients add column if not exists two_factor jsonb;
+
 -- What the owner wants the assistant to know beyond the catalogue: texts and uploaded documents.
 create table if not exists knowledge (
   id          bigint generated always as identity primary key,

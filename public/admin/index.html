@@ -199,6 +199,26 @@
       background: rgba(28,32,40,.92); color: #f4f6f8; padding: 12px 20px; border-radius: 99px; font-size: 14.5px; max-width: calc(100% - 32px); text-align: center; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+    /* account security: optional two-step verification */
+    .security { margin-top: 14px; }
+    .sec-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .sec-row .hint { margin: 4px 0 0; max-width: 620px; }
+    .sec-row .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sec-row .btn { height: 42px; font-size: 14px; }
+    .sec-row .bstate { margin: 0 0 0 6px; vertical-align: 3px; font-family: var(--sans); }
+    .tf-box { width: min(560px, 100%); }
+    .tf-box .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .tf-l { display: block; font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 12px 0 6px; }
+    .tf-i { width: 100%; height: 46px; padding: 0 14px; border: 1px solid #d7dce2; border-radius: 12px; font: 400 16px var(--sans); background: #fff; color: var(--ink); }
+    .tf-i:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(78,127,180,.14); }
+    .tf-qr { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    .tf-qr .qr { width: 170px; height: 170px; flex: none; background: #fff; border-radius: 12px; padding: 6px; box-shadow: inset 0 0 0 1px rgba(47,49,51,.1); }
+    .tf-qr .qr svg { display: block; width: 100%; height: 100%; }
+    .tf-qr > div:last-child { flex: 1; min-width: 200px; }
+    .tf-key { display: block; font: 14px/1.6 ui-monospace, Consolas, monospace; word-break: break-word; }
+    .tf-codes { columns: 2; font-size: 15px; margin-top: 4px; }
+    @media (max-width: 560px) { .tf-codes { columns: 1; } }
+
     /* AI advice */
     .advice { margin-top: 14px; padding: 26px 28px; border-radius: 28px; color: #eef3f9; background: linear-gradient(150deg, #5a88bf, #2f4f80); box-shadow: 0 30px 70px -36px rgba(30,50,90,.7); }
     .advice .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -302,6 +322,7 @@
       <section class="pane card settings" id="settings"></section>
       <section class="pane card billing" id="billing"></section>
     </div>
+    <section class="pane card security" id="security" hidden></section>
 
     <section class="advice">
       <div class="head">
@@ -409,6 +430,14 @@
         now: "právě teď", minAgo: (m) => `před ${m} min`, hAgo: (h) => `před ${h} h`,
         notFound: "Tento obchod neexistuje.", loadErr: (s) => `Data se nepodařilo načíst (${s}).`, inactive: "neaktivní",
         foot: "Sella · data za posledních 90 dní, starší se automaticky mažou",
+        tfH: "Ověření ve dvou krocích", tfOn: "zapnuto", tfOff: "vypnuto", tfOffP: "Nepovinné. Při přihlášení budete kromě hesla zadávat i kód z aplikace v telefonu, takže samotné heslo k účtu nikomu nestačí.",
+        tfOnP: (n) => `Při přihlášení zadáváte i kód z aplikace. Zbývá záložních kódů: ${n}.`, tfEnable: "Zapnout ověření", tfDisable: "Vypnout ověření", tfNewCodes: "Nové záložní kódy",
+        tfPwP: "Pro jistotu nejdřív potvrďte své heslo.", tfPw: "Heslo", tfContinue: "Pokračovat",
+        tfScanH: "Naskenujte QR kód", tfScanP: "Otevřete aplikaci pro ověřování (Google Authenticator, Microsoft Authenticator, 1Password…), přidejte účet a naskenujte kód.", tfManual: "Nejde to naskenovat? Zadejte do aplikace tento klíč:",
+        tfCode: "Šestimístný kód z aplikace", tfTurnOn: "Ověřit a zapnout", tfDone: "Ověření ve dvou krocích je zapnuté.", tfOffDone: "Ověření ve dvou krocích je vypnuté.",
+        tfCodesH: "Uložte si záložní kódy", tfCodesP: "Když přijdete o telefon, přihlásíte se jedním z nich. Každý platí jednou a znovu je už neuvidíte.", tfSaved: "Mám je uložené",
+        tfDisableP: "Pro vypnutí potvrďte heslo a kód z aplikace.", tfNewCodesP: "Staré záložní kódy přestanou platit. Potvrďte heslo a kód z aplikace.", tfCodeOrRec: "Kód z aplikace nebo záložní kód",
+        tfBadPw: "Nesprávné heslo.", tfBadCode: "Nesprávný kód. Zkuste to znovu.", tfExpired: "Nastavení vypršelo, začněte prosím znovu.", tfMany: "Příliš mnoho pokusů, zkuste to za 15 minut.", tfFailed: "Nepodařilo se to, zkuste to prosím znovu.",
         awaiting: "Čeká na platbu", ended: "Předplatné skončilo", pastDue: "Platba selhala – zkontrolujte kartu",
         actWelcome: "Účet je založený. Zbývá zaplatit tarif.", actH: "Sella čeká na platbu", actEnded: "Předplatné skončilo",
         actP: "Vyberte tarif a zaplaťte kartou. Hned po platbě se prodavačka na vašem webu zapne a níže se odemkne kód pro vložení.",
@@ -494,6 +523,14 @@
         now: "just now", minAgo: (m) => `${m} min ago`, hAgo: (h) => `${h} h ago`,
         notFound: "This shop doesn't exist.", loadErr: (s) => `Couldn't load the data (${s}).`, inactive: "inactive",
         foot: "Sella · data for the last 90 days, older data is deleted automatically",
+        tfH: "Two-step verification", tfOn: "on", tfOff: "off", tfOffP: "Optional. When signing in you'll enter a code from an app on your phone as well as your password, so a password alone isn't enough to get into your account.",
+        tfOnP: (n) => `You enter a code from your app when signing in. Recovery codes left: ${n}.`, tfEnable: "Turn on verification", tfDisable: "Turn off verification", tfNewCodes: "New recovery codes",
+        tfPwP: "First, please confirm your password.", tfPw: "Password", tfContinue: "Continue",
+        tfScanH: "Scan the QR code", tfScanP: "Open your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), add an account and scan the code.", tfManual: "Can't scan it? Enter this key in the app:",
+        tfCode: "6-digit code from the app", tfTurnOn: "Verify and turn on", tfDone: "Two-step verification is on.", tfOffDone: "Two-step verification is off.",
+        tfCodesH: "Save your recovery codes", tfCodesP: "If you lose your phone, you can sign in with one of these. Each works once and you won't see them again.", tfSaved: "I've saved them",
+        tfDisableP: "To turn it off, confirm your password and a code from the app.", tfNewCodesP: "Your old recovery codes will stop working. Confirm your password and a code from the app.", tfCodeOrRec: "Code from the app or a recovery code",
+        tfBadPw: "Wrong password.", tfBadCode: "Wrong code. Please try again.", tfExpired: "The setup has expired, please start again.", tfMany: "Too many attempts, please try again in 15 minutes.", tfFailed: "That didn't work, please try again.",
         awaiting: "Waiting for payment", ended: "Subscription ended", pastDue: "Payment failed – check your card",
         actWelcome: "Your account is ready. Just pay for a plan.", actH: "Sella is waiting for payment", actEnded: "Your subscription has ended",
         actP: "Choose a plan and pay by card. Right after the payment the assistant switches on on your site and the embed code below unlocks.",
@@ -630,6 +667,7 @@
       renderActivate(d);
       renderSetup(d, me);
       renderSite(d, me);
+      renderSecurity(d, me);
 
       // the four main numbers
       const aiShare = tt.sessions ? tt.aiSessions / tt.sessions : 0;
@@ -967,6 +1005,86 @@
         btn.disabled = false;
         toast(res.error || t("payErr"));
       }
+    });
+
+    // ---- optional two-step verification: only the owner's own account, and only if they want it
+    function renderSecurity(d, me) {
+      const tf = d.client.twoFactor, box = $("security");
+      box.hidden = Boolean(me.master || d.client.builtIn);
+      if (box.hidden) return;
+      box.innerHTML = `<div class="sec-row"><div>
+          <h3>${t("tfH")} <span class="bstate ${tf.on ? "ok" : "plain"}">${tf.on ? t("tfOn") : t("tfOff")}</span></h3>
+          <p class="hint">${tf.on ? t("tfOnP", tf.recoveryLeft) : t("tfOffP")}</p></div>
+        <div class="row">${tf.on
+          ? `<button class="btn light" data-tf="recovery">${t("tfNewCodes")}</button><button class="btn light" data-tf="disable">${t("tfDisable")}</button>`
+          : `<button class="btn dark" data-tf="start">${t("tfEnable")}</button>`}</div></div>`;
+    }
+    // a dialog of plans-bg: the overview doesn't refresh itself under it
+    function tfDialog(html) {
+      document.querySelector(".plans-bg")?.remove();
+      const bg = document.createElement("div");
+      bg.className = "plans-bg";
+      bg.innerHTML = `<form class="plans-box tf-box" role="dialog" aria-modal="true" novalidate>${html}<p class="plans-err" id="tf-err" role="alert"></p></form>`;
+      bg.onclick = (e) => { if (e.target.closest("[data-close]")) { e.preventDefault(); bg.remove(); load(); } };
+      document.body.append(bg);
+      bg.querySelector("input")?.focus();
+      return bg;
+    }
+    const tfField = (id, label, attrs = "") => `<label class="tf-l" for="${id}">${label}</label><input class="tf-i" id="${id}" ${attrs}>`;
+    const tfHead = (h, p) => `<div class="top"><div><h3>${h}</h3><p>${p}</p></div><button type="button" class="btn light" data-close>${t("closeP")}</button></div>`;
+    async function tfSend(bg, url, body) {
+      const btn = bg.querySelector("[type=submit]"), err = bg.querySelector("#tf-err");
+      err.textContent = ""; btn.disabled = true;
+      try {
+        const r = await post(url, body);
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) return d;
+        err.textContent = r.status === 429 ? t("tfMany") : d.code === "password" ? t("tfBadPw") : d.code === "code" ? t("tfBadCode") : d.code === "expired" ? t("tfExpired") : (d.error || t("tfFailed"));
+      } catch { err.textContent = t("tfFailed"); }
+      btn.disabled = false;
+      return null;
+    }
+    function tfShowCodes(codes) {
+      const bg = tfDialog(`${tfHead(t("tfCodesH"), t("tfCodesP"))}
+        <pre class="code tf-codes" id="tf-codes">${codes.map(esc).join("\n")}</pre>
+        <div class="row"><button type="button" class="btn light" id="tf-copy">${t("copy")}</button><button type="button" class="btn dark" data-close>${t("tfSaved")}</button></div>`);
+      bg.querySelector("#tf-copy").onclick = async (e) => { await navigator.clipboard?.writeText(codes.join("\n")).catch(() => {}); e.target.textContent = t("copied"); };
+    }
+    function tfStart() {
+      const bg = tfDialog(`${tfHead(t("tfEnable"), t("tfPwP"))}${tfField("tf-pw", t("tfPw"), 'type="password" autocomplete="current-password"')}
+        <div class="row"><button type="submit" class="btn dark">${t("tfContinue")}</button></div>`);
+      bg.querySelector("form").onsubmit = async (e) => {
+        e.preventDefault();
+        const d = await tfSend(bg, "/api/account/2fa/start", { password: bg.querySelector("#tf-pw").value });
+        if (d) tfScan(d);
+      };
+    }
+    function tfScan(setup) {
+      const bg = tfDialog(`${tfHead(t("tfScanH"), t("tfScanP"))}
+        <div class="tf-qr"><div class="qr">${setup.qr}</div><div><p class="hint">${t("tfManual")}</p><code class="tf-key">${esc(setup.secret.match(/.{1,4}/g).join(" "))}</code></div></div>
+        ${tfField("tf-code", t("tfCode"), 'inputmode="numeric" autocomplete="one-time-code" maxlength="6"')}
+        <div class="row"><button type="submit" class="btn dark">${t("tfTurnOn")}</button></div>`);
+      bg.querySelector("form").onsubmit = async (e) => {
+        e.preventDefault();
+        const d = await tfSend(bg, "/api/account/2fa/confirm", { ticket: setup.ticket, code: bg.querySelector("#tf-code").value });
+        if (d) { toast(t("tfDone")); tfShowCodes(d.recoveryCodes); }
+      };
+    }
+    function tfProve(kind) {
+      const off = kind === "disable";
+      const bg = tfDialog(`${tfHead(off ? t("tfDisable") : t("tfNewCodes"), off ? t("tfDisableP") : t("tfNewCodesP"))}
+        ${tfField("tf-pw", t("tfPw"), 'type="password" autocomplete="current-password"')}${tfField("tf-code", t("tfCodeOrRec"), 'autocomplete="one-time-code"')}
+        <div class="row"><button type="submit" class="btn dark">${off ? t("tfDisable") : t("tfNewCodes")}</button></div>`);
+      bg.querySelector("form").onsubmit = async (e) => {
+        e.preventDefault();
+        const d = await tfSend(bg, `/api/account/2fa/${kind}`, { password: bg.querySelector("#tf-pw").value, code: bg.querySelector("#tf-code").value });
+        if (!d) return;
+        if (off) { bg.remove(); toast(t("tfOffDone")); load(); } else tfShowCodes(d.recoveryCodes);
+      };
+    }
+    $("security").addEventListener("click", (e) => {
+      const a = e.target.closest("[data-tf]")?.dataset.tf;
+      if (a === "start") tfStart(); else if (a) tfProve(a);
     });
 
     let toastTimer;

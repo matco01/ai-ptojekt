@@ -74,6 +74,18 @@
         <p class="help" data-i18n-html="help"><a href="/sella/zapomenute-heslo.html">Zapomněli jste heslo?</a></p>
         <p class="help" data-i18n-html="new">Ještě nemáte účet? <a href="/sella/registrace.html">Chci Sellu</a></p>
       </form>
+      <form class="pane" id="form2" novalidate hidden>
+        <h1 data-i18n="h2fa">Ověření ve dvou krocích</h1>
+        <p class="sub" id="code-sub" data-i18n="sub2fa">Zadejte šestimístný kód z aplikace pro ověřování.</p>
+        <div class="field">
+          <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" autocapitalize="none" spellcheck="false" placeholder=" " maxlength="20">
+          <label for="code" id="code-label" data-i18n="code">Kód z aplikace</label>
+        </div>
+        <p class="err" id="err2" role="alert"></p>
+        <button class="btn dark" type="submit" id="go2"><span data-i18n="verify">Ověřit a přihlásit</span> <span class="arr">→</span></button>
+        <p class="help"><a href="#" id="use-recovery" data-i18n="useRecovery">Nemáte telefon? Použijte záložní kód</a></p>
+        <p class="help"><a href="#" id="back2" data-i18n="back2">← Zpět k přihlášení</a></p>
+      </form>
     </div>
   </main>
 
@@ -92,6 +104,9 @@
         help: "<a href=\"/sella/zapomenute-heslo.html\">Zapomněli jste heslo?</a>", privacy: "Ochrana soukromí", terms_link: "Obchodní podmínky", dpa_link: "Zpracování údajů",
         empty: "Vyplňte prosím e-mail (nebo ID obchodu) i heslo.", bad: "Nesprávný e-mail, ID obchodu nebo heslo.", many: "Příliš mnoho pokusů, zkuste to za 15 minut.",
         failed: "Přihlášení se nepodařilo.", offline: "Spojení se nezdařilo, zkuste to prosím znovu.",
+        h2fa: "Ověření ve dvou krocích", sub2fa: "Zadejte šestimístný kód z aplikace pro ověřování.", code: "Kód z aplikace", verify: "Ověřit a přihlásit",
+        useRecovery: "Nemáte telefon? Použijte záložní kód", useApp: "Použít kód z aplikace", subRecovery: "Zadejte jeden ze záložních kódů, které jste si uložili. Každý platí jen jednou.", codeRecovery: "Záložní kód",
+        back2: "← Zpět k přihlášení", badCode: "Nesprávný kód. Zkuste to znovu.", emptyCode: "Zadejte prosím kód.", expired: "Přihlášení vypršelo, zadejte prosím znovu heslo.",
       },
       en: {
         title: "Sign in – Sella", back: "← Back to Sella", h1: "Your shop's insights", sub: "What your assistant does and what your customers look for.",
@@ -99,6 +114,9 @@
         help: "<a href=\"/sella/zapomenute-heslo.html\">Forgot your password?</a>", privacy: "Privacy", terms_link: "Terms", dpa_link: "Data processing",
         empty: "Please fill in your e-mail (or shop ID) and password.", bad: "Wrong e-mail, shop ID or password.", many: "Too many attempts, please try again in 15 minutes.",
         failed: "Signing in didn't work.", offline: "Couldn't connect, please try again.",
+        h2fa: "Two-step verification", sub2fa: "Enter the 6-digit code from your authenticator app.", code: "Code from the app", verify: "Verify and sign in",
+        useRecovery: "No phone? Use a recovery code", useApp: "Use a code from the app", subRecovery: "Enter one of the recovery codes you saved. Each works only once.", codeRecovery: "Recovery code",
+        back2: "← Back to sign-in", badCode: "Wrong code. Please try again.", emptyCode: "Please enter the code.", expired: "The sign-in has expired, please enter your password again.",
       },
     });
     const retitle = () => { document.title = t("title"); };
@@ -137,13 +155,68 @@
       try {
         const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client, password }) });
         if (!r.ok) throw new Error(r.status === 401 ? t("bad") : r.status === 429 ? t("many") : t("failed"));
-        const me = await fetch("/api/admin/me").then((x) => x.json()).catch(() => ({}));
-        document.body.classList.add("leaving");
-        setTimeout(() => location.assign(home(me)), Sella.reduced ? 0 : 420);
+        const d = await r.json().catch(() => ({}));
+        if (d.twoFactor) return askForCode(d.ticket);
+        await signedIn();
       } catch (err) {
         fail(err instanceof TypeError ? t("offline") : err.message);
         $("password").select();
         $("go").disabled = false;
+      }
+    };
+    async function signedIn() {
+      const me = await fetch("/api/admin/me").then((x) => x.json()).catch(() => ({}));
+      document.body.classList.add("leaving");
+      setTimeout(() => location.assign(home(me)), Sella.reduced ? 0 : 420);
+    }
+
+    // ---- the second step, for owners who switched two-step verification on
+    let ticket = null, recovery = false;
+    function codeMode(useRecovery) {
+      recovery = useRecovery;
+      $("code").inputMode = recovery ? "text" : "numeric";
+      $("code").autocomplete = recovery ? "off" : "one-time-code";
+      $("code").value = ""; $("err2").textContent = "";
+      $("code-sub").dataset.i18n = recovery ? "subRecovery" : "sub2fa";
+      $("code-label").dataset.i18n = recovery ? "codeRecovery" : "code";
+      $("use-recovery").dataset.i18n = recovery ? "useApp" : "useRecovery";
+      I.apply($("form2"));
+      $("code").focus();
+    }
+    function askForCode(t2) {
+      ticket = t2;
+      $("form").hidden = true; $("form2").hidden = false;
+      codeMode(false);
+    }
+    function backToPassword(message = "") {
+      ticket = null;
+      $("form2").hidden = true; $("form").hidden = false;
+      $("password").value = ""; $("go").disabled = false; $("go2").disabled = false;
+      $("err").textContent = message;
+      $("password").focus();
+    }
+    $("use-recovery").onclick = (e) => { e.preventDefault(); codeMode(!recovery); };
+    $("back2").onclick = (e) => { e.preventDefault(); backToPassword(); };
+    // a whole app code sends itself
+    $("code").oninput = () => { if (!recovery && /^\d{6}$/.test($("code").value.replace(/\s/g, ""))) $("form2").requestSubmit(); };
+    $("form2").onsubmit = async (e) => {
+      e.preventDefault();
+      if ($("go2").disabled) return;
+      const code = $("code").value.trim();
+      if (!code) return ($("err2").textContent = t("emptyCode"));
+      $("err2").textContent = "";
+      $("go2").disabled = true;
+      try {
+        const r = await fetch("/api/admin/login/2fa", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticket, code }) });
+        const d = await r.json().catch(() => ({}));
+        if (d.code === "expired") return backToPassword(t("expired"));
+        if (!r.ok) throw new Error(r.status === 429 ? t("many") : d.code === "code" ? t("badCode") : t("failed"));
+        await signedIn();
+      } catch (err) {
+        $("err2").textContent = err instanceof TypeError ? t("offline") : err.message;
+        $("form2").classList.remove("shake"); void $("form2").offsetWidth; $("form2").classList.add("shake");
+        $("code").select();
+        $("go2").disabled = false;
       }
     };
   </script>

@@ -132,6 +132,7 @@
         <div class="row">
           <button class="btn light" id="copy-embed" data-i18n="copyCode">Kopírovat kód</button>
           <button class="btn dark" id="make-login" data-i18n="makeLogin">Vytvořit nové přihlášení majitele</button>
+          <button class="btn light" id="reset-2fa" hidden data-i18n="reset2fa">Vypnout ověření ve dvou krocích</button>
           <span class="err" id="login-err"></span>
         </div>
         <div id="credentials" class="sub" hidden>
@@ -206,7 +207,7 @@
       export: "Export využití pro fakturaci", csv: "Stáhnout CSV", foot: "Sella · jen pro provozovatele",
       monthHint: (m) => `Využití za ${m}. Zpráva od AI = odpověď v chatu, nabídka pomoci nebo doporučení pro majitele. Náš náklad = cena volání Claude API (bez hlasu Azure), majitel ho nevidí.`, msgsN: (n) => `${n} zpráv`,
       demoFeed: (n) => `ukázkový, ${n}`, builtIn: "vestavěný", noFeed: "bez feedu", notYet: "zatím nestaženo", feedErr: "chyba načtení", fromBefore: (n) => `${n} produktů z dřívějška`, products: (n) => `${n} produktů`,
-      inactive: "neaktivní", onlyDemos: "běží jen na našem webu", voiceChars: (n) => `hlas ${n} znaků`, calls: (n) => `${n} volání Claude`, pwSet: "heslo nastaveno", pwMissing: "chybí – vytvořte",
+      inactive: "neaktivní", onlyDemos: "běží jen na našem webu", voiceChars: (n) => `hlas ${n} znaků`, calls: (n) => `${n} volání Claude`, reset2fa: "Vypnout ověření ve dvou krocích", reset2faQ: (n) => `Vypnout ověření ve dvou krocích pro ${n}? Dělejte to, jen když majitel ztratil telefon i záložní kódy a ověřili jste, že je to opravdu on.`, has2fa: "ověření ve 2 krocích", pwSet: "heslo nastaveno", pwMissing: "chybí – vytvořte",
       editBtn: "Upravit", overview: "Přehled", badJson: (l) => `${l}: neplatný JSON.`, saveFail: "Uložení se nepodařilo.", saved: "Uloženo.", nowLogin: " Teď vytvořte přihlášení majitele.",
       copied: "Zkopírováno ✓", relogin: (n) => `${n} už přihlášení má. Vytvořit nové heslo? Staré přestane platit.`, failed: "Nepodařilo se.",
       mailSubject: (n) => `AI prodavačka pro ${n} – přístup`,
@@ -237,7 +238,7 @@
       export: "Usage export for invoicing", csv: "Download CSV", foot: "Sella · operator only",
       monthHint: (m) => `Usage for ${m}. An AI message = a chat answer, an offer of help or advice for the owner. Our cost = Claude API calls (without Azure voice); owners don't see it.`, msgsN: (n) => `${n} messages`,
       demoFeed: (n) => `demo, ${n}`, builtIn: "built-in", noFeed: "no feed", notYet: "not fetched yet", feedErr: "read error", fromBefore: (n) => `${n} products from before`, products: (n) => `${n} products`,
-      inactive: "inactive", onlyDemos: "runs only on our site", voiceChars: (n) => `voice ${n} chars`, calls: (n) => `${n} Claude calls`, pwSet: "password set", pwMissing: "missing – create one",
+      inactive: "inactive", onlyDemos: "runs only on our site", voiceChars: (n) => `voice ${n} chars`, calls: (n) => `${n} Claude calls`, reset2fa: "Turn off two-step verification", reset2faQ: (n) => `Turn off two-step verification for ${n}? Do this only if the owner lost both the phone and the recovery codes, and you've checked it's really them.`, has2fa: "two-step verification", pwSet: "password set", pwMissing: "missing – create one",
       editBtn: "Edit", overview: "Insights", badJson: (l) => `${l}: invalid JSON.`, saveFail: "Saving failed.", saved: "Saved.", nowLogin: " Now create a login for the owner.",
       copied: "Copied ✓", relogin: (n) => `${n} already has a login. Create a new password? The old one will stop working.`, failed: "That didn't work.",
       mailSubject: (n) => `AI shop assistant for ${n} – access`,
@@ -303,7 +304,7 @@
         <td class="num">$${c.usage.costUsd.toFixed(2)}<small>${t("calls", nf(c.usage.aiCalls))}</small></td>
         <td>${knows}</td>
         <td>${web}</td>
-        <td>${c.demoPassword ? `<span class="pill">${t("pwSet")}</span><small>${t("pwDemo")}</small>` : c.hasPassword ? `<span class="pill">${t("pwSet")}</span>` : `<span class="pill warn">${t("pwMissing")}</span>`}</td>
+        <td>${c.demoPassword ? `<span class="pill">${t("pwSet")}</span><small>${t("pwDemo")}</small>` : c.hasPassword ? `<span class="pill">${t("pwSet")}</span>${c.twoFactor ? `<small>${t("has2fa")}</small>` : ""}` : `<span class="pill warn">${t("pwMissing")}</span>`}</td>
         <td><div class="actions"><button class="mini" data-edit="${esc(c.id)}">${t("editBtn")}</button><a class="mini" href="/admin/?client=${encodeURIComponent(c.id)}">${t("overview")}</a></div></td>
       </tr>`;
     }).join("");
@@ -381,6 +382,7 @@
   function showOnboard(id) {
     $("onboard").hidden = !id;
     if (id) $("embed").textContent = embedFor(id);
+    $("reset-2fa").hidden = !editing?.twoFactor;
   }
   const copy = async (text, btn) => {
     await navigator.clipboard.writeText(text);
@@ -388,6 +390,15 @@
   };
   $("copy-embed").onclick = (e) => copy($("embed").textContent, e.target);
   $("copy-message").onclick = (e) => copy($("message").textContent, e.target);
+
+  $("reset-2fa").onclick = async () => {
+    const c = editing;
+    if (!c || !confirm(t("reset2faQ", c.name))) return;
+    const r = await post(`/api/admin/clients/${encodeURIComponent(c.id)}/two-factor/reset`, {});
+    if (!r.ok) { $("login-err").textContent = t("failed"); return; }
+    c.twoFactor = false; $("reset-2fa").hidden = true;
+    load();
+  };
 
   $("make-login").onclick = async () => {
     const c = editing;

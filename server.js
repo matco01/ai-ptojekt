@@ -6,6 +6,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { techmarket, techmarketEn } from "./lib/catalog.js";
 import { getCatalog, catalogStatus, storedStatuses, sourceOf } from "./lib/catalogs.js";
 import { SELLA_ID } from "./lib/sella.js";
+import QRCode from "qrcode";
+import { newSecret, matchStep, otpauthUrl, sealSecret, openSecret, newRecoveryCodes, enabledState, checkSecondFactor } from "./lib/twofactor.js";
 import { productSvg } from "./lib/images.js";
 import { feedXml as kavarnaFeed, kavarnaSvg } from "./catalog/kavarna.js";
 import { recordMany, summarize, purgeOld, EVENT_TYPES, NUDGE_LABELS, RETENTION_DAYS } from "./lib/analytics.js";
@@ -15,7 +17,7 @@ import {
   getClient, listClients, originAllowed, validateClient, saveClient, setPasswordHash, setClientPlan, isBuiltIn,
   normalizeDomain, createSignedUpClient, setOwnerSettings,
   setBotSettings, setInstallRequest, setWidgetSeen, setSiteLook,
-  setEmailVerified, setOwnerEmail, unconfirmed, domainHolder, deleteUnconfirmed,
+  setEmailVerified, setOwnerEmail, unconfirmed, domainHolder, deleteUnconfirmed, setTwoFactor, clearClientCache,
 } from "./lib/clients.js";
 import { mailEnabled, sendAccountMail } from "./lib/mail.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
@@ -430,6 +432,7 @@ app.post("/api/admin/login", sameOrigin, rateLimit("login", 10, 15 * 60e3, { sha
   // brute force on one account from many IPs
   if (!(await hit(`login-account:${id}`, 15 * 60e3, 30))) return res.status(429).json({ error: "Příliš mnoho pokusů, zkuste to za 15 minut." });
 
+  clearClientCache(); // a login reads the account as it is now: 2FA just switched on elsewhere must count
   let sessionFor = null;
   if (id === "admin") {
     if (ADMIN_TOKEN && safeEqual(password, ADMIN_TOKEN)) sessionFor = MASTER;
@@ -449,8 +452,30 @@ app.post("/api/admin/login", sameOrigin, rateLimit("login", 10, 15 * 60e3, { sha
     }
   }
   if (!sessionFor) return fail();
+  if (sessionFor !== MASTER) {
+    const c = await getClient(sessionFor, { includeInactive: true });
+    // two-step sign-in is on: no session yet, only a short-lived ticket for the code step
+    if (c?.twoFactor?.secret) return res.json({ twoFactor: true, ticket: createLink("2fa", { c: c.id, s: passwordStamp(c.passwordHash) }, 5 * 60e3) });
+  }
   res.set("Set-Cookie", sessionCookie(createSession(sessionFor), { secure: req.secure }));
   res.json({ ok: true });
+});
+
+// the second step of signing in: a code from the authenticator app, or a recovery code
+app.post("/api/admin/login/2fa", sameOrigin, rateLimit("login-2fa", 20, 15 * 60e3, { shared: true }), async (req, res) => {
+  const d = readLink("2fa", req.body?.ticket);
+  clearClientCache();
+  const c = d && (await getClient(d.c, { includeInactive: true }));
+  if (!c || !canSignIn(c) || !c.twoFactor?.secret || d.s !== passwordStamp(c.passwordHash)) return res.status(401).json({ code: "expired", error: "Přihlaste se prosím znovu." });
+  if (!(await hit(`2fa:${c.id}`, 15 * 60e3, 10))) return res.status(429).json({ error: "Příliš mnoho pokusů, zkuste to za 15 minut." });
+  const next = checkSecondFactor(c.twoFactor, str(req.body?.code, 40));
+  if (!next) return res.status(401).json({ code: "code", error: "Nesprávný kód." });
+  try {
+    const { usedRecovery, ...state } = next;
+    await setTwoFactor(c.id, state); // saved first: a code works only once
+    res.set("Set-Cookie", sessionCookie(createSession(c.id), { secure: req.secure }));
+    res.json({ ok: true });
+  } catch (err) { fail(res, err); }
 });
 
 app.post("/api/admin/logout", sameOrigin, (req, res) => {
@@ -515,7 +540,8 @@ app.get("/api/analytics", admin, async (req, res) => {
     const c = req.client;
     res.json({
       ...stats,
-      client: { id: c.id, name: c.name, active: c.active, domains: c.domains, feedUrl: c.feedUrl ?? "", ownerEmail: c.ownerEmail ?? "", builtIn: isBuiltIn(c.id), installRequest: c.installRequest ?? null,
+      client: { twoFactor: c.twoFactor?.secret ? { on: true, recoveryLeft: c.twoFactor.recovery?.length ?? 0, since: c.twoFactor.enabledAt ?? null } : { on: false },
+        id: c.id, name: c.name, active: c.active, domains: c.domains, feedUrl: c.feedUrl ?? "", ownerEmail: c.ownerEmail ?? "", builtIn: isBuiltIn(c.id), installRequest: c.installRequest ?? null,
         // for the step-by-step setup: is the code on the website, and has the owner named the assistant
         widgetSeen: c.widgetSeen ?? null, agentName: agentName(c), named: Boolean(c.agentName), styled: Object.keys(c.appearance ?? {}).length > 0,
         emailVerified: emailOk(c), mail: mailEnabled() },
@@ -716,6 +742,67 @@ app.post("/api/account/email", sameOrigin, admin, rateLimit("account-email", 5, 
   } catch (err) { fail(res, err); }
 });
 
+// --- optional two-step sign-in, switched on and off by the owner (lib/twofactor.js) ---
+// Only the owner's own session: we (the operator) can reset it for them, never set it up for them.
+const ownAccount = (req, res, next) => (req.isMaster || isBuiltIn(req.client.id) ? res.status(403).json({ error: "Dvoufázové ověření si zapíná jen majitel svého obchodu." }) : next());
+const passwordOk = (c, password) => (c.passwordHash ? verifyPassword(password, c.passwordHash) : safeEqual(password, c.legacyToken));
+const twoFactorGuard = [sameOrigin, admin, ownAccount, rateLimit("account-2fa", 30, 15 * 60e3, { shared: true })];
+const tooMany = async (req, res) => {
+  if (await hit(`2fa:${req.client.id}`, 15 * 60e3, 10)) return false;
+  res.status(429).json({ error: "Příliš mnoho pokusů, zkuste to za 15 minut." });
+  return true;
+};
+
+// 1. the password again, then the QR code; nothing is saved until the first code is confirmed
+app.post("/api/account/2fa/start", ...twoFactorGuard, async (req, res) => {
+  const c = req.client;
+  if (c.twoFactor?.secret) return res.status(400).json({ error: "Dvoufázové ověření už máte zapnuté." });
+  if (await tooMany(req, res)) return;
+  if (!passwordOk(c, str(req.body?.password, 200))) return res.status(401).json({ code: "password", error: "Nesprávné heslo." });
+  try {
+    const secret = newSecret(), url = otpauthUrl(secret, c.ownerEmail || c.id);
+    res.json({ secret, qr: await QRCode.toString(url, { type: "svg", margin: 1 }), ticket: createLink("2fa-setup", { c: c.id, k: sealSecret(secret) }, 15 * 60e3) });
+  } catch (err) { fail(res, err); }
+});
+// 2. the first code from the app proves it works; the recovery codes are shown only now
+app.post("/api/account/2fa/confirm", ...twoFactorGuard, async (req, res) => {
+  const c = req.client, d = readLink("2fa-setup", req.body?.ticket);
+  const secret = d?.c === c.id ? openSecret(d.k) : null;
+  if (!secret) return res.status(400).json({ code: "expired", error: "Nastavení vypršelo, začněte prosím znovu." });
+  if (await tooMany(req, res)) return;
+  const step = matchStep(secret, str(req.body?.code, 20));
+  if (step == null) return res.status(400).json({ code: "code", error: "Nesprávný kód." });
+  try {
+    const { codes, hashes } = newRecoveryCodes();
+    await setTwoFactor(c.id, enabledState(secret, step, hashes));
+    res.json({ ok: true, recoveryCodes: codes });
+  } catch (err) { fail(res, err); }
+});
+// switching it off, and new recovery codes: the password and a current code
+const secondFactorProof = async (req, res) => {
+  const c = req.client;
+  if (!c.twoFactor?.secret) { res.status(400).json({ error: "Dvoufázové ověření nemáte zapnuté." }); return null; }
+  if (await tooMany(req, res)) return null;
+  if (!passwordOk(c, str(req.body?.password, 200))) { res.status(401).json({ code: "password", error: "Nesprávné heslo." }); return null; }
+  const next = checkSecondFactor(c.twoFactor, str(req.body?.code, 40));
+  if (!next) res.status(401).json({ code: "code", error: "Nesprávný kód." });
+  return next;
+};
+app.post("/api/account/2fa/disable", ...twoFactorGuard, async (req, res) => {
+  if (!(await secondFactorProof(req, res))) return;
+  try { await setTwoFactor(req.client.id, null); res.json({ ok: true }); } catch (err) { fail(res, err); }
+});
+app.post("/api/account/2fa/recovery", ...twoFactorGuard, async (req, res) => {
+  const next = await secondFactorProof(req, res);
+  if (!next) return;
+  try {
+    const { usedRecovery, ...state } = next;
+    const { codes, hashes } = newRecoveryCodes();
+    await setTwoFactor(req.client.id, { ...state, recovery: hashes });
+    res.json({ ok: true, recoveryCodes: codes });
+  } catch (err) { fail(res, err); }
+});
+
 // "Forgot your password?" – the same answer whether or not such an account exists
 app.post("/api/password/forgot", sameOrigin, rateLimit("forgot", 5, 15 * 60e3, { shared: true }), async (req, res) => {
   if (!mailEnabled()) return res.json({ ok: true, mail: false }); // the page then points to our contact e-mail
@@ -742,6 +829,8 @@ app.post("/api/password/reset", sameOrigin, rateLimit("reset", 10, 15 * 60e3, { 
   try {
     await setPasswordHash(c.id, hashPassword(password));
     if (!c.emailVerifiedAt) await setEmailVerified(c.id); // the link came to their inbox – the address is theirs
+    // a reset link proves the mailbox, not the second factor: with 2FA on, sign in as usual
+    if (c.twoFactor?.secret) return res.json({ ok: true, signIn: true });
     res.set("Set-Cookie", sessionCookie(createSession(c.id), { secure: req.secure }));
     res.json({ ok: true });
   } catch (err) { fail(res, err); }
@@ -829,6 +918,7 @@ app.get("/api/admin/clients", async (req, res) => {
           info: c.info ?? {}, integration: c.integration ?? {}, freeShippingFrom: c.freeShippingFrom ?? null,
           plan: c.plan, monthlyMessageLimit: c.monthlyMessageLimit, ownerEmail: c.ownerEmail ?? "", notes: c.notes ?? "",
           billing: c.billing, paidUntil: c.paidUntil ?? null, createdAt: c.createdAt ?? null, installRequest: c.installRequest ?? null,
+          twoFactor: Boolean(c.twoFactor?.secret),
           hasPassword: Boolean(c.passwordHash || c.legacyToken || (isBuiltIn(c.id) && demoPassword(c.id))),
           // a showcase shop's starting password can be shown to us (it is derived, not stored)
           demoPassword: isBuiltIn(c.id) && !c.passwordHash && !c.legacyToken ? demoPassword(c.id) : null,
@@ -865,6 +955,13 @@ app.post("/api/admin/clients/:id/install-done", async (req, res) => {
     await setInstallRequest(c.id, { ...c.installRequest, doneAt: new Date().toISOString() });
     res.json({ ok: true });
   } catch (err) { fail(res, err); }
+});
+
+// an owner who lost both the phone and the recovery codes: we switch two-step sign-in off (after checking who they are)
+app.post("/api/admin/clients/:id/two-factor/reset", async (req, res) => {
+  const client = await getClient(req.params.id, { includeInactive: true });
+  if (!client) return res.status(404).json({ error: "Neznámý klient." });
+  try { await setTwoFactor(client.id, null); res.json({ ok: true }); } catch (err) { fail(res, err); }
 });
 
 app.post("/api/admin/clients/:id/password", async (req, res) => {
