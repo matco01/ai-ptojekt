@@ -1733,11 +1733,25 @@
       }
     }
     if (mode === "voice") speak(history.length === 1 ? history[0].text : L("listening"), () => listen());
-    else footer.querySelector("textarea")?.focus();
+    else if (!touch.matches) footer.querySelector("textarea")?.focus(); // a keyboard popping up by itself would cover the chat
   }
 
   // on a phone the chat is a sheet over most of the screen
   const phone = matchMedia("(max-width: 480px)");
+  const touch = matchMedia("(pointer: coarse)");
+  // A phone's keyboard covers the bottom of the screen and the page doesn't get smaller under it,
+  // so the sheet follows what is really visible – the message box stays above the keyboard.
+  const seen = window.visualViewport;
+  function fitSheet() {
+    if (!panel || !seen) return;
+    const covered = phone.matches ? document.documentElement.clientHeight - seen.height - seen.offsetTop : 0;
+    const keyboard = covered > 60; // less than that is just the browser's address bar
+    panel.style.bottom = keyboard ? `${covered + 8}px` : "";
+    panel.style.height = keyboard ? `${Math.min(560, seen.height - 16)}px` : "";
+    if (keyboard && msgs) msgs.scrollTop = msgs.scrollHeight;
+  }
+  seen?.addEventListener("resize", fitSheet);
+  seen?.addEventListener("scroll", fitSheet);
 
   function closePanel() {
     stopVoice();
@@ -1763,6 +1777,7 @@
       </div>`);
     msgs = panel.querySelector(".msgs");
     footer = panel.querySelector(".footer");
+    fitSheet();
     panel.querySelector('[data-a="close"]').onclick = closePanel;
     panel.querySelector('[data-a="switch"]').onclick = () => { stopVoice(); openPanel(mode === "voice" ? "chat" : "voice"); };
     for (const h of history) {
@@ -1822,7 +1837,7 @@
       } catch { addNote(L("fileFail", file.name)); }
       finally { preparing--; renderTray(); }
     }
-    footer?.querySelector("textarea")?.focus();
+    if (!touch.matches) footer?.querySelector("textarea")?.focus();
   }
   function renderTray() {
     const tray = footer?.querySelector(".tray");
