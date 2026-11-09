@@ -168,6 +168,10 @@ test("a request for a custom plan reaches us, linked to the shop when its owner 
   assert.equal((await post(`/api/admin/clients/plan-requests/${visitor.id}/reopen`, {}, asMaster)).status, 200);
   const reopened = (await (await fetch(`${base}/api/admin/clients/plan-requests`, { headers: { ...asMaster, ...own } })).json()).requests;
   assert.equal(reopened.find((q) => q.id === visitor.id).doneAt, null);
+  // and deleted for good
+  assert.equal((await post(`/api/admin/clients/plan-requests/${visitor.id}/delete`, {}, asMaster)).status, 200);
+  const left = (await (await fetch(`${base}/api/admin/clients/plan-requests`, { headers: { ...asMaster, ...own } })).json()).requests;
+  assert.equal(left.some((q) => q.id === visitor.id), false);
 });
 
 test("without e-mail set up, a forgotten password goes through our contact e-mail", async () => {

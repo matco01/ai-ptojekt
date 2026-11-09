@@ -96,6 +96,8 @@
     .req .mini.pri { background: #2f3133; color: #fff; box-shadow: none; }
     .req .mini.pri:hover { background: #1f2122; }
     .req.done { opacity: .72; }
+    .req .mini.del { color: #a3433a; }
+    .req .mini.del:hover { background: rgba(192,84,75,.1); }
     .req-empty { margin: 22px 0 4px; color: var(--ink-3); font-size: 14.5px; }
     .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: rgba(47,138,93,.13); color: #2f7a55; }
     .pill.warn { background: rgba(183,122,29,.15); color: #8c5d12; }
@@ -241,6 +243,7 @@
       fAgent: "Jméno prodavačky", fAgentS: "– prázdné = odvodí se od názvu", fShip: "Doprava zdarma od (Kč)", fPlan: "Tarif", reqH: "Poptávky tarifu na míru", reqHint: "Z ceníku na webu a z přehledů majitelů – přišly i na support e-mail. Odpovězte, domluvte cenu a limity a u klienta nastavte tarif Na míru.",
       viewClients: "Klienti", viewRequests: "Poptávky", reqNone: "Zatím žádné poptávky. Přijdou z ceníku na webu (Na míru) a z přehledů majitelů.",
       reqOpen: "Nové", reqClosed: "Vyřízené", reqClient: (id) => `Klient Sella · ${id}`, reqLead: "Nový zájemce", reqNoNote: "Bez zprávy",
+      reqDelete: "Smazat", reqDeleteQ: (m) => `Smazat poptávku od ${m}? Nejde to vrátit.`,
       reqReply: "Odpovědět v Gmailu", reqCopy: "Kopírovat e-mail", reqCopied: "Zkopírováno", reqSet: "Nastavit tarif", reqDone: "Vyřízeno", reqReopen: "Vrátit mezi nové", reqDoneAt: (d) => `vyřízeno ${d}`,
       reqToday: "Dnes", reqYesterday: "Včera", reqNoneOpen: "Žádné nové poptávky – všechno je vyřízené.", reqNoneDone: "Zatím nic vyřízeného.",
       reqSum: (n, wait) => `${n === 1 ? "1 nová poptávka" : n < 5 ? `${n} nové poptávky` : `${n} nových poptávek`} · nejdéle čeká ${wait}`,
@@ -281,6 +284,7 @@
       fAgent: "Assistant's name", fAgentS: "– empty = derived from the shop name", fShip: "Free delivery from (CZK)", fPlan: "Plan", reqH: "Custom plan requests", reqHint: "From the price list on the site and from owners' insights – they came to the support e-mail too. Reply, agree the price and limits, and give the client the Custom plan.",
       viewClients: "Clients", viewRequests: "Requests", reqNone: "No requests yet. They come from the price list on the site (Custom) and from owners' insights.",
       reqOpen: "New", reqClosed: "Done", reqClient: (id) => `Sella client · ${id}`, reqLead: "New lead", reqNoNote: "No message",
+      reqDelete: "Delete", reqDeleteQ: (m) => `Delete the request from ${m}? This can't be undone.`,
       reqReply: "Reply in Gmail", reqCopy: "Copy e-mail", reqCopied: "Copied", reqSet: "Set up the plan", reqDone: "Done", reqReopen: "Move back to new", reqDoneAt: (d) => `done ${d}`,
       reqToday: "Today", reqYesterday: "Yesterday", reqNoneOpen: "No new requests – everything is done.", reqNoneDone: "Nothing done yet.",
       reqSum: (n, wait) => `${n === 1 ? "1 new request" : `${n} new requests`} · the oldest has waited ${wait}`,
@@ -387,6 +391,7 @@
           <button class="mini" data-copy-mail="${esc(q.email)}">${t("reqCopy")}</button>
           ${known ? `<button class="mini" data-req-edit="${esc(q.clientId)}">${t("reqSet")}</button>` : ""}
           <button class="mini end" data-req-state="${esc(q.id)}" data-done="${q.doneAt ? "0" : "1"}">${q.doneAt ? t("reqReopen") : t("reqDone")}</button>
+          <button class="mini del" data-req-delete="${esc(q.id)}">${t("reqDelete")}</button>
         </div>
       </article>`;
     }
@@ -401,6 +406,16 @@
     if (!b) return;
     if (b.dataset.copyMail) { navigator.clipboard?.writeText(b.dataset.copyMail); b.textContent = t("reqCopied"); setTimeout(() => { b.textContent = t("reqCopy"); }, 1500); return; }
     if (b.dataset.reqEdit) { openEditor(data.clients.find((c) => c.id === b.dataset.reqEdit)); $("f-plan").value = "custom"; showCustom(); return; }
+    if (b.dataset.reqDelete) {
+      const q = requests.find((x) => x.id === b.dataset.reqDelete);
+      if (!confirm(t("reqDeleteQ", q?.email ?? ""))) return;
+      b.disabled = true;
+      const r = await post(`/api/admin/clients/plan-requests/${encodeURIComponent(b.dataset.reqDelete)}/delete`, {});
+      if (!r.ok) { b.disabled = false; return; }
+      requests = requests.filter((x) => x.id !== b.dataset.reqDelete);
+      renderRequests();
+      return;
+    }
     if (b.dataset.reqState) {
       const done = b.dataset.done === "1";
       b.disabled = true;

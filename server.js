@@ -20,7 +20,7 @@ import {
   setEmailVerified, setOwnerEmail, unconfirmed, domainHolder, deleteUnconfirmed, setTwoFactor, clearClientCache,
 } from "./lib/clients.js";
 import { mailEnabled, sendAccountMail, sendMail } from "./lib/mail.js";
-import { addPlanRequest, listPlanRequests, markPlanRequestDone } from "./lib/requests.js";
+import { addPlanRequest, listPlanRequests, markPlanRequestDone, deletePlanRequest } from "./lib/requests.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
 import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
@@ -978,8 +978,9 @@ app.get("/api/admin/clients/plan-requests", async (req, res) => {
   try { res.json({ requests: await listPlanRequests() }); } catch (err) { fail(res, err); }
 });
 app.post("/api/admin/clients/plan-requests/:id/:state", async (req, res) => {
-  if (!["done", "reopen"].includes(req.params.state)) return res.status(404).json({ error: "Neznámá akce." });
-  try { res.json({ ok: await markPlanRequestDone(str(req.params.id, 40), req.params.state === "done") }); } catch (err) { fail(res, err); }
+  const id = str(req.params.id, 40), action = req.params.state;
+  if (!["done", "reopen", "delete"].includes(action)) return res.status(404).json({ error: "Neznámá akce." });
+  try { res.json({ ok: action === "delete" ? await deletePlanRequest(id) : await markPlanRequestDone(id, action === "done") }); } catch (err) { fail(res, err); }
 });
 
 // create (isNew) or update a client. A shop paying through Stripe whose plan or custom price we
