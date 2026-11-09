@@ -114,9 +114,19 @@
     .pl ul li::before { content: "✓"; color: #2f8a5d; font-weight: 700; margin-right: 8px; }
     .pl .btn { margin-top: auto; height: 42px; font-size: 14px; }
     .pl .btn[disabled] { opacity: .55; cursor: default; transform: none; }
-    .pl.ask { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; background: transparent; }
+    .pl.ask { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: start; gap: 12px 24px; background: transparent; }
     .pl.ask p { margin: 4px 0 0; color: var(--ink-3); font-size: 14px; }
-    .pl.ask .btn { margin-top: 0; }
+    .ask-f { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .ask-f input, .ask-f textarea { width: 100%; box-sizing: border-box; padding: 11px 14px; border: 0; border-radius: 12px; font: 400 14.5px var(--sans); color: var(--ink); background: rgba(255,255,255,.75); box-shadow: inset 0 0 0 1px rgba(47,49,51,.1); }
+    .ask-f input:focus, .ask-f textarea:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px rgba(78,127,180,.14); }
+    .ask-f textarea { grid-column: 1 / -1; resize: vertical; min-height: 58px; }
+    .ask-f .btn { margin-top: 0; height: 42px; }
+    .ask-f .ask-msg { grid-column: 1 / -1; margin: 0; font-size: 14px; }
+    .ask-f .ask-msg:empty { display: none; }
+    .ask-f .ask-msg.err { color: #a3433a; }
+    .pl.ask.sent .ask-f > :not(.ask-msg) { display: none; }
+    .pl.ask.sent .ask-msg { color: #2f7a55; font-size: 15px; }
+    @media (max-width: 760px) { .pl.ask { grid-template-columns: 1fr; } }
     .plans-err { color: #a3433a; font-size: 14px; margin-top: 12px; min-height: 20px; }
     @media (max-width: 900px) { .plans-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 560px) { .plans-grid { grid-template-columns: 1fr; } .plans-box { padding: 20px; } }
@@ -368,7 +378,6 @@
 
   <script src="/sella/i18n.js"></script>
   <script src="/sella/sella.js"></script>
-  <script src="/legal/provozovatel.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -399,7 +408,8 @@
         change: "Změnit tarif", upgrade: "Zvýšit tarif a zapnout prodavačku", offNote: (m) => `Tento měsíc jste vyčerpali všech ${m} zpráv, takže se prodavačka na vašem webu vypnula. Zapne se znovu 1. dne dalšího měsíce – nebo hned, když zvolíte vyšší tarif.`,
         plansH: "Vyberte tarif", plansP: "Platí hned. Když se vyčerpají zprávy tarifu, prodavačka se do konce měsíce vypne.", current: "Váš tarif", choose: "Vybrat", chosen: "Tarif změněn.",
         plMsgs: (n) => `${n} zpráv od AI měsíčně`, plVoice: (n) => `${n} znaků přirozeného hlasu`, plAll: "Celý přehled, AI doporučení, fotky v chatu", popular: "Doporučujeme", closeP: "Zavřít",
-        askH: "Na míru", askP: "Víc zpráv, víc obchodů nebo jiné podmínky? Domluvíme tarif přesně pro vás.", askBtn: "Napište nám", askSubject: "Tarif na míru",
+        askH: "Na míru", askP: "Víc zpráv, víc obchodů nebo jiné podmínky? Napište nám, co potřebujete, a domluvíme tarif přesně pro vás.", askBtn: "Odeslat poptávku",
+        askEmail: "Váš e-mail", askNote: "Co potřebujete? Např. kolik zpráv, obchodů nebo jinou platbu", askOk: "Díky! Ozveme se vám e-mailem do 2 pracovních dnů.", askBadEmail: "Zadejte prosím platný e-mail.", askErr: "Odeslání se nepovedlo – zkuste to prosím znovu.",
         visits: "Návštěvy", visitsS: (n) => `${n} zaznamenaných událostí`, used: "Využilo prodavačku", usedS: (a, b) => `${a} z ${b} návštěv`,
         asks: "Dotazy na AI", asksS: (n) => `průměrně ${n} na rozhovor`, noChat: "zatím žádný rozhovor",
         bought: "Nákupy s pomocí AI", boughtS: (a, b) => `z ${b} objednávek celkem`, noOrders: "zatím žádná objednávka",
@@ -493,7 +503,8 @@
         change: "Change plan", upgrade: "Upgrade and switch the assistant on", offNote: (m) => `You've used all ${m} messages this month, so the assistant switched off on your site. It comes back on the 1st of next month – or right away when you pick a bigger plan.`,
         plansH: "Choose a plan", plansP: "Applies right away. When the plan's messages run out, the assistant switches off until the month ends.", current: "Your plan", choose: "Choose", chosen: "Plan changed.",
         plMsgs: (n) => `${n} AI messages a month`, plVoice: (n) => `${n} characters of natural voice`, plAll: "Full insights, AI advice, photos in chat", popular: "Recommended", closeP: "Close",
-        askH: "Custom", askP: "More messages, more shops or other terms? We'll agree a plan made for you.", askBtn: "Write to us", askSubject: "Custom plan",
+        askH: "Custom", askP: "More messages, more shops or other terms? Tell us what you need and we'll agree a plan made for you.", askBtn: "Send request",
+        askEmail: "Your e-mail", askNote: "What do you need? E.g. how many messages, shops or another way to pay", askOk: "Thank you! We'll get back to you by e-mail within 2 working days.", askBadEmail: "Please enter a valid e-mail.", askErr: "Sending failed – please try again.",
         visits: "Visits", visitsS: (n) => `${n} recorded events`, used: "Used the assistant", usedS: (a, b) => `${a} of ${b} visits`,
         asks: "Questions to AI", asksS: (n) => `${n} per conversation on average`, noChat: "no conversation yet",
         bought: "Purchases with AI", boughtS: (a, b) => `of ${b} orders in total`, noOrders: "no order yet",
@@ -760,13 +771,28 @@
       <span class="nm">${esc(planName(p))}</span>
       <span class="pr">${p.priceCzk ? kc(p.priceCzk) : t("free")} ${p.priceCzk ? `<small>${t("perMonth")}</small>` : ""}</span>
       <ul><li>${t("plMsgs", nf(p.messages))}</li><li>${t("plVoice", nf(p.ttsChars))}</li><li>${t("plAll")}</li></ul>${button}</div>`;
-    // none of the plans fits: we agree a custom one (set on the All clients page)
-    const askCard = (d) => {
-      const mail = window.SELLA_OPERATOR?.email;
-      if (!mail || d.plans.some((p) => p.custom)) return "";
-      const href = `mailto:${mail}?subject=${encodeURIComponent(`${t("askSubject")} – ${d.client.name}`)}`;
-      return `<div class="pl ask"><div><span class="nm">${t("askH")}</span><p>${t("askP")}</p></div><a class="btn light" href="${esc(href)}">${t("askBtn")}</a></div>`;
-    };
+    // none of the plans fits: the owner asks for a custom one – it reaches us on the All clients page
+    // and in the support mailbox, linked to this shop; we then set it up there
+    const askCard = (d) => d.plans.some((p) => p.custom) ? "" : `<div class="pl ask"><div><span class="nm">${t("askH")}</span><p>${t("askP")}</p></div>
+      <form class="ask-f" novalidate><input type="email" name="email" value="${esc(d.client.ownerEmail || "")}" placeholder="${esc(t("askEmail"))}" aria-label="${esc(t("askEmail"))}" autocomplete="email" maxlength="200">
+        <button class="btn dark" type="submit">${t("askBtn")}</button>
+        <textarea name="note" maxlength="1500" placeholder="${esc(t("askNote"))}" aria-label="${esc(t("askNote"))}"></textarea>
+        <p class="ask-msg" role="status" aria-live="polite"></p></form></div>`;
+    document.addEventListener("input", (e) => { const m = e.target.closest(".ask-f")?.querySelector(".ask-msg.err"); if (m) m.textContent = ""; });
+    document.addEventListener("submit", async (e) => {
+      const f = e.target.closest(".ask-f");
+      if (!f) return;
+      e.preventDefault();
+      const msg = f.querySelector(".ask-msg"), btn = f.querySelector("button");
+      const say = (text, err) => { msg.textContent = text; msg.classList.toggle("err", Boolean(err)); };
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.value.trim())) { say(t("askBadEmail"), true); f.email.focus(); return; }
+      btn.disabled = true; say("");
+      const r = await post("/api/plan-request", { email: f.email.value.trim(), note: f.note.value });
+      btn.disabled = false;
+      if (!r.ok) { const d = await r.json().catch(() => ({})); say(d.code === "email" ? t("askBadEmail") : t("askErr"), true); return; }
+      f.closest(".pl.ask").classList.add("sent");
+      say(t("askOk"));
+    });
     const post = (url, body) => call(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, lang: I.lang }) });
 
     // pays for a plan: off to Stripe's payment page, or done at once (simulated locally)
