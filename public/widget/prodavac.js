@@ -65,8 +65,9 @@
       tapTalk: "Klepněte pro mluvení / přerušení", preparing: "Připravuji…", toChat: "Raději budu psát",
       attach: "Přiložit fotku nebo soubor", attachTitle: "Přiložit fotku nebo PDF", placeholder: "Napište, co hledáte…", msgLabel: "Zpráva pro prodavačku",
       legal: "Odpovídá umělá inteligence a může se splést", privacy: "Ochrana soukromí", more: "Více",
-      greetData: "Obchod uvidí, na co se ptáte a co si prohlížíte – bez jména a kontaktů.",
-      dataNote: "Když mi napíšete, obchod uvidí vaše dotazy a co si tu prohlížíte – bez jména a kontaktů.", optOut: "Nesouhlasím", optedOut: "Dobře, z rozhovoru si nic neukládám.", addCart: "Do košíku", inCart: "V košíku",
+      greetData: "Smí obchod vidět, na co se ptáte a co si prohlížíte? Bez jména a kontaktů.",
+      dataNote: "Smí obchod vidět vaše dotazy a co si tu prohlížíte? Bez jména a kontaktů – poradím vám i bez toho.", optIn: "Souhlasím", optOut: "Nesouhlasím", optedOut: "Dobře, z rozhovoru si nic neukládám.",
+      optedIn: "Děkuji. Souhlas můžete kdykoli odvolat pod polem pro zprávu.", consentOn: "Obchod vidí vaše dotazy a co si prohlížíte – bez jména a kontaktů.", withdraw: "Odvolat souhlas", addCart: "Do košíku", inCart: "V košíku",
       thinking: (n) => `${n} přemýšlí…`, connFail: "Spojení se nezdařilo.", removed: (n) => `Odebráno z košíku: ${n}`, added: (n) => `Přidáno do košíku: ${n}`, addOpening: (n) => `Otevírám ${n} a přidávám do košíku…`, addFailed: (n) => `${n} se mi přidat nepodařilo – přidejte prosím tlačítkem na stránce produktu.`,
       addOnPage: (n) => `${n} přidáte do košíku na stránce produktu – stačí kliknout na jeho kartičku.`, removeOnPage: (n) => `${n} se mi z košíku odebrat nepodařilo – odeberte ho prosím přímo v košíku.`, simple: "Teď odpovídám ve zjednodušeném režimu.",
       vListening: "Poslouchám vás…", vThinking: "Přemýšlím…", vSpeakTouch: "Mluvím… (klepnutím mě přerušíte)", vSpeak: "Mluvím… (klidně mi skočte do řeči)", vIdle: "Klepněte na mě a mluvte",
@@ -94,8 +95,9 @@
       tapTalk: "Tap to talk / interrupt", preparing: "Getting ready…", toChat: "I'd rather type",
       attach: "Attach a photo or file", attachTitle: "Attach a photo or PDF", placeholder: "Type what you're looking for…", msgLabel: "Message to the assistant",
       legal: "Answers come from AI and may be wrong", privacy: "Privacy", more: "More",
-      greetData: "The shop sees what you ask and look at – no name or contact details.",
-      dataNote: "When you write to me, the shop sees your questions and what you look at here – no name or contact details.", optOut: "I don't agree", optedOut: "OK, I won't keep anything from our chat.", addCart: "Add to cart", inCart: "In cart",
+      greetData: "May the shop see what you ask and look at? No name or contact details.",
+      dataNote: "May the shop see your questions and what you look at here? No name or contact details – I'll help you either way.", optIn: "I agree", optOut: "I don't agree", optedOut: "OK, I won't keep anything from our chat.",
+      optedIn: "Thank you. You can withdraw your consent any time below the message box.", consentOn: "The shop sees your questions and what you look at – no name or contact details.", withdraw: "Withdraw consent", addCart: "Add to cart", inCart: "In cart",
       thinking: (n) => `${n} is thinking…`, connFail: "Couldn't connect.", removed: (n) => `Removed from cart: ${n}`, added: (n) => `Added to cart: ${n}`, addOpening: (n) => `Opening ${n} and adding it to the cart…`, addFailed: (n) => `I couldn't add ${n} – please use the button on its product page.`,
       addOnPage: (n) => `You can add ${n} to the cart on its product page – just click its card.`, removeOnPage: (n) => `I couldn't take ${n} out of the cart – please remove it in the cart itself.`, simple: "I'm answering in a simple mode right now.",
       vListening: "Listening…", vThinking: "Thinking…", vSpeakTouch: "Speaking… (tap to interrupt)", vSpeak: "Speaking… (feel free to interrupt)", vIdle: "Tap me and talk",
@@ -125,9 +127,10 @@
       return granted;
     } catch { return null; }
   }
-  // Our own consent, for shops without a cookie tool: a visitor who starts writing (or talking) to the
-  // assistant agrees that the shop sees their questions and what they look at – the chat says so right
-  // under the message box, with "I don't agree". A cookie tool's answer (or the shop's own) always wins.
+  // Our own consent, for shops without a cookie tool: the assistant asks in her greeting and under the
+  // message box, and only a click on "I agree" lets the shop see the visitor's questions and what they
+  // look at. No answer = no consent; it can be withdrawn any time. A cookie tool's answer (or the shop's
+  // own) always wins.
   const CHAT_CONSENT = `aip_${cfg.client}_chatConsent`;
   let chatConsent = (() => { try { const v = localStorage.getItem(CHAT_CONSENT); return v === "1" ? true : v === "0" ? false : null; } catch { return null; } })();
   const siteDecides = () => consentOverride != null || detectConsent() != null;
@@ -135,6 +138,13 @@
   function setChatConsent(v) {
     chatConsent = v;
     try { localStorage.setItem(CHAT_CONSENT, v ? "1" : "0"); } catch {}
+  }
+  // the visitor answered our question: a yes starts the statistics, a no (or withdrawing) wipes what we kept
+  function answerConsent(v) {
+    setChatConsent(v);
+    if (v) { api.track("session_start"); return; }
+    queue = [];
+    try { for (const k of Object.keys(localStorage)) if (k.startsWith(PREFIX) && k !== CHAT_CONSENT) localStorage.removeItem(k); } catch {}
   }
 
   // ------------------------------------------------------------- state ----
@@ -1001,7 +1011,7 @@
     .legal { margin: -8px 14px 12px; text-align: center; font-size: 11.5px; color: var(--soft); }
     .legal a { color: inherit; text-decoration: underline; }
     .legal.datanote { margin-top: -6px; line-height: 1.4; }
-    .legal .optout { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
+    .legal .optout, .legal .optin { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
     .msgs > .chips { align-self: flex-start; }
 
     /* product cards: white so the products stand out */
@@ -1548,15 +1558,17 @@
               <button class="g-btn" data-m="voice">${ICON.mic}${L("talk")}</button>
               <button class="g-skip" data-m="no">${L("skip")}</button>
             </div>
-            ${siteDecides() || chatConsent !== null ? "" : `<p class="g-data">${L("greetData")} <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">${L("more")}</a> · <button type="button" class="g-optout">${L("optOut")}</button></p>`}
+            ${siteDecides() || chatConsent !== null ? "" : `<p class="g-data">${L("greetData")} <button type="button" class="g-optin">${L("optIn")}</button> · <button type="button" class="g-optout">${L("optOut")}</button> · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">${L("more")}</a></p>`}
           </div>
           <div class="hop">${avatar(96)}<span class="ground"></span></div>
         </div>
       </div>`);
     root.append(stage);
-    // what the chat keeps, said where the visitor first meets her – with "I don't agree" right there
-    const optout = stage.querySelector(".g-optout");
-    if (optout) optout.onclick = () => { setChatConsent(false); queue = []; optout.parentElement.textContent = L("optedOut"); };
+    // the question about statistics, asked where the visitor first meets her
+    for (const [cls, v] of [[".g-optin", true], [".g-optout", false]]) {
+      const b = stage.querySelector(cls);
+      if (b) b.onclick = () => { answerConsent(v); b.parentElement.textContent = L(v ? "optedIn" : "optedOut"); };
+    }
     const hop = stage.querySelector(".hop"), av = hop.querySelector(".av");
 
     // jump from where the mascot sits in the corner (or from off-screen if it isn't there)
@@ -1859,17 +1871,18 @@
   const filesHtml = (files = []) => files.length ? `<div class="files">${files.map((f) => f.kind === "image" && f.thumb
     ? `<img src="${f.thumb}" alt="${esc(f.name)}" onerror="this.remove()">` : `<span class="fchip">${ICON.file}${esc(f.name)}</span>`).join("")}</div>` : "";
 
-  // what the chat keeps, said where the visitor types – only while our own consent is what counts
-  const dataNote = () => (siteDecides() || chatConsent === false ? "" : `<div class="legal datanote">${L("dataNote")} <button type="button" class="optout">${L("optOut")}</button></div>`);
+  // the question, asked again where the visitor types (or how to withdraw a yes) – only while our own
+  // consent is what counts
+  const dataNote = () => {
+    if (siteDecides() || chatConsent === false) return "";
+    if (chatConsent) return `<div class="legal datanote">${L("consentOn")} <button type="button" class="optout">${L("withdraw")}</button></div>`;
+    return `<div class="legal datanote">${L("dataNote")} <button type="button" class="optin">${L("optIn")}</button> · <button type="button" class="optout">${L("optOut")}</button></div>`;
+  };
   function wireOptOut() {
-    const b = footer.querySelector(".optout");
-    if (!b) return;
-    b.onclick = () => {
-      setChatConsent(false);
-      queue = [];
-      try { for (const k of Object.keys(localStorage)) if (k.startsWith(PREFIX) && k !== CHAT_CONSENT) localStorage.removeItem(k); } catch {}
-      b.parentElement.textContent = L("optedOut");
-    };
+    for (const [cls, v] of [[".optin", true], [".optout", false]]) {
+      const b = footer.querySelector(cls);
+      if (b) b.onclick = () => { answerConsent(v); b.parentElement.textContent = L(v ? "optedIn" : "optedOut"); };
+    }
   }
 
   function renderFooter() {
@@ -2087,7 +2100,6 @@
   // -------------------------------------------------------------- chat ----
   let chatAbort = null; // lets a spoken interruption stop an answer that is still arriving
   async function send(text, { via, files = [] } = {}) {
-    if (chatConsent === null && !siteDecides()) { setChatConsent(true); api.track("session_start"); }
     busy = true;
     const addLater = []; // products whose button is on their own page: opened once the answer is finished
     let closeAfter = false; // the customer asked her to switch off – close once she has said goodbye

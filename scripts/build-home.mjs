@@ -171,7 +171,7 @@ Sella is an AI salesperson (an AI chatbot and shop assistant) for online shops, 
 - [Terms](${SITE}/podminky.html), [Data processing agreement](${SITE}/zpracovani-udaju.html), [Privacy](${SITE}/soukromi.html)
 
 ## Pricing (monthly, excluding VAT, billed by card)
-${plans.map((p) => `- ${p.nameEn}: CZK ${p.priceCzk.toLocaleString("en-GB")} – ${p.messages.toLocaleString("en-GB")} AI messages and ${p.ttsChars.toLocaleString("en-GB")} characters of natural voice${p.popular ? " (most popular)" : ""}`).join("\n")}
+${plans.map((p) => `- ${p.nameEn}: CZK ${p.priceCzk.toLocaleString("en-GB")} – ${p.messages.toLocaleString("en-GB")} AI messages and ${p.ttsChars.toLocaleString("en-GB")} characters of natural voice${p.popular ? " (recommended)" : ""}`).join("\n")}
 
 When a plan's messages run out, the assistant switches itself off until the month ends, so a shop never pays more.
 

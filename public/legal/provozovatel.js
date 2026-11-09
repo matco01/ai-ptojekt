@@ -5,7 +5,8 @@ window.SELLA_OPERATOR = {
   name: "Ondřej Novotný",
   ico: "24374458",
   address: "Na Křemínku 928, 282 01 Český Brod",
-  email: "", // ← kontaktní e-mail (zatím nevyplněno)
+  email: "support.sella@gmail.com",          // contact for customers, visitors and data protection requests
+  operatorEmail: "novotny.ondra11@gmail.com", // the operator himself (identification in the legal documents)
   register: { cs: "fyzická osoba podnikající, zapsaná v živnostenském rejstříku", en: "a sole trader registered in the Czech Trade Register" },
   vatPayer: false,
   termsVersion: "2026-10-14",
@@ -26,8 +27,9 @@ window.SELLA_OPERATOR = {
     };
     document.querySelectorAll("[data-op]").forEach((el) => {
       const key = el.dataset.op;
-      if (key === "mailto") {
-        if (op.email) { el.href = `mailto:${op.email}`; el.textContent = op.email; } else { el.removeAttribute("href"); el.textContent = missing; }
+      if (key === "mailto" || key === "opmail") {
+        const mail = key === "opmail" ? op.operatorEmail : op.email;
+        if (mail) { el.href = `mailto:${mail}`; el.textContent = mail; } else { el.removeAttribute("href"); el.textContent = missing; }
       } else if (key in values) el.textContent = values[key];
     });
   };

@@ -13,7 +13,7 @@ Sella is an AI salesperson (an AI chatbot and shop assistant) for online shops, 
 
 ## Pricing (monthly, excluding VAT, billed by card)
 - Start: CZK 990 – 2,000 AI messages and 300,000 characters of natural voice
-- Standard: CZK 2,990 – 10,000 AI messages and 1,000,000 characters of natural voice (most popular)
+- Standard: CZK 2,990 – 10,000 AI messages and 1,000,000 characters of natural voice (recommended)
 - Pro: CZK 9,990 – 50,000 AI messages and 3,000,000 characters of natural voice
 
 When a plan's messages run out, the assistant switches itself off until the month ends, so a shop never pays more.
@@ -35,7 +35,7 @@ From the XML feed you already have for Heureka, Zboží.cz or Google Merchant. W
 It recommends only products from your catalogue, with prices and stock from your feed. Questions about delivery, payment and returns are answered only from the information you give it and the documents you upload. It doesn't invent discounts or specifications.
 
 ### Is Sella GDPR compliant?
-Yes. Visitor behaviour and questions are stored only with consent – from the shop's cookie banner, or when the customer writes to the assistant. E-mails and phone numbers in questions are masked, data is deleted after 90 days, and every shop gets a data processing agreement.
+Yes. Visitor behaviour and questions are stored only with consent – from the shop's cookie banner, or when the customer clicks I agree in the chat. E-mails and phone numbers in questions are masked, data is deleted after 90 days, and every shop gets a data processing agreement.
 
 ### What will I see in my dashboard?
 How many visitors used the assistant, how many of them bought compared with the rest, the average order, what customers ask, what they search for and don't find, and which products they view but don't buy. Plus AI advice on what to focus on.
@@ -62,7 +62,7 @@ Z XML feedu, který už máte pro Heureku, Zboží.cz nebo Google Merchant. Kdy�
 Doporučuje jen produkty z vašeho katalogu, s cenami a dostupností z vašeho feedu. Na otázky o dopravě, platbě a vrácení odpovídá jen z informací, které jí zadáte, a dokumentů, které jí nahrajete. Slevy ani parametry si nevymýšlí.
 
 ### Je Sella v souladu s GDPR?
-Ano. Chování návštěvníků a jejich dotazy ukládá jen se souhlasem – z cookie lišty obchodu, nebo když zákazník prodavačce sám napíše. E-maily a telefony v dotazech skryje, data po 90 dnech maže a s každým e-shopem uzavíráme smlouvu o zpracování osobních údajů.
+Ano. Chování návštěvníků a jejich dotazy ukládá jen se souhlasem – z cookie lišty obchodu, nebo když zákazník v chatu sám klikne na Souhlasím. E-maily a telefony v dotazech skryje, data po 90 dnech maže a s každým e-shopem uzavíráme smlouvu o zpracování osobních údajů.
 
 ### Co uvidím v přehledu?
 Kolik návštěvníků prodavačku využilo, kolik z nich nakoupilo ve srovnání s ostatními, průměrnou objednávku, na co se zákazníci ptají, co hledají a nenajdou a které produkty si prohlížejí, ale nekupují. K tomu doporučení od AI, na co se zaměřit.
