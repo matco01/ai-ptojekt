@@ -5,7 +5,7 @@ window.SELLA_OPERATOR = {
   name: "Ondřej Novotný",
   ico: "24374458",
   address: "Na Křemínku 928, 282 01 Český Brod",
-  email: "support.sella@gmail.com",          // contact for customers, visitors and data protection requests
+  email: "sella.support@gmail.com",          // contact for customers, visitors and data protection requests
   operatorEmail: "novotny.ondra11@gmail.com", // the operator himself (identification in the legal documents)
   register: { cs: "fyzická osoba podnikající, zapsaná v živnostenském rejstříku", en: "a sole trader registered in the Czech Trade Register" },
   vatPayer: false,

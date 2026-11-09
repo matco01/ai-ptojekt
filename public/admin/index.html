@@ -809,7 +809,7 @@
       const shop = last?.d?.client;
       const body = [f.note.value.trim(), shop && `E-shop: ${shop.name}${shop.domains?.[0] ? ` (${shop.domains[0]})` : ""}`].filter(Boolean).join("\n\n");
       const also = f.querySelector(".ask-also");
-      also.querySelector("div").innerHTML = compose("support.sella@gmail.com", `${t("askSubject")}${shop ? ` – ${shop.name}` : ""}`, body)
+      also.querySelector("div").innerHTML = compose("sella.support@gmail.com", `${t("askSubject")}${shop ? ` – ${shop.name}` : ""}`, body)
         .map(([name, href]) => `<a class="btn light" href="${esc(href)}"${href.startsWith("mailto:") ? "" : ' target="_blank" rel="noopener"'}>${name ?? t("askApp")}</a>`).join("");
       also.hidden = false;
     });

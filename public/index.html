@@ -543,7 +543,7 @@
         // the same request from the visitor's own mailbox, whichever account they like
         const body = [customForm.note.value.trim(), customForm.web.value.trim() && `E-shop: ${customForm.web.value.trim()}`].filter(Boolean).join("\n\n");
         const also = customForm.querySelector(".cp-also");
-        also.querySelector("div").innerHTML = compose("support.sella@gmail.com", I.t("pr.customSubject"), body)
+        also.querySelector("div").innerHTML = compose("sella.support@gmail.com", I.t("pr.customSubject"), body)
           .map(([name, href]) => `<a class="btn light" href="${href.replace(/"/g, "&quot;")}"${href.startsWith("mailto:") ? "" : ' target="_blank" rel="noopener"'}>${name ?? I.t("pr.customApp")}</a>`).join("");
         also.hidden = false;
       } catch (err) { say(err.message || I.t("pr.customErr"), true); }

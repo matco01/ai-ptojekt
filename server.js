@@ -840,7 +840,7 @@ app.post("/api/password/reset", sameOrigin, rateLimit("reset", 10, 15 * 60e3, { 
 // --- "Na míru – napište nám": a request for a custom plan --------------------
 // From the price list on the site, or from an owner's overview (then it is linked to their shop).
 // Kept for us on the All clients page, sent to the support mailbox and to the alert channel.
-const SUPPORT_EMAIL = () => process.env.SUPPORT_EMAIL || "support.sella@gmail.com";
+const SUPPORT_EMAIL = () => process.env.SUPPORT_EMAIL || "sella.support@gmail.com";
 app.post("/api/plan-request", sameOrigin, rateLimit("plan-request", 5, 60 * 60e3), async (req, res) => {
   const b = req.body ?? {};
   if (b.website) return res.json({ ok: true }); // honeypot field – only bots fill it in

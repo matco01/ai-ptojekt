@@ -175,7 +175,7 @@ ${plans.map((p) => `- ${p.nameEn}: CZK ${p.priceCzk.toLocaleString("en-GB")} –
 
 When a plan's messages run out, the assistant switches itself off until the month ends, so a shop never pays more.
 
-When no plan fits, we agree a custom plan with its own price and limits (support.sella@gmail.com).
+When no plan fits, we agree a custom plan with its own price and limits (sella.support@gmail.com).
 
 ## Questions
 ${faq(en)}
