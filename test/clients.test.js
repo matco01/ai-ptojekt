@@ -48,3 +48,17 @@ test("client settings are validated", () => {
   assert.match(validateClient({ id: "datart", name: "x", domains: "a.cz", feedUrl: "ftp://x" }, { isNew: true }).error, /feedu/);
   assert.match(validateClient({ id: "datart", name: "x", domains: "a.cz", info: { a: 1 } }, { isNew: true }).error, /JSON/);
 });
+
+test("a custom plan needs its price and both limits", () => {
+  const base = { id: "datart", name: "Datart", domains: "datart.cz", plan: "custom" };
+  assert.match(validateClient({ ...base, customPriceCzk: 5000, monthlyMessageLimit: 30000 }, { isNew: true }).error, /na míru/);
+  assert.match(validateClient({ ...base, customPriceCzk: "pět", monthlyMessageLimit: 1, monthlyTtsLimit: 1 }, { isNew: true }).error, /Cena/);
+  const ok = validateClient({ ...base, customPriceCzk: "5000", monthlyMessageLimit: "30000", monthlyTtsLimit: "2000000" }, { isNew: true });
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.row.custom_price_czk, 5000);
+  assert.equal(ok.row.monthly_tts_limit, 2000000);
+  // on another plan the price isn't stored, and an empty voice limit isn't written at all
+  const start = validateClient({ ...base, plan: "start", customPriceCzk: 5000 }, { isNew: true });
+  assert.equal("custom_price_czk" in start.row, false);
+  assert.equal("monthly_tts_limit" in start.row, false);
+});

@@ -57,7 +57,7 @@
     },
     onChange(fn) { listeners.push(fn); },
     /** Plan names come from the server in Czech (lib/plans.js). */
-    plan: (name) => (I.lang === "en" ? { "Zkušební": "Trial", "Interní": "Internal" }[name] ?? name : name),
+    plan: (name) => (I.lang === "en" ? { "Zkušební": "Trial", "Interní": "Internal", "Na míru": "Custom" }[name] ?? name : name),
     /** A small CS | EN switch rendered into `el`. */
     switcher(el) {
       el.classList.add("sella-lang");

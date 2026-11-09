@@ -110,6 +110,36 @@ test("a signed-up shop sees its overview, but its widget works only after paying
   assert.equal((await post("/api/analytics/settings", { domains: "", feedUrl: "" }, asOwner)).status, 400);
 });
 
+test("we give a paying shop a custom plan; it works like the others and ends when the shop picks another", async () => {
+  const master = await post("/api/admin/login", { client: "admin", password: "test-master-password" });
+  assert.equal(master.status, 200);
+  const asMaster = { Cookie: master.headers.get("set-cookie").split(";")[0] };
+  const deal = { id: "kavarna-u-lipy", name: "Kavárna U Lípy", domains: "ulipy.cz, kava-ulipy.cz", ownerEmail: "majitel@ulipy.cz", plan: "custom" };
+  // the price and both limits are required
+  assert.equal((await post("/api/admin/clients", { ...deal, customPriceCzk: 5000 }, asMaster)).status, 400);
+  const saved = await post("/api/admin/clients", { ...deal, customPriceCzk: 5000, monthlyMessageLimit: 30000, monthlyTtsLimit: 2000000 }, asMaster);
+  assert.equal(saved.status, 200);
+
+  const login = await post("/api/admin/login", { client: "majitel@ulipy.cz", password: shop.password });
+  const asOwner = { Cookie: login.headers.get("set-cookie").split(";")[0] };
+  let d = await (await fetch(`${base}/api/analytics`, { headers: asOwner })).json();
+  assert.equal(d.usage.planId, "custom");
+  assert.equal(d.usage.priceCzk, 5000);
+  assert.equal(d.usage.messageLimit, 30000);
+  assert.equal(d.usage.ttsLimit, 2000000);
+  assert.equal(d.plans.at(-1).id, "custom");
+  assert.equal(d.plans.at(-1).priceCzk, 5000);
+
+  // the owner moves to a public plan: the deal's price and limits are gone, and it can't be paid any more
+  assert.equal((await post("/api/analytics/plan", { plan: "start" }, asOwner)).status, 200);
+  d = await (await fetch(`${base}/api/analytics`, { headers: asOwner })).json();
+  assert.equal(d.usage.planId, "start");
+  assert.equal(d.usage.priceCzk, d.plans[0].priceCzk);
+  assert.equal(d.usage.ttsLimit, d.plans[0].ttsChars);
+  assert.equal(d.plans.some((p) => p.custom), false);
+  assert.equal((await post("/api/billing/checkout", { plan: "custom" }, asOwner)).status, 400);
+});
+
 test("without e-mail set up, a forgotten password goes through our contact e-mail", async () => {
   assert.deepEqual(await (await post("/api/password/forgot", { email: "majitel@ulipy.cz" })).json(), { ok: true, mail: false });
   assert.equal((await post("/api/password/forgot", { email: "x@y.cz" }, { Origin: "https://evil.example" })).status, 403);

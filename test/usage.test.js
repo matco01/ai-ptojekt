@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { costOf, recordUsage, allowance, getUsage } from "../lib/usage.js";
-import { limitsFor } from "../lib/plans.js";
+import { limitsFor, plansFor, publicPlans } from "../lib/plans.js";
 
 test("cost of a Claude response (Sonnet 5.5 prices)", () => {
   const cost = costOf("claude-sonnet-5-5", { input_tokens: 1e6, output_tokens: 1e5, cache_read_input_tokens: 1e6, cache_creation_input_tokens: 0 });
@@ -12,6 +12,17 @@ test("plans and per-client overrides", () => {
   assert.equal(limitsFor({ plan: "start" }).messages, 2000);
   assert.equal(limitsFor({ plan: "start", monthlyMessageLimit: 50 }).messages, 50);
   assert.equal(limitsFor({ plan: "nonsense" }).plan, "trial");
+  assert.equal(limitsFor({ plan: "start", monthlyTtsLimit: 1000 }).ttsChars, 1000);
+});
+
+test("a custom plan takes its price and limits from the client", () => {
+  const deal = { plan: "custom", customPriceCzk: 5000, monthlyMessageLimit: 30000, monthlyTtsLimit: 2000000 };
+  assert.deepEqual(limitsFor(deal), { plan: "custom", planName: "Na míru", priceCzk: 5000, messages: 30000, ttsChars: 2000000 });
+  // a public plan never takes a custom price
+  assert.equal(limitsFor({ plan: "start", customPriceCzk: 1 }).priceCzk, publicPlans()[0].priceCzk);
+  // the shop with the deal sees it among the plans; nobody else does
+  assert.deepEqual(plansFor(deal).at(-1), { id: "custom", name: "Na míru", nameEn: "Custom", priceCzk: 5000, messages: 30000, ttsChars: 2000000, popular: false, custom: true });
+  assert.deepEqual(plansFor({ plan: "start" }), publicPlans());
 });
 
 test("usage is summed and the monthly limit switches the AI off", async () => {

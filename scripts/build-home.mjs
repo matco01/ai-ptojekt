@@ -170,10 +170,12 @@ Sella is an AI salesperson (an AI chatbot and shop assistant) for online shops, 
 - [Demo: electronics shop](${SITE}/techmarket/) and [demo: coffee roastery](${SITE}/kavarna) – Sella running on two sample shops
 - [Terms](${SITE}/podminky.html), [Data processing agreement](${SITE}/zpracovani-udaju.html), [Privacy](${SITE}/soukromi.html)
 
-## Pricing (monthly, excluding VAT, billed by card)
+## Pricing (monthly, final prices – not VAT registered, billed by card)
 ${plans.map((p) => `- ${p.nameEn}: CZK ${p.priceCzk.toLocaleString("en-GB")} – ${p.messages.toLocaleString("en-GB")} AI messages and ${p.ttsChars.toLocaleString("en-GB")} characters of natural voice${p.popular ? " (recommended)" : ""}`).join("\n")}
 
 When a plan's messages run out, the assistant switches itself off until the month ends, so a shop never pays more.
+
+When no plan fits, we agree a custom plan with its own price and limits (support.sella@gmail.com).
 
 ## Questions
 ${faq(en)}

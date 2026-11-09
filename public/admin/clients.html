@@ -111,7 +111,9 @@
         <div><label for="f-agent"><span data-i18n="fAgent">Jméno prodavačky</span> <small data-i18n="fAgentS">– prázdné = odvodí se od názvu</small></label><input id="f-agent"></div>
         <div><label for="f-ship" data-i18n="fShip">Doprava zdarma od (Kč)</label><input id="f-ship" type="number" min="0" step="1"></div>
         <div><label for="f-plan" data-i18n="fPlan">Tarif</label><select id="f-plan"></select></div>
+        <div id="f-price-row" hidden><label for="f-price"><span data-i18n="fPrice">Cena na míru (Kč / měsíc)</span> <small data-i18n="fPriceS">– platí se kartou jako ostatní tarify</small></label><input id="f-price" type="number" min="0" step="1"></div>
         <div><label for="f-limit"><span data-i18n="fLimit">Vlastní limit zpráv / měsíc</span> <small data-i18n="fLimitS">– prázdné = podle tarifu</small></label><input id="f-limit" type="number" min="0" step="1"></div>
+        <div><label for="f-tts"><span data-i18n="fTts">Vlastní limit hlasu / měsíc (znaků)</span> <small data-i18n="fLimitS">– prázdné = podle tarifu</small></label><input id="f-tts" type="number" min="0" step="1"></div>
         <div><label for="f-email" data-i18n="fEmail">E-mail majitele</label><input id="f-email" type="email"></div>
         <div><label class="check"><input id="f-active" type="checkbox" checked> <span data-i18n="fActive">Aktivní (widget běží)</span></label></div>
         <div class="wide"><label for="f-info"><span data-i18n="fInfo">Informace o obchodě</span> <small data-i18n="fInfoS">– JSON téma → text; na doprava/vrácení/platbu AI odpovídá jen odsud</small></label>
@@ -190,7 +192,8 @@
       newClient: "Nový klient", edit: (n) => `Upravit: ${n}`, edHint: "Po uložení vytvořte majiteli přihlášení a pošlete mu ho i s kódem pro web.",
       fId: "ID", fIdS: "– do vložení widgetu, nejde změnit", fName: "Název obchodu", fDom: "Domény", fDomS: "– oddělte čárkou; subdomény (www., m.) jsou povolené samy",
       fFeed: "Produktový feed", fFeedS: "– Heureka / Zboží.cz nebo Google Merchant XML", fDesc: "Co je to za obchod", fDescS: "– AI podle toho mluví", fDescP: "e-shop s elektronikou a spotřebiči",
-      fAgent: "Jméno prodavačky", fAgentS: "– prázdné = odvodí se od názvu", fShip: "Doprava zdarma od (Kč)", fPlan: "Tarif", fLimit: "Vlastní limit zpráv / měsíc", fLimitS: "– prázdné = podle tarifu",
+      fAgent: "Jméno prodavačky", fAgentS: "– prázdné = odvodí se od názvu", fShip: "Doprava zdarma od (Kč)", fPlan: "Tarif", fLimit: "Vlastní limit zpráv / měsíc", fLimitS: "– prázdné = podle tarifu", fTts: "Vlastní limit hlasu / měsíc (znaků)", fPrice: "Cena na míru (Kč / měsíc)", fPriceS: "– platí se kartou jako ostatní tarify",
+      customOpt: "Na míru – cena a limity níže", stripeUpdated: " Předplatné ve Stripe je upravené (rozdíl se doúčtoval).",
       fEmail: "E-mail majitele", fActive: "Aktivní (widget běží)", fInfo: "Informace o obchodě", fInfoS: "– JSON téma → text; na doprava/vrácení/platbu AI odpovídá jen odsud",
       fInteg: "Úpravy napojení", fIntegS: "– jen pro neobvyklé weby, JSON", fNotes: "Interní poznámky", save: "Uložit", close: "Zavřít",
       embedH: "Kód pro web klienta", embedP: "Vloží se na všechny stránky obchodu – přímo, nebo přes Google Tag Manager.", copyCode: "Kopírovat kód", makeLogin: "Vytvořit nové přihlášení majitele",
@@ -221,7 +224,8 @@
       newClient: "New client", edit: (n) => `Edit: ${n}`, edHint: "After saving, create a login for the owner and send it together with the code for their website.",
       fId: "ID", fIdS: "– used in the widget embed, can't be changed", fName: "Shop name", fDom: "Domains", fDomS: "– comma-separated; subdomains (www., m.) are allowed automatically",
       fFeed: "Product feed", fFeedS: "– Heureka / Zboží.cz or Google Merchant XML", fDesc: "What kind of shop", fDescS: "– the AI talks accordingly", fDescP: "an electronics and appliances shop",
-      fAgent: "Assistant's name", fAgentS: "– empty = derived from the shop name", fShip: "Free delivery from (CZK)", fPlan: "Plan", fLimit: "Custom message limit / month", fLimitS: "– empty = by plan",
+      fAgent: "Assistant's name", fAgentS: "– empty = derived from the shop name", fShip: "Free delivery from (CZK)", fPlan: "Plan", fLimit: "Custom message limit / month", fLimitS: "– empty = by plan", fTts: "Custom voice limit / month (characters)", fPrice: "Custom price (CZK / month)", fPriceS: "– paid by card like the other plans",
+      customOpt: "Custom – price and limits below", stripeUpdated: " The Stripe subscription is updated (the difference was charged).",
       fEmail: "Owner's e-mail", fActive: "Active (widget runs)", fInfo: "Shop information", fInfoS: "– JSON topic → text; the AI answers delivery/returns/payment only from here",
       fInteg: "Integration tweaks", fIntegS: "– only for unusual sites, JSON", fNotes: "Internal notes", save: "Save", close: "Close",
       embedH: "Code for the client's website", embedP: "Goes on every page of the shop – directly or through Google Tag Manager.", copyCode: "Copy code", makeLogin: "Create a new owner login",
@@ -266,7 +270,7 @@
     $("nodb").hidden = data.database;
     $("new").disabled = !data.database;
     const plan = $("f-plan").value;
-    $("f-plan").innerHTML = Object.entries(data.plans).map(([id, p]) => `<option value="${id}">${esc(I.plan(p.name))} (${t("msgsN", nf(p.messages))})</option>`).join("");
+    $("f-plan").innerHTML = Object.entries(data.plans).map(([id, p]) => `<option value="${id}">${p.custom ? esc(t("customOpt")) : `${esc(I.plan(p.name))} (${t("msgsN", nf(p.messages))})`}</option>`).join("");
     if (plan) $("f-plan").value = plan;
     const month = new Date(data.month + "-01").toLocaleDateString(I.locale(), { month: "long", year: "numeric" });
     $("month-hint").textContent = t("monthHint", month);
@@ -342,6 +346,9 @@
     $("f-ship").value = c?.freeShippingFrom ?? "";
     $("f-plan").value = c?.plan ?? "trial";
     $("f-limit").value = c?.monthlyMessageLimit ?? "";
+    $("f-tts").value = c?.monthlyTtsLimit ?? "";
+    $("f-price").value = c?.customPriceCzk ?? "";
+    showCustom();
     $("f-email").value = c?.ownerEmail ?? "";
     $("f-active").checked = c?.active ?? true;
     $("f-info").value = json(c?.info);
@@ -353,6 +360,14 @@
     $("editor").hidden = false;
     $("editor").scrollIntoView({ behavior: "smooth" });
   }
+
+  // a custom plan is made of its price and both limits – they are required then
+  function showCustom() {
+    const custom = Boolean(data.plans[$("f-plan").value]?.custom);
+    $("f-price-row").hidden = !custom;
+    for (const f of ["f-price", "f-limit", "f-tts"]) $(f).required = custom;
+  }
+  $("f-plan").addEventListener("change", showCustom);
 
   function parseJson(field, label) {
     const v = $(field).value.trim();
@@ -369,6 +384,7 @@
         isNew: !editing, id: $("f-id").value.trim(), name: $("f-name").value, domains: $("f-domains").value,
         feedUrl: $("f-feed").value, description: $("f-desc").value, agentName: $("f-agent").value,
         freeShippingFrom: $("f-ship").value, plan: $("f-plan").value, monthlyMessageLimit: $("f-limit").value,
+        monthlyTtsLimit: $("f-tts").value, customPriceCzk: $("f-price").value,
         ownerEmail: $("f-email").value, active: $("f-active").checked, notes: $("f-notes").value,
         info: parseJson("f-info", t("fInfo")), integration: parseJson("f-integ", t("fInteg")),
       };
@@ -382,7 +398,7 @@
     const saved = data.clients.find((c) => c.id === d.id);
     const wasNew = !editing;
     openEditor(saved);
-    $("form-err").innerHTML = `<span class="ok">${t("saved")}</span>${wasNew ? t("nowLogin") : ""}`;
+    $("form-err").innerHTML = `<span class="ok">${t("saved")}</span>${wasNew ? t("nowLogin") : ""}${d.stripe === "updated" ? t("stripeUpdated") : d.stripe ? ` ${esc(d.stripe)}` : ""}`;
   };
 
   // the embed code always points at our own domain – never at a temporary Vercel address the owner happened to open

@@ -114,6 +114,9 @@
     .pl ul li::before { content: "✓"; color: #2f8a5d; font-weight: 700; margin-right: 8px; }
     .pl .btn { margin-top: auto; height: 42px; font-size: 14px; }
     .pl .btn[disabled] { opacity: .55; cursor: default; transform: none; }
+    .pl.ask { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; background: transparent; }
+    .pl.ask p { margin: 4px 0 0; color: var(--ink-3); font-size: 14px; }
+    .pl.ask .btn { margin-top: 0; }
     .plans-err { color: #a3433a; font-size: 14px; margin-top: 12px; min-height: 20px; }
     @media (max-width: 900px) { .plans-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 560px) { .plans-grid { grid-template-columns: 1fr; } .plans-box { padding: 20px; } }
@@ -365,6 +368,7 @@
 
   <script src="/sella/i18n.js"></script>
   <script src="/sella/sella.js"></script>
+  <script src="/legal/provozovatel.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -395,6 +399,7 @@
         change: "Změnit tarif", upgrade: "Zvýšit tarif a zapnout prodavačku", offNote: (m) => `Tento měsíc jste vyčerpali všech ${m} zpráv, takže se prodavačka na vašem webu vypnula. Zapne se znovu 1. dne dalšího měsíce – nebo hned, když zvolíte vyšší tarif.`,
         plansH: "Vyberte tarif", plansP: "Platí hned. Když se vyčerpají zprávy tarifu, prodavačka se do konce měsíce vypne.", current: "Váš tarif", choose: "Vybrat", chosen: "Tarif změněn.",
         plMsgs: (n) => `${n} zpráv od AI měsíčně`, plVoice: (n) => `${n} znaků přirozeného hlasu`, plAll: "Celý přehled, AI doporučení, fotky v chatu", popular: "Doporučujeme", closeP: "Zavřít",
+        askH: "Na míru", askP: "Víc zpráv, víc obchodů nebo jiné podmínky? Domluvíme tarif přesně pro vás.", askBtn: "Napište nám", askSubject: "Tarif na míru",
         visits: "Návštěvy", visitsS: (n) => `${n} zaznamenaných událostí`, used: "Využilo prodavačku", usedS: (a, b) => `${a} z ${b} návštěv`,
         asks: "Dotazy na AI", asksS: (n) => `průměrně ${n} na rozhovor`, noChat: "zatím žádný rozhovor",
         bought: "Nákupy s pomocí AI", boughtS: (a, b) => `z ${b} objednávek celkem`, noOrders: "zatím žádná objednávka",
@@ -488,6 +493,7 @@
         change: "Change plan", upgrade: "Upgrade and switch the assistant on", offNote: (m) => `You've used all ${m} messages this month, so the assistant switched off on your site. It comes back on the 1st of next month – or right away when you pick a bigger plan.`,
         plansH: "Choose a plan", plansP: "Applies right away. When the plan's messages run out, the assistant switches off until the month ends.", current: "Your plan", choose: "Choose", chosen: "Plan changed.",
         plMsgs: (n) => `${n} AI messages a month`, plVoice: (n) => `${n} characters of natural voice`, plAll: "Full insights, AI advice, photos in chat", popular: "Recommended", closeP: "Close",
+        askH: "Custom", askP: "More messages, more shops or other terms? We'll agree a plan made for you.", askBtn: "Write to us", askSubject: "Custom plan",
         visits: "Visits", visitsS: (n) => `${n} recorded events`, used: "Used the assistant", usedS: (a, b) => `${a} of ${b} visits`,
         asks: "Questions to AI", asksS: (n) => `${n} per conversation on average`, noChat: "no conversation yet",
         bought: "Purchases with AI", boughtS: (a, b) => `of ${b} orders in total`, noOrders: "no order yet",
@@ -754,6 +760,13 @@
       <span class="nm">${esc(planName(p))}</span>
       <span class="pr">${p.priceCzk ? kc(p.priceCzk) : t("free")} ${p.priceCzk ? `<small>${t("perMonth")}</small>` : ""}</span>
       <ul><li>${t("plMsgs", nf(p.messages))}</li><li>${t("plVoice", nf(p.ttsChars))}</li><li>${t("plAll")}</li></ul>${button}</div>`;
+    // none of the plans fits: we agree a custom one (set on the All clients page)
+    const askCard = (d) => {
+      const mail = window.SELLA_OPERATOR?.email;
+      if (!mail || d.plans.some((p) => p.custom)) return "";
+      const href = `mailto:${mail}?subject=${encodeURIComponent(`${t("askSubject")} – ${d.client.name}`)}`;
+      return `<div class="pl ask"><div><span class="nm">${t("askH")}</span><p>${t("askP")}</p></div><a class="btn light" href="${esc(href)}">${t("askBtn")}</a></div>`;
+    };
     const post = (url, body) => call(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, lang: I.lang }) });
 
     // pays for a plan: off to Stripe's payment page, or done at once (simulated locally)
@@ -776,7 +789,7 @@
         <h2>${ended ? t("actEnded") : params.has("welcome") ? t("actWelcome") : t("actH")}</h2>
         <p>${ended ? t("actEndedP") : t("actP")}</p>
         <div class="plans-grid">${d.plans.map((p) => planCard(p,
-          `<button class="btn ${p.id === d.usage.planId ? "dark" : "light"}" data-pay="${p.id}"${b.payments === "off" ? " disabled" : ""}>${t("pay", kc(p.priceCzk))}</button>`)).join("")}</div>
+          `<button class="btn ${p.id === d.usage.planId ? "dark" : "light"}" data-pay="${p.id}"${b.payments === "off" ? " disabled" : ""}>${t("pay", kc(p.priceCzk))}</button>`)).join("")}${askCard(d)}</div>
         <p class="plans-err" id="pay-err"></p>
         <p class="note${b.payments === "simulated" || b.payments === "demo" ? " dev" : ""}">${note}</p>`;
     }
@@ -807,7 +820,7 @@
         <div class="plans-grid">${d.plans.map((p) => {
           const mine = p.id === d.usage.planId;
           return planCard(p, `<button class="btn ${mine ? "light" : "dark"}" data-plan="${p.id}" ${mine ? "disabled" : ""}>${mine ? t("current") : t("choose")}</button>`);
-        }).join("")}</div>
+        }).join("")}${askCard(d)}</div>
         <p class="plans-err" id="plans-err"></p></div>`;
       document.body.append(bg);
       const close = () => bg.remove();

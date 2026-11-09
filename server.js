@@ -26,7 +26,7 @@ import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
 import { rateLimit, hit, once } from "./lib/ratelimit.js";
 import { recordUsage, allowance, usageForMonth, monthKey } from "./lib/usage.js";
-import { limitsFor, PLANS, publicPlans } from "./lib/plans.js";
+import { limitsFor, PLANS, publicPlans, plansFor } from "./lib/plans.js";
 import { alert } from "./lib/alerts.js";
 import { TERMS_VERSION } from "./lib/legal.js";
 import { validateBot, widgetLook, avatarImage, listDocs, addDoc, deleteDoc, fileText, LIMITS as BOT_LIMITS } from "./lib/bot.js";
@@ -548,7 +548,7 @@ app.get("/api/analytics", admin, async (req, res) => {
       billing: billingView(c),
       catalog: catalogStatus(req.client),
       usage: usageView(req.client, await allowance(req.client), { master: req.isMaster }),
-      plans: publicPlans(),
+      plans: plansFor(c),
       clients: req.isMaster ? (await listClients()).map(({ id, name, active, billing }) => ({ id, name, active, billing })) : null,
     });
   } catch (err) { fail(res, err); }
@@ -908,7 +908,7 @@ app.get("/api/admin/clients", async (req, res) => {
     const usageOf = new Map(usage.map((u) => [u.client_id, u]));
     res.json({
       month: monthKey(),
-      plans: Object.fromEntries(Object.entries(PLANS).map(([id, p]) => [id, { name: p.name, messages: p.messages }])),
+      plans: Object.fromEntries(Object.entries(PLANS).map(([id, p]) => [id, { name: p.name, messages: p.messages, custom: Boolean(p.custom) }])),
       database: Boolean(db),
       clients: clients.map((c) => {
         const u = usageOf.get(c.id) ?? { messages: 0, ai_calls: 0, tts_chars: 0, cost_usd: 0 };
@@ -916,7 +916,8 @@ app.get("/api/admin/clients", async (req, res) => {
           id: c.id, name: c.name, active: c.active, builtIn: isBuiltIn(c.id), domains: c.domains,
           agentName: c.agentName, description: c.description ?? "", feedUrl: c.feedUrl ?? "",
           info: c.info ?? {}, integration: c.integration ?? {}, freeShippingFrom: c.freeShippingFrom ?? null,
-          plan: c.plan, monthlyMessageLimit: c.monthlyMessageLimit, ownerEmail: c.ownerEmail ?? "", notes: c.notes ?? "",
+          plan: c.plan, monthlyMessageLimit: c.monthlyMessageLimit, monthlyTtsLimit: c.monthlyTtsLimit ?? null, customPriceCzk: c.customPriceCzk ?? null,
+          ownerEmail: c.ownerEmail ?? "", notes: c.notes ?? "",
           billing: c.billing, paidUntil: c.paidUntil ?? null, createdAt: c.createdAt ?? null, installRequest: c.installRequest ?? null,
           twoFactor: Boolean(c.twoFactor?.secret),
           hasPassword: Boolean(c.passwordHash || c.legacyToken || (isBuiltIn(c.id) && demoPassword(c.id))),
@@ -935,14 +936,23 @@ app.get("/api/admin/clients", async (req, res) => {
   } catch (err) { fail(res, err); }
 });
 
-// create (isNew) or update a client
+// create (isNew) or update a client. A shop paying through Stripe whose plan or custom price we
+// change gets its subscription moved too – the difference is charged (or credited) right away.
 app.post("/api/admin/clients", async (req, res) => {
   const isNew = req.body?.isNew === true;
   const { row, error } = validateClient(req.body ?? {}, { isNew });
   if (error) return res.status(400).json({ error });
   try {
+    const before = isNew ? null : await getClient(row.id, { includeInactive: true });
     await saveClient(row, { isNew });
-    res.json({ ok: true, id: row.id });
+    const after = await getClient(row.id, { includeInactive: true });
+    let stripe = null;
+    const subscribed = after?.stripeSubscriptionId && ["active", "past_due"].includes(after.billing);
+    if (before && subscribed && (before.plan !== after.plan || limitsFor(before).priceCzk !== limitsFor(after).priceCzk)) {
+      try { await startPayment(after, after.plan); stripe = "updated"; }
+      catch (err) { stripe = `Uloženo, ale předplatné ve Stripe se nezměnilo: ${err.message}`; }
+    }
+    res.json({ ok: true, id: row.id, stripe });
   } catch (err) { fail(res, err); }
 });
 

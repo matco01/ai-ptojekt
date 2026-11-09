@@ -70,6 +70,10 @@ update clients set email_verified_at = created_at where email_verified_at is nul
 -- Optional two-step sign-in of the owner (v11): encrypted secret, hashed recovery codes. See lib/twofactor.js.
 alter table clients add column if not exists two_factor jsonb;
 
+-- A custom plan agreed with one shop (v12): its own price and voice limit; see lib/plans.js.
+alter table clients add column if not exists custom_price_czk integer;       -- the custom plan's monthly price
+alter table clients add column if not exists monthly_tts_limit integer;      -- overrides the plan's voice limit (empty = plan default)
+
 -- What the owner wants the assistant to know beyond the catalogue: texts and uploaded documents.
 create table if not exists knowledge (
   id          bigint generated always as identity primary key,
