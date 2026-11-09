@@ -977,8 +977,9 @@ app.get("/api/admin/clients", async (req, res) => {
 app.get("/api/admin/clients/plan-requests", async (req, res) => {
   try { res.json({ requests: await listPlanRequests() }); } catch (err) { fail(res, err); }
 });
-app.post("/api/admin/clients/plan-requests/:id/done", async (req, res) => {
-  try { res.json({ ok: await markPlanRequestDone(str(req.params.id, 40)) }); } catch (err) { fail(res, err); }
+app.post("/api/admin/clients/plan-requests/:id/:state", async (req, res) => {
+  if (!["done", "reopen"].includes(req.params.state)) return res.status(404).json({ error: "Neznámá akce." });
+  try { res.json({ ok: await markPlanRequestDone(str(req.params.id, 40), req.params.state === "done") }); } catch (err) { fail(res, err); }
 });
 
 // create (isNew) or update a client. A shop paying through Stripe whose plan or custom price we
