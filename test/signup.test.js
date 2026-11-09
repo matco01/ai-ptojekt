@@ -140,6 +140,31 @@ test("we give a paying shop a custom plan; it works like the others and ends whe
   assert.equal((await post("/api/billing/checkout", { plan: "custom" }, asOwner)).status, 400);
 });
 
+test("a request for a custom plan reaches us, linked to the shop when its owner asks", async () => {
+  assert.equal((await post("/api/plan-request", { email: "neni-email" })).status, 400);
+  assert.equal((await post("/api/plan-request", { email: "x@y.cz" }, { Origin: "https://evil.example" })).status, 403);
+  // a visitor of the site, and the owner of a shop from the overview
+  assert.equal((await post("/api/plan-request", { email: "Novak@Obchod.cz", web: "obchod.cz", note: "Máme 3 e-shopy." })).status, 200);
+  const login = await post("/api/admin/login", { client: "majitel@ulipy.cz", password: shop.password });
+  assert.equal((await post("/api/plan-request", { email: "majitel@ulipy.cz", note: "Chceme víc zpráv." }, { Cookie: login.headers.get("set-cookie").split(";")[0] })).status, 200);
+
+  const master = await post("/api/admin/login", { client: "admin", password: "test-master-password" });
+  const asMaster = { Cookie: master.headers.get("set-cookie").split(";")[0] };
+  const list = await fetch(`${base}/api/admin/clients/plan-requests`, { headers: { ...asMaster, ...own } });
+  assert.equal(list.status, 200);
+  const { requests } = await list.json();
+  const visitor = requests.find((q) => q.email === "novak@obchod.cz");
+  const owner = requests.find((q) => q.email === "majitel@ulipy.cz");
+  assert.deepEqual([visitor.web, visitor.note, visitor.clientId, visitor.doneAt], ["obchod.cz", "Máme 3 e-shopy.", null, null]);
+  assert.equal(owner.clientId, "kavarna-u-lipy");
+  assert.equal(owner.shop, "Kavárna U Lípy");
+  // only we see them, and we mark them done
+  assert.equal((await fetch(`${base}/api/admin/clients/plan-requests`, { headers: { Cookie: login.headers.get("set-cookie").split(";")[0], ...own } })).status, 403);
+  assert.equal((await post(`/api/admin/clients/plan-requests/${visitor.id}/done`, {}, asMaster)).status, 200);
+  const after = (await (await fetch(`${base}/api/admin/clients/plan-requests`, { headers: { ...asMaster, ...own } })).json()).requests;
+  assert.ok(after.find((q) => q.id === visitor.id).doneAt);
+});
+
 test("without e-mail set up, a forgotten password goes through our contact e-mail", async () => {
   assert.deepEqual(await (await post("/api/password/forgot", { email: "majitel@ulipy.cz" })).json(), { ok: true, mail: false });
   assert.equal((await post("/api/password/forgot", { email: "x@y.cz" }, { Origin: "https://evil.example" })).status, 403);

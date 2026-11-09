@@ -19,7 +19,8 @@ import {
   setBotSettings, setInstallRequest, setWidgetSeen, setSiteLook, deleteClient,
   setEmailVerified, setOwnerEmail, unconfirmed, domainHolder, deleteUnconfirmed, setTwoFactor, clearClientCache,
 } from "./lib/clients.js";
-import { mailEnabled, sendAccountMail } from "./lib/mail.js";
+import { mailEnabled, sendAccountMail, sendMail } from "./lib/mail.js";
+import { addPlanRequest, listPlanRequests, markPlanRequestDone } from "./lib/requests.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
 import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
@@ -836,6 +837,41 @@ app.post("/api/password/reset", sameOrigin, rateLimit("reset", 10, 15 * 60e3, { 
   } catch (err) { fail(res, err); }
 });
 
+// --- "Na míru – napište nám": a request for a custom plan --------------------
+// From the price list on the site, or from an owner's overview (then it is linked to their shop).
+// Kept for us on the All clients page, sent to the support mailbox and to the alert channel.
+const SUPPORT_EMAIL = () => process.env.SUPPORT_EMAIL || "support.sella@gmail.com";
+app.post("/api/plan-request", sameOrigin, rateLimit("plan-request", 5, 60 * 60e3), async (req, res) => {
+  const b = req.body ?? {};
+  if (b.website) return res.json({ ok: true }); // honeypot field – only bots fill it in
+  const email = str(b.email, 200).trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Zadejte prosím platný e-mail.", code: "email" });
+  const s = currentSession(req);
+  const owner = s && s.clientId !== MASTER ? await getClient(s.clientId, { includeInactive: true }) : null;
+  const request = {
+    email, lang: b.lang === "en" ? "en" : "cs",
+    shop: str(b.shop, 120).trim() || owner?.name || "",
+    web: str(b.web, 200).trim() || owner?.domains?.[0] || "",
+    note: str(b.note, 1500).trim(),
+    clientId: owner?.id ?? null,
+  };
+  // stored, mailed and alerted independently: a request is lost only when it can't be kept anywhere
+  let saved = null;
+  try { saved = await addPlanRequest(request); }
+  catch (err) { console.error("plan request not stored:", err.message); }
+  const who = [request.shop, request.web].filter(Boolean).join(", ") || "bez názvu";
+  const unsaved = saved ? "" : " (NEULOŽENO v Selle – chybí tabulka plan_requests? spusťte supabase/schema.sql)";
+  alert(`plan-request:${saved?.id ?? email}`, `Poptávka tarifu na míru${unsaved}: ${who} – ${email}${request.note ? `: ${request.note.slice(0, 300)}` : ""}`, { everyMs: 60e3 });
+  // the support mailbox gets it too; replying goes straight to the customer
+  const mailed = await sendMail({
+    to: SUPPORT_EMAIL(), replyTo: email,
+    subject: `Poptávka tarifu na míru – ${who}`,
+    text: [`E-mail: ${email}`, `Obchod: ${request.shop || "–"}`, `Web: ${request.web || "–"}`, `Účet v Selle: ${request.clientId || "zatím nemá"}`, "", request.note || "(bez zprávy)", "", saved ? "Odpovědí na tento e-mail píšete přímo zákazníkovi. Poptávka je i v Selle na stránce Klienti." : `Odpovědí na tento e-mail píšete přímo zákazníkovi. Pozor: v Selle se poptávka NEULOŽILA${unsaved}.`].join("\n"),
+  }).catch((err) => { console.error("plan request mail failed:", err.message); return false; });
+  if (!saved && !mailed) return fail(res, new Error("plan request neither stored nor mailed"));
+  res.json({ ok: true });
+});
+
 // --- self sign-up on the Sella site ("Chci Sellu") --------------------------
 // Creates the shop's account with its widget switched off and signs the owner in; the overview
 // then asks them to pay – only a paid shop's embed code works.
@@ -934,6 +970,14 @@ app.get("/api/admin/clients", async (req, res) => {
       }),
     });
   } catch (err) { fail(res, err); }
+});
+
+// requests for a custom plan, and marking one done once we've got in touch
+app.get("/api/admin/clients/plan-requests", async (req, res) => {
+  try { res.json({ requests: await listPlanRequests() }); } catch (err) { fail(res, err); }
+});
+app.post("/api/admin/clients/plan-requests/:id/done", async (req, res) => {
+  try { res.json({ ok: await markPlanRequestDone(str(req.params.id, 40)) }); } catch (err) { fail(res, err); }
 });
 
 // create (isNew) or update a client. A shop paying through Stripe whose plan or custom price we

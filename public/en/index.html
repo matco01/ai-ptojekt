@@ -213,13 +213,28 @@
     .plan .btn { margin-top: 20px; justify-content: center; }
     .nav .signin { text-decoration: none; font-size: 15px; color: var(--ink-2); }
     .nav .signin:hover { color: var(--ink); }
-    .custom-plan { margin-top: 14px; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px 24px; flex-wrap: wrap; }
+    .custom-plan { margin-top: 14px; padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 18px 36px; align-items: start; }
     .custom-plan .nm { font: 400 30px/1.1 var(--serif); }
-    .custom-plan p { margin: 6px 0 0; color: var(--ink-3); font-size: 15px; max-width: 620px; }
-    .custom-plan .cp-act { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-    .custom-plan .cp-act small { color: var(--ink-3); font-size: 13.5px; }
-    .custom-plan .cp-act small a { color: var(--ink-2); }
-    @media (max-width: 560px) { .custom-plan .cp-act { align-items: flex-start; } }
+    .custom-plan .cp-text p { margin: 8px 0 0; color: var(--ink-3); font-size: 15px; line-height: 1.5; }
+    .cp-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cp-form input, .cp-form textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 15px; color: var(--ink); padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, .72); outline: none; transition: border-color .2s, box-shadow .2s; }
+    .cp-form input:focus, .cp-form textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(78, 127, 180, .18); }
+    .cp-form textarea { grid-column: 1 / -1; resize: vertical; min-height: 64px; }
+    .cp-form .cp-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .cp-form .cp-row small { color: var(--ink-3); font-size: 13px; flex: 1; min-width: 200px; }
+    .cp-form .cp-row small a { color: inherit; }
+    .cp-form .cp-msg { grid-column: 1 / -1; margin: 0; font-size: 14.5px; }
+    .cp-form .cp-msg:empty { display: none; }
+    .cp-form .cp-msg.err { color: #a3433a; }
+    .cp-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+    .custom-plan.sent .cp-form > :not(.cp-msg):not(.cp-also) { display: none; }
+    .custom-plan.sent .cp-msg { color: #2f7a55; font-size: 16px; }
+    .cp-also { grid-column: 1 / -1; display: grid; gap: 10px; }
+    .cp-also p { margin: 0; color: var(--ink-3); font-size: 14.5px; }
+    .cp-also div { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cp-also .btn { padding: 10px 18px; font-size: 14.5px; }
+    @media (max-width: 900px) { .custom-plan { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) { .cp-form { grid-template-columns: 1fr; } }
     .prices-note { margin-top: 22px; color: var(--ink-3); font-size: 15px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
     @media (max-width: 900px) { .prices { grid-template-columns: 1fr; max-width: 460px; } }
     @media (max-width: 560px) { .prices { grid-template-columns: 1fr; } }
@@ -401,7 +416,18 @@
           <a class="btn light" href="/sella/registrace.html?plan=pro">Choose plan</a>
         </div>
         <!-- prices:end --></div>
-        <div class="pane custom-plan rv"><div><span class="nm" data-i18n="pr.customH">Custom</span><p data-i18n="pr.customP">Need more messages, more shops or other terms? Write to us and we'll agree a plan with a price and limits made for you.</p></div><div class="cp-act"><a class="btn dark" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=support.sella%40gmail.com&amp;su=Custom%20plan&amp;body=Hello%2C%0A%0AI'm%20interested%20in%20a%20custom%20Sella%20plan.%0A%0AShop%3A%20%0AWhat%20I%20need%20(messages%2C%20shops%2C%20how%20to%20pay)%3A%20%0A%0AThank%20you" target="_blank" rel="noopener" data-i18n-attr="href=pr.customHref" data-i18n="pr.customBtn">Write via Gmail</a><small><span data-i18n="pr.customOr">or from any mailbox to</span> <a href="mailto:support.sella@gmail.com">support.sella@gmail.com</a></small></div></div>
+        <div class="pane custom-plan rv" id="na-miru">
+          <div class="cp-text"><span class="nm" data-i18n="pr.customH">Custom</span><p data-i18n="pr.customP">Need more messages, more shops or other terms? Leave us your e-mail and we'll agree a plan with a price and limits made for you.</p></div>
+          <form class="cp-form" id="custom-form" novalidate>
+            <input type="email" name="email" required maxlength="200" autocomplete="email" data-i18n-attr="placeholder=pr.customEmail;aria-label=pr.customEmail" placeholder="Your e-mail" aria-label="Your e-mail">
+            <input name="web" maxlength="200" autocomplete="url" data-i18n-attr="placeholder=pr.customWeb;aria-label=pr.customWeb" placeholder="Shop address (optional)" aria-label="Shop address (optional)">
+            <textarea name="note" rows="2" maxlength="1500" data-i18n-attr="placeholder=pr.customNote;aria-label=pr.customNote" placeholder="What do you need? E.g. how many visits or shops you have (optional)" aria-label="What do you need? E.g. how many visits or shops you have (optional)"></textarea>
+            <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <div class="cp-row"><button class="btn dark" type="submit" data-i18n="pr.customBtn">Get in touch</button><small data-i18n-html="pr.customPriv">We use your e-mail only to answer your request. <a href="/soukromi.html">Privacy</a></small></div>
+            <p class="cp-msg" role="status" aria-live="polite"></p>
+            <div class="cp-also" hidden><p data-i18n="pr.customAlso">Want to send it from your own mailbox too? Pick where from – you'll keep a copy in your sent mail.</p><div></div></div>
+          </form>
+        </div>
         <div class="prices-note rv"><span data-i18n="pr.note">You pay monthly by card and the invoice arrives by e-mail. Change or cancel your plan any time in your insights. Prices are final – we are not VAT registered.</span><a class="btn light" href="/sella/prihlaseni.html" data-i18n="pr.cta">Have an account? Sign in</a></div>
       </div>
     </section>
@@ -490,6 +516,39 @@
     }
     fetch("/api/plans").then((r) => r.json()).then((d) => { plans = d.plans || []; renderPlans(); }).catch(() => {});
     I.onChange(renderPlans);
+
+    // "Na míru": the request is stored for us and sent to our support mailbox
+    const customForm = document.getElementById("custom-form");
+    const compose = (to, subject, body) => {
+      const q = (o) => Object.entries(o).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
+      return [
+        ["Gmail", `https://mail.google.com/mail/?view=cm&fs=1&${q({ to, su: subject, body })}`],
+        ["Outlook", `https://outlook.live.com/mail/0/deeplink/compose?${q({ to, subject, body })}`],
+        [null, `mailto:${to}?${q({ subject, body })}`], // the visitor's own mail app – any account
+      ];
+    };
+    customForm.addEventListener("input", () => { const m = customForm.querySelector(".cp-msg.err"); if (m) m.textContent = ""; });
+    customForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = customForm.querySelector(".cp-msg"), btn = customForm.querySelector("button");
+      const say = (text, err) => { msg.textContent = text; msg.classList.toggle("err", Boolean(err)); };
+      if (!customForm.email.value.trim() || !customForm.email.checkValidity()) { say(I.t("pr.customBadEmail"), true); customForm.email.focus(); return; }
+      btn.disabled = true; say("");
+      try {
+        const r = await fetch("/api/plan-request", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...Object.fromEntries(new FormData(customForm)), lang: I.lang }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.code === "email" ? I.t("pr.customBadEmail") : r.status === 429 ? I.t("pr.customLater") : I.t("pr.customErr"));
+        document.getElementById("na-miru").classList.add("sent");
+        say(I.t("pr.customOk"));
+        // the same request from the visitor's own mailbox, whichever account they like
+        const body = [customForm.note.value.trim(), customForm.web.value.trim() && `E-shop: ${customForm.web.value.trim()}`].filter(Boolean).join("\n\n");
+        const also = customForm.querySelector(".cp-also");
+        also.querySelector("div").innerHTML = compose("support.sella@gmail.com", I.t("pr.customSubject"), body)
+          .map(([name, href]) => `<a class="btn light" href="${href.replace(/"/g, "&quot;")}"${href.startsWith("mailto:") ? "" : ' target="_blank" rel="noopener"'}>${name ?? I.t("pr.customApp")}</a>`).join("");
+        also.hidden = false;
+      } catch (err) { say(err.message || I.t("pr.customErr"), true); }
+      btn.disabled = false;
+    });
 
     // the nav gets a frosted bar once the page scrolls
     const nav = document.getElementById("nav");
