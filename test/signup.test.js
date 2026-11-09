@@ -144,7 +144,8 @@ test("a request for a custom plan reaches us, linked to the shop when its owner 
   assert.equal((await post("/api/plan-request", { email: "neni-email" })).status, 400);
   assert.equal((await post("/api/plan-request", { email: "x@y.cz" }, { Origin: "https://evil.example" })).status, 403);
   // a visitor of the site, and the owner of a shop from the overview
-  assert.equal((await post("/api/plan-request", { email: "Novak@Obchod.cz", web: "obchod.cz", note: "Máme 3 e-shopy." })).status, 200);
+  const sent = await post("/api/plan-request", { email: "Novak@Obchod.cz", web: "obchod.cz", note: "Máme 3 e-shopy." });
+  assert.deepEqual(await sent.json(), { ok: true, to: "sella.support@gmail.com" }); // the pages send it on to this address
   const login = await post("/api/admin/login", { client: "majitel@ulipy.cz", password: shop.password });
   assert.equal((await post("/api/plan-request", { email: "majitel@ulipy.cz", note: "Chceme víc zpráv." }, { Cookie: login.headers.get("set-cookie").split(";")[0] })).status, 200);
 

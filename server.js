@@ -840,7 +840,8 @@ app.post("/api/password/reset", sameOrigin, rateLimit("reset", 10, 15 * 60e3, { 
 // --- "Na míru – napište nám": a request for a custom plan --------------------
 // From the price list on the site, or from an owner's overview (then it is linked to their shop).
 // Kept for us on the All clients page, sent to the support mailbox and to the alert channel.
-const SUPPORT_EMAIL = () => process.env.SUPPORT_EMAIL || "sella.support@gmail.com";
+// our support mailbox – the one place it is set; the pages take it from the answer below
+const SUPPORT_EMAIL = () => "sella.support@gmail.com";
 app.post("/api/plan-request", sameOrigin, rateLimit("plan-request", 5, 60 * 60e3), async (req, res) => {
   const b = req.body ?? {};
   if (b.website) return res.json({ ok: true }); // honeypot field – only bots fill it in
@@ -869,7 +870,7 @@ app.post("/api/plan-request", sameOrigin, rateLimit("plan-request", 5, 60 * 60e3
     text: [`E-mail: ${email}`, `Obchod: ${request.shop || "–"}`, `Web: ${request.web || "–"}`, `Účet v Selle: ${request.clientId || "zatím nemá"}`, "", request.note || "(bez zprávy)", "", saved ? "Odpovědí na tento e-mail píšete přímo zákazníkovi. Poptávka je i v Selle na stránce Klienti." : `Odpovědí na tento e-mail píšete přímo zákazníkovi. Pozor: v Selle se poptávka NEULOŽILA${unsaved}.`].join("\n"),
   }).catch((err) => { console.error("plan request mail failed:", err.message); return false; });
   if (!saved && !mailed) return fail(res, new Error("plan request neither stored nor mailed"));
-  res.json({ ok: true });
+  res.json({ ok: true, to: SUPPORT_EMAIL() });
 });
 
 // --- self sign-up on the Sella site ("Chci Sellu") --------------------------
