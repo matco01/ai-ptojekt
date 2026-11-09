@@ -855,18 +855,21 @@ app.post("/api/plan-request", sameOrigin, rateLimit("plan-request", 5, 60 * 60e3
     note: str(b.note, 1500).trim(),
     clientId: owner?.id ?? null,
   };
-  try {
-    const saved = await addPlanRequest(request);
-    const who = [request.shop, request.web].filter(Boolean).join(", ") || "bez názvu";
-    alert(`plan-request:${saved.id}`, `Poptávka tarifu na míru: ${who} – ${email}${request.note ? `: ${request.note.slice(0, 300)}` : ""}`, { everyMs: 60e3 });
-    // the support mailbox gets it too; replying goes straight to the customer
-    sendMail({
-      to: SUPPORT_EMAIL(), replyTo: email,
-      subject: `Poptávka tarifu na míru – ${who}`,
-      text: [`E-mail: ${email}`, `Obchod: ${request.shop || "–"}`, `Web: ${request.web || "–"}`, `Účet v Selle: ${request.clientId || "zatím nemá"}`, "", request.note || "(bez zprávy)", "", "Odpovědí na tento e-mail píšete přímo zákazníkovi. Poptávka je i v Selle na stránce Klienti."].join("\n"),
-    }).catch((err) => console.error("plan request mail failed:", err.message));
-    res.json({ ok: true });
-  } catch (err) { fail(res, err); }
+  // stored, mailed and alerted independently: a request is lost only when it can't be kept anywhere
+  let saved = null;
+  try { saved = await addPlanRequest(request); }
+  catch (err) { console.error("plan request not stored:", err.message); }
+  const who = [request.shop, request.web].filter(Boolean).join(", ") || "bez názvu";
+  const unsaved = saved ? "" : " (NEULOŽENO v Selle – chybí tabulka plan_requests? spusťte supabase/schema.sql)";
+  alert(`plan-request:${saved?.id ?? email}`, `Poptávka tarifu na míru${unsaved}: ${who} – ${email}${request.note ? `: ${request.note.slice(0, 300)}` : ""}`, { everyMs: 60e3 });
+  // the support mailbox gets it too; replying goes straight to the customer
+  const mailed = await sendMail({
+    to: SUPPORT_EMAIL(), replyTo: email,
+    subject: `Poptávka tarifu na míru – ${who}`,
+    text: [`E-mail: ${email}`, `Obchod: ${request.shop || "–"}`, `Web: ${request.web || "–"}`, `Účet v Selle: ${request.clientId || "zatím nemá"}`, "", request.note || "(bez zprávy)", "", saved ? "Odpovědí na tento e-mail píšete přímo zákazníkovi. Poptávka je i v Selle na stránce Klienti." : `Odpovědí na tento e-mail píšete přímo zákazníkovi. Pozor: v Selle se poptávka NEULOŽILA${unsaved}.`].join("\n"),
+  }).catch((err) => { console.error("plan request mail failed:", err.message); return false; });
+  if (!saved && !mailed) return fail(res, new Error("plan request neither stored nor mailed"));
+  res.json({ ok: true });
 });
 
 // --- self sign-up on the Sella site ("Chci Sellu") --------------------------

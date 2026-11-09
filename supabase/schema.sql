@@ -258,3 +258,6 @@ insert into clients (id, name, plan) values
   ('techmarket', 'TechMarket', 'internal'),
   ('kavarna', 'Bohème', 'internal')
 on conflict (id) do nothing;
+
+-- Let the database API see new tables and columns right away (otherwise it can lag behind).
+notify pgrst, 'reload schema';
