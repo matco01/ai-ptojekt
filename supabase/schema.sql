@@ -74,19 +74,6 @@ alter table clients add column if not exists two_factor jsonb;
 alter table clients add column if not exists custom_price_czk integer;       -- the custom plan's monthly price
 alter table clients add column if not exists monthly_tts_limit integer;      -- overrides the plan's voice limit (empty = plan default)
 
--- Requests for a custom plan from the site or an owner's overview (v13); see lib/requests.js.
-create table if not exists plan_requests (
-  id          bigint generated always as identity primary key,
-  email       text not null,
-  shop        text,
-  web         text,
-  note        text,
-  lang        text not null default 'cs',
-  client_id   text references clients(id) on delete set null, -- set when an owner asked from the overview
-  created_at  timestamptz not null default now(),
-  done_at     timestamptz                                     -- we got in touch
-);
-
 -- What the owner wants the assistant to know beyond the catalogue: texts and uploaded documents.
 create table if not exists knowledge (
   id          bigint generated always as identity primary key,
@@ -247,7 +234,6 @@ alter table catalogs enable row level security;
 alter table usage enable row level security;
 alter table rate_limits enable row level security;
 alter table knowledge enable row level security;
-alter table plan_requests enable row level security;
 revoke execute on function add_usage, hit_rate_limit, dashboard_summary from public, anon, authenticated;
 
 -- The simulated "demo data" is gone from the app – remove what was generated earlier.
