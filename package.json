@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
-    "@supabase/supabase-js": "^2.117.2",
     "express": "^5.2.1",
     "fast-xml-parser": "^5.11.1",
+    "pg": "^8.23.1",
     "qrcode": "^1.5.4",
     "stripe": "^23.0.0"
   },

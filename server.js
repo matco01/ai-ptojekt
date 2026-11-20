@@ -22,7 +22,7 @@ import {
 import { mailEnabled, sendAccountMail, sendMail } from "./lib/mail.js";
 import { addPlanRequest, listPlanRequests, markPlanRequestDone, deletePlanRequest } from "./lib/requests.js";
 import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount, endUnpaidPeriods } from "./lib/billing.js";
-import { db } from "./lib/db.js";
+import { db, query, ensureSchema } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
 import { rateLimit, hit, once } from "./lib/ratelimit.js";
@@ -161,8 +161,7 @@ function cleanBehaviour(b = {}, getProduct) {
 app.get("/api/health", async (req, res) => {
   let database = "none";
   if (db) {
-    const { error } = await db.from("clients").select("id", { head: true, count: "exact" }).limit(1);
-    database = error ? "down" : "ok";
+    database = await query("select 1").then(() => "ok", () => "down");
   }
   const payments = paymentsEnabled() ? "stripe" : demoPayments() ? "demo" : simulated() ? "simulated" : "off";
   res.status(database === "down" ? 503 : 200).json({ ok: database !== "down", tts: ttsProvider(), database, payments });
@@ -862,7 +861,7 @@ app.post("/api/plan-request", sameOrigin, rateLimit("plan-request", 5, 60 * 60e3
   try { saved = await addPlanRequest(request); }
   catch (err) { console.error("plan request not stored:", err.message); }
   const who = [request.shop, request.web].filter(Boolean).join(", ") || "bez názvu";
-  const unsaved = saved ? "" : " (NEULOŽENO v Selle – chybí tabulka plan_requests? spusťte supabase/schema.sql)";
+  const unsaved = saved ? "" : " (NEULOŽENO v Selle – databáze nedostupná)";
   alert(`plan-request:${saved?.id ?? email}`, `Poptávka tarifu na míru${unsaved}: ${who} – ${email}${request.note ? `: ${request.note.slice(0, 300)}` : ""}`, { everyMs: 60e3 });
   // the support mailbox gets it too; replying goes straight to the customer
   const mailed = await sendMail({
@@ -1070,7 +1069,7 @@ async function dailyMaintenance({ timeBudgetMs }) {
   const report = { purgedEvents: 0, feeds: [] };
   try {
     report.purgedEvents = await purgeOld();
-    if (db) await db.from("rate_limits").delete().lt("window_start", Date.now() - 32 * 864e5);
+    if (db) await query("delete from rate_limits where window_start < $1", [Date.now() - 32 * 864e5]);
     // sign-ups nobody confirmed (and nobody paid for) within 14 days
     if (mailEnabled()) {
       report.removedUnconfirmed = 0;
@@ -1147,6 +1146,8 @@ app.use((err, req, res, next) => {
 });
 process.on("unhandledRejection", (err) => alert("unhandled", `Neošetřená chyba: ${err?.message ?? err}`));
 
+// the tables first (db/schema.sql, applied at every start), then requests
+await ensureSchema().catch((err) => { console.error("database schema failed:", err.message); alert("schema", `Databáze: schéma se nepodařilo nahrát – ${err.message}`); });
 const server = app.listen(PORT, () => {
   console.log(`AI prodavač běží:`);
   console.log(`  Sella:        http://localhost:${PORT}/`);
@@ -1155,7 +1156,7 @@ const server = app.listen(PORT, () => {
   console.log(`  Dashboard:    http://localhost:${PORT}/admin/`);
   console.log(`  Klienti:      http://localhost:${PORT}/admin/clients.html`);
   console.log(hasApiKey() ? `  Model:        ${MODEL}` : `  Režim:        bez AI (ANTHROPIC_API_KEY není nastaven) – chat odpovídá zjednodušeně`);
-  console.log(`  Data:         ${db ? "Supabase" : "lokální soubory (SUPABASE_URL / SUPABASE_SECRET_KEY nejsou nastaveny)"}, uchovávají se ${RETENTION_DAYS} dní`);
+  console.log(`  Data:         ${db ? "Postgres (DATABASE_URL)" : "lokální soubory (DATABASE_URL není nastaven)"}, uchovávají se ${RETENTION_DAYS} dní`);
   if (isProduction() && !ADMIN_TOKEN) console.warn("  POZOR: ADMIN_TOKEN není nastaven – přihlášení provozovatele nefunguje.");
 });
 // a new version on Railway: stop taking requests, let the running ones (a chat answer) finish, then exit

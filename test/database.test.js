@@ -1,4 +1,4 @@
-// Runs supabase/schema.sql in an in-memory Postgres (PGlite) and checks the SQL functions:
+// Runs db/schema.sql in an in-memory Postgres (PGlite) and checks the SQL functions:
 // the dashboard totals must match the JavaScript version exactly.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -9,10 +9,7 @@ import { aggregate, finish, redact } from "../lib/analytics.js";
 let pg;
 before(async () => {
   pg = new PGlite();
-  // what Supabase has and plain Postgres doesn't
-  await pg.exec(`create schema storage; create table storage.buckets (id text primary key, name text, public boolean);
-    create role anon; create role authenticated;`);
-  const schema = fs.readFileSync(new URL("../supabase/schema.sql", import.meta.url), "utf8");
+  const schema = fs.readFileSync(new URL("../db/schema.sql", import.meta.url), "utf8");
   await pg.exec(schema);
   await pg.exec(schema); // must be safe to run again
 });

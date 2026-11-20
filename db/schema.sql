@@ -1,5 +1,5 @@
--- AI prodavač – database schema. Run in Supabase → SQL Editor → Run.
--- Safe to run again (also after updates): it only adds what is missing.
+-- AI prodavač – database schema (Postgres on Railway). The server applies it itself at every start
+-- (lib/db.js → ensureSchema), so nothing needs running by hand. Safe to run again: it only adds what is missing.
 
 -- One row per shop that uses the AI salesperson.
 create table if not exists clients (
@@ -99,17 +99,17 @@ create table if not exists knowledge (
 );
 create index if not exists knowledge_client on knowledge (client_id);
 
--- The last downloaded product feed per client. The products themselves live gzipped in the
--- private Storage bucket "catalogs" (<client_id>.json.gz); this row only describes them.
+-- The last downloaded product feed per client: the products gzipped in `products` (one read per
+-- server start), and when / how it went.
 create table if not exists catalogs (
   client_id     text primary key references clients(id) on delete cascade,
-  data          jsonb,                             -- legacy: products stored inline (read once, then moved to Storage)
+  data          jsonb,                             -- legacy: products stored inline as JSON (read once, then gzipped into products)
   product_count integer,
   error         text,                              -- why the last download failed (the previous catalog stays in use)
   updated_at    timestamptz not null default now()
 );
-alter table catalogs add column if not exists stored_at timestamptz;     -- when the products were last written to Storage
-insert into storage.buckets (id, name, public) values ('catalogs', 'catalogs', false) on conflict (id) do nothing;
+alter table catalogs add column if not exists stored_at timestamptz;     -- when the products were last stored
+alter table catalogs add column if not exists products bytea;            -- the catalog, gzipped JSON
 
 -- AI usage per client and month – the basis for plan limits and invoicing.
 create table if not exists usage (
@@ -240,16 +240,6 @@ select jsonb_build_object(
 );
 $$;
 
--- Only the server (secret key) may touch these tables; the public anon key gets nothing.
-alter table clients enable row level security;
-alter table events enable row level security;
-alter table catalogs enable row level security;
-alter table usage enable row level security;
-alter table rate_limits enable row level security;
-alter table knowledge enable row level security;
-alter table plan_requests enable row level security;
-revoke execute on function add_usage, hit_rate_limit, dashboard_summary from public, anon, authenticated;
-
 -- The simulated "demo data" is gone from the app – remove what was generated earlier.
 delete from events where demo;
 
@@ -258,6 +248,3 @@ insert into clients (id, name, plan) values
   ('techmarket', 'TechMarket', 'internal'),
   ('kavarna', 'Bohème', 'internal')
 on conflict (id) do nothing;
-
--- Let the database API see new tables and columns right away (otherwise it can lag behind).
-notify pgrst, 'reload schema';

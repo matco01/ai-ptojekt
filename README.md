@@ -19,7 +19,7 @@ AI prodavačka pro e-shopy. Hned po příchodu na web se zákazníka zeptá, jes
 - **Hesla ukázkových obchodů:** TechMarket a Bohème mají úvodní heslo odvozené z `ADMIN_TOKEN` (např. `k7mq-2xpt-9fhd`), takže fungují i bez databáze a hned po nasazení. Najdete je na stránce Všichni klienti (Ukázat / Kopírovat / Kopírovat přístup pro majitele). **Vytvořit nové heslo** vygeneruje nové a úvodní tím přestane platit; na serveru to potřebuje databázi, lokálně se uloží do `data/passwords.json`.
 - **Video znovu:** `public/sella/film.html?lang=cs` je animace, ze které je video nahrané (každý snímek je funkcí času). Po úpravě textů se dá znovu nahrát po snímcích do MP4 (puppeteer + ffmpeg).
 - **Videonávod „Jak rozjet Sellu na svém webu“** (`public/sella/navod.html`, nahrané `public/sella/video/navod-cs.mp4` a `navod-en.mp4`, s namluveným hlasem): prochází přesně šest kroků z karty v přehledu – zkopírovat kód, vložit ho (Shoptet, WordPress s pluginem WPCode, Shopify, Google Tag Manager, jiný web), Sella se ukáže na webu, přečte si web, nastavení na stránce Upravit prodavačku (Vzhled: jméno, barva, maskot; Povaha: tón a pokyny; Co má vědět: informace o obchodě a dokumenty; Uložit změny) a přehled se plní daty; na konci nabídka, že to uděláme za ně. Majitel ho pustí v přehledu (**▶ Video návod**). Když se změní kroky nebo stránka nastavení, upravte texty v `navod.html` a video nahrajte znovu.
-- **Vložte to za mě:** v přehledu u kódu majitel vyplní, na čem web běží, kontakt a poznámku. Přijde upozornění (`ALERT_WEBHOOK_URL`) a žádost se ukáže na stránce **Všichni klienti**, kde ji po vložení označíte **Vyřízeno**. Potřebuje sloupec `install_request` – spusťte znovu `supabase/schema.sql`.
+- **Vložte to za mě:** v přehledu u kódu majitel vyplní, na čem web běží, kontakt a poznámku. Přijde upozornění (`ALERT_WEBHOOK_URL`) a žádost se ukáže na stránce **Všichni klienti**, kde ji po vložení označíte **Vyřízeno**.
 - **Nahrání videí:** s běžící aplikací (`npm start`) a nástroji jen pro tento skript (`npm i --no-save puppeteer-core ffmpeg-static`): `node scripts/record-film.mjs navod cs` (resp. `en`, nebo `film`). Vytvoří MP4 i náhledový obrázek; namluvený hlas jde přidat `--audio hlas.mp3`.
 
 ## Web a vyhledávače (SEO)
@@ -49,7 +49,6 @@ Obchod si Sellu založí sám, zaplatí kartou a teprve pak mu funguje kód pro 
 2. Developers → Webhooks → Add endpoint: `https://VÁŠ-WEB/api/stripe/webhook`, události `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Signing secret uložte do `STRIPE_WEBHOOK_SECRET`.
 3. Settings → Billing → Customer portal: zapněte portál (faktury, změna karty, zrušení předplatného).
 4. Settings → Customer emails: zapněte posílání faktur a potvrzení o platbě.
-5. Spusťte znovu `supabase/schema.sql` (přidá sloupce pro platby).
 
 Volitelně `STRIPE_TRIAL_DAYS=14` dá novým obchodům zkušební dny zdarma (karta se zadá hned, strhne se až po nich). Lokálně bez `STRIPE_SECRET_KEY` se platba jen nasimuluje, takže jde celé proklikat; na serveru bez klíče platby nejdou a registrace bez databáze vrací 503.
 
@@ -63,7 +62,7 @@ S `RESEND_API_KEY` (a ověřenou doménou sella.chat v Resendu, viz `.env.exampl
 - **Doména:** samotné zadání domény při registraci nic neblokuje. Doménu „drží“ až obchod, který platí (nebo je na fakturu), případně ten, jehož widget na ní už běží. Jiný účet pak tuto doménu nemůže zaregistrovat, přidat si v Nastavení ani za ni zaplatit.
 - **Zapomenuté heslo:** odkaz z přihlášení vede na `/sella/zapomenute-heslo.html`. Přijde e-mail s odkazem na nové heslo (platí hodinu a jen jednou; odpověď je stejná, ať účet existuje, nebo ne). Po uložení je majitel rovnou přihlášený.
 
-Bez klíče se nic z toho nezapíná a stránka se zapomenutým heslem odkáže na kontaktní e-mail. Potřebuje sloupec `email_verified_at` – spusťte znovu `supabase/schema.sql`.
+Bez klíče se nic z toho nezapíná a stránka se zapomenutým heslem odkáže na kontaktní e-mail.
 
 ## Klienti (více e-shopů)
 
@@ -71,7 +70,7 @@ Každý e-shop, který prodavačku používá, je klient s vlastním ID. Ukázko
 
 **Jak funguje ID klienta:** web obchodu vkládá widget s `data-client="id"`. Server podle ID načte nastavení obchodu, ověří, že stránka běží na jedné z jeho domén (jinak 403), načte jeho produkty z feedu a všechno, co se stane, uloží pod tímto ID. Obchody tak nikdy nevidí data jiných obchodů. Vložení bez `data-client` se nespustí (dřív se tiše počítalo jako TechMarket).
 
-**Přidání nového klienta** (potřebuje Supabase):
+**Přidání nového klienta** (potřebuje databázi):
 1. Přihlaste se na `/admin/` jako **admin** s heslem `ADMIN_TOKEN` a otevřete **Klienti** → **+ Nový klient**.
 2. Vyplňte ID (např. `datart`), název, domény obchodu, adresu produktového feedu (Heureka / Zboží.cz nebo Google Merchant), popis obchodu, tarif a e-mail majitele. Informace o obchodě (doprava, vrácení, platba, kontakt) zadejte jako JSON – na tyhle otázky AI odpovídá jen odsud.
 3. Po uložení klikněte **Vytvořit nové přihlášení majitele**. Stránka ukáže kód pro web, adresu přehledu, ID a vygenerované heslo – jako hotovou zprávu, kterou zkopírujete nebo otevřete v e-mailu. Heslo se ukáže jen jednou; ukládá se jen jeho otisk.
@@ -85,7 +84,7 @@ Kód pro web klienta (přímo, nebo přes jeho Google Tag Manager):
 
 **Tarify a limity** (`lib/plans.js`): každý tarif má měsíční limit zpráv, které napíše AI (odpověď v chatu, nabídka pomoci napsaná na míru váhajícímu zákazníkovi i doporučení pro majitele se počítají každá jako jedna), a znaků přirozeného hlasu; u klienta jde nastavit vlastní limit. Server počítá každé volání Claude (tokeny → cena v USD) a hlas do tabulky `usage`. Po vyčerpání limitu zpráv se prodavačka na webu obchodu do konce měsíce vypne (nebo do vyššího tarifu); vyčerpaný hlas přejde na hlas prohlížeče. Při 80 % a 100 % limitu přijde upozornění. Majitel vidí čerpání v přehledu, vy u všech klientů na stránce Klienti, kde je i **export CSV za měsíc** pro fakturaci. Ceny tarifů jsou v `lib/plans.js`; obchody z registrace platí přes Stripe (viz výše), ručním klientům fakturujete podle exportu.
 
-**Tarif na míru:** když obchodu žádný tarif nesedí, vyplní na webu (nebo ve svém přehledu) krátký formulář „Na míru“ – e-mail, adresu obchodu a co potřebuje. Poptávka se uloží do tabulky `plan_requests`, ukáže se nahoře na stránce Klienti (s tlačítky Napsat e-mail, Nastavit tarif a Vyřízeno), přijde e-mailem na sella.support@gmail.com (adresa je v `server.js`, `SUPPORT_EMAIL`; odpověď jde rovnou zákazníkovi) a do upozornění. Domluvíte se a na stránce Klienti mu u klienta nastavíte tarif **Na míru** s cenou, limitem zpráv a limitem hlasu. Funguje jako ostatní tarify: majitel ho vidí ve svém přehledu, zaplatí ho kartou přes Stripe (cena se ve Stripe založí sama) a po vyčerpání limitu se prodavačka vypne. Platí-li obchod už předplatné, změna tarifu nebo ceny ho ve Stripe rovnou upraví a rozdíl doúčtuje. Klientovi na fakturu nastavíte cenu stejně, jen se platí mimo Stripe. Když si majitel sám vybere veřejný tarif, dohoda na míru skončí. Potřebuje sloupce `custom_price_czk`, `monthly_tts_limit` a tabulku `plan_requests` – spusťte znovu `supabase/schema.sql`.
+**Tarif na míru:** když obchodu žádný tarif nesedí, vyplní na webu (nebo ve svém přehledu) krátký formulář „Na míru“ – e-mail, adresu obchodu a co potřebuje. Poptávka se uloží do tabulky `plan_requests`, ukáže se nahoře na stránce Klienti (s tlačítky Napsat e-mail, Nastavit tarif a Vyřízeno), přijde e-mailem na sella.support@gmail.com (adresa je v `server.js`, `SUPPORT_EMAIL`; odpověď jde rovnou zákazníkovi) a do upozornění. Domluvíte se a na stránce Klienti mu u klienta nastavíte tarif **Na míru** s cenou, limitem zpráv a limitem hlasu. Funguje jako ostatní tarify: majitel ho vidí ve svém přehledu, zaplatí ho kartou přes Stripe (cena se ve Stripe založí sama) a po vyčerpání limitu se prodavačka vypne. Platí-li obchod už předplatné, změna tarifu nebo ceny ho ve Stripe rovnou upraví a rozdíl doúčtuje. Klientovi na fakturu nastavíte cenu stejně, jen se platí mimo Stripe. Když si majitel sám vybere veřejný tarif, dohoda na míru skončí.
 
 **Produkty – feed není potřeba:** obchod zadá jen adresu webu. Sella si produkty přečte sama, v tomto pořadí (`lib/crawl.js`):
 1. **Shopify** – všechny produkty z veřejné adresy `/products.json`.
@@ -95,7 +94,7 @@ Kód pro web klienta (přímo, nebo přes jeho Google Tag Manager):
 
 Web se nikdy nečte uprostřed dotazu zákazníka. Poprvé ho spustí přehled majitele (karta „Katalog produktů“ ukáže „Načítám produkty z vašeho webu…“, trvá to až 2 minuty), pak ho znovu načte každá noční údržba; tlačítko „Načíst produkty z webu znovu“ ho načte hned. 5. **Weby skládané až v prohlížeči** (JavaScriptové aplikace, server pošle prázdnou stránku): Claude přečte produkty z vlastních skriptů webu a dat vložených do stránky (např. Next.js). Funguje, když web produkty v kódu nebo stránce má; když si je stahuje odjinud (vlastní API), potřebuje feed. Časový limit čtení: `CRAWL_SECONDS` (výchozí 100).
 
-**Produkty z feedu:** když obchod feed zadá (při registraci nebo v nastavení, nepovinné), použije se místo čtení webu. Server ho stáhne při první návštěvě a pak každých 6 hodin. Produkty se ukládají zabalené (gzip) do Supabase Storage, takže nový server je nemusí stahovat znovu. Feed větší než 60 MB se odmítne. Když stažení selže, jede se dál na posledním funkčním katalogu, chyba se ukáže v přehledu a přijde upozornění.
+**Produkty z feedu:** když obchod feed zadá (při registraci nebo v nastavení, nepovinné), použije se místo čtení webu. Server ho stáhne při první návštěvě a pak každých 6 hodin. Produkty se ukládají zabalené (gzip) v databázi (`catalogs.products`), takže restartovaný server je nemusí stahovat znovu. Feed větší než 60 MB se odmítne. Když stažení selže, jede se dál na posledním funkčním katalogu, chyba se ukáže v přehledu a přijde upozornění.
 
 **Napojení bez kódu u klienta:** widget si sám přečte, co web publikuje kvůli Googlu:
 - na jakém produktu zákazník je – ze strukturovaných dat produktu (JSON-LD / microdata) nebo z adresy stránky porovnané s URL ve feedu,
@@ -136,29 +135,16 @@ Vzhled dorazí do widgetu spolu se startovní kontrolou (`/api/status` → `look
 
 ## Nasazení na Railway
 
-Server běží na Railway jako obyčejná Node aplikace (`npm start`), nastavení je v `railway.json` (kontrola `/api/health`, restart při pádu).
+Server i databáze běží na Railway: Node aplikace (`npm start`, nastavení v `railway.json` – kontrola `/api/health`, restart při pádu) a Postgres vedle ní.
 
-1. **Projekt:** railway.com → New Project → Deploy from GitHub repo → tento repozitář, větev `main`. Každý push na `main` nasadí novou verzi.
-2. **Proměnné:** service → Variables → Raw Editor: vložte stejné proměnné jako na Vercelu (seznam níže u Vercelu, vše viz `.env.example`). **`ADMIN_TOKEN` a `SESSION_SECRET` musí být přesně stejné** – šifruje se jimi dvoufázové ověření majitelů; s jinými se všem vypne a změní se hesla ukázkových obchodů. Railway sám nastaví `PORT` a `RAILWAY_ENVIRONMENT` (podle ní aplikace pozná ostrý provoz).
-3. **Vyzkoušení:** Settings → Networking → Generate Domain dá dočasnou adresu `…up.railway.app` (neindexuje se; kód pro web v přehledu i tak ukazuje sella.chat).
-4. **Doména:** Settings → Networking → Custom Domain → `sella.chat` (a `www.sella.chat`). V DNS (Cloudflare) nahraďte dosavadní záznamy Vercelu za CNAME na adresu, kterou Railway ukáže, se stavem „DNS only“, a přidejte ověřovací TXT záznam. Certifikát vystaví Railway sám.
-5. **Po přepnutí:** projekt na Vercelu smažte, ať tam nic neběží dvakrát (noční údržba). Stripe, Resend a Supabase se nemění – adresy zůstávají na sella.chat.
+1. **Projekt:** railway.com → New Project → Deploy from GitHub repo → tento repozitář, větev `main`. Region služeb **EU West (Amsterdam)** – zásady soukromí slibují servery v EU. Každý push na `main` nasadí novou verzi.
+2. **Databáze:** v projektu + New → Database → PostgreSQL (taky v EU West). Tabulky a funkce si server vytvoří a při každém startu doplní sám z `db/schema.sql` – nic se nespouští ručně.
+3. **Proměnné:** service s aplikací → Variables → Raw Editor: `DATABASE_URL=${{Postgres.DATABASE_URL}}` (odkaz na databázi po interní síti) a dál `ANTHROPIC_API_KEY`, `ADMIN_TOKEN`, `SESSION_SECRET`, `CRON_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`, `ALERT_WEBHOOK_URL`, `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` (vše viz `.env.example`). **`ADMIN_TOKEN` a `SESSION_SECRET`** jsou dlouhé náhodné řetězce (`ADMIN_TOKEN` je zároveň vaše heslo do administrace, ID `admin`). Pozdější změna odhlásí všechny, vypne majitelům dvoufázové ověření a změní hesla ukázkových obchodů – proto je nastavte jednou a uschovejte. Railway sám nastaví `PORT` a `RAILWAY_ENVIRONMENT` (podle ní aplikace pozná ostrý provoz).
+4. **Vyzkoušení:** Settings → Networking → Generate Domain dá dočasnou adresu `…up.railway.app` (neindexuje se; kód pro web v přehledu i tak ukazuje sella.chat). `/api/health` musí ukázat `"database":"ok"`.
+5. **Doména:** Settings → Networking → Custom Domain → `sella.chat` (a `www.sella.chat`). V DNS (Cloudflare) nahraďte dosavadní záznamy Vercelu za CNAME na adresu, kterou Railway ukáže, se stavem „DNS only“, a přidejte ověřovací TXT záznam. Certifikát vystaví Railway sám.
+6. **Po přepnutí:** projekty na Vercelu a v Supabase smažte (data se nepřenášela – zatím šlo jen o zkušební účty). Stripe a Resend se nemění – adresy zůstávají na sella.chat. Pak lze smazat i `vercel.json`.
 
-Rozdíly proti Vercelu: žádný limit 4,5 MB na požadavek ani délky běhu, noční údržba v serveru (bez Vercel Cron), soubory v `data/` jsou ale pořád jen dočasné (po novém nasazení zmizí) – trvalá data jsou v Supabase.
-
-## Nasazení na Vercel
-
-Projekt běží na Vercelu bez dalšího nastavení (Express se detekuje sám ze `server.js`).
-
-1. **Import repozitáře:** ve Vercelu zvolte Add New → Project, vyberte repozitář a nechte výchozí nastavení (Framework Preset: Express / Other, žádný build command).
-2. **Proměnné prostředí:** v Settings → Environment Variables nastavte `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADMIN_TOKEN`, `CRON_SECRET`, pro platby `STRIPE_SECRET_KEY` a `STRIPE_WEBHOOK_SECRET` pro e-maily `RESEND_API_KEY` a `MAIL_FROM`, doporučeně `ALERT_WEBHOOK_URL`; pro přirozený hlas `AZURE_SPEECH_KEY` a `AZURE_SPEECH_REGION` (vše viz `.env.example`). Soubor `.env.local` se na Vercel nenahrává.
-3. **Databáze:** spusťte `supabase/schema.sql` v Supabase → SQL Editor – poprvé i po každé aktualizaci (přidá jen to, co chybí, a smaže dřívější simulovaná demo data).
-4. **Deploy.** Každý push na `main` nasadí novou verzi.
-
-**Co se na Vercelu chová jinak:**
-- Statické soubory servíruje Vercel přímo ze složky `public/` (`/` = e-shop, `/admin/`, `/admin/clients.html`, `/demo/kavarna.html`, `/widget/prodavac.js`, `/soukromi.html`, `/podminky.html`, `/zpracovani-udaju.html`).
-- Konverzace přežije i přeskočení mezi instancemi, protože widget posílá s každou zprávou i dosavadní přepis.
-- **Data dashboardu se ukládají do Supabase.** Bez `SUPABASE_URL` a `SUPABASE_SECRET_KEY` jdou jen do dočasné složky, jsou pro každou instanci zvlášť a po restartu zmizí.
+Soubory v `data/` jsou jen dočasné (po novém nasazení zmizí) – vše trvalé je v Postgresu. Zálohy: Railway → Postgres → Backups.
 
 ## Spuštění
 
@@ -267,7 +253,7 @@ public/widget/       prodavac.js – vložitelný widget (Shadow DOM, funguje na
 public/              Web Selly (index.html; sella/ – přihlášení, styly, video), techmarket/ (demo e-shop: index.html, shop.js, shop.css), soukromi.html, podminky.html, zpracovani-udaju.html, legal/ (údaje provozovatele, styl právních stránek) + vendor/ (ikony, písma)
 public/demo/         Ukázka jiného webu (kavárna Bohème)
 public/admin/        Přehled pro majitele (index.html) a správa klientů (clients.html)
-supabase/schema.sql  Databáze: tabulky a funkce pro limity, využití a souhrn přehledu
+db/schema.sql        Databáze: tabulky a funkce pro limity, využití a souhrn přehledu (server ji nahrává sám při startu)
 lib/legal.js         Verze obchodních podmínek, se kterou obchod při registraci souhlasí
 test/                Testy (npm test)
 ```

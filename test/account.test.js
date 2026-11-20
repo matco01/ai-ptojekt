@@ -31,7 +31,7 @@ before(async () => {
     },
     stdio: "pipe",
   });
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 400; i++) { // up to 40 s: the in-memory Postgres tests run alongside and load the CPU
     try { if ((await fetch(base + "/api/health")).ok) return; } catch {}
     await new Promise((r) => setTimeout(r, 100));
   }
