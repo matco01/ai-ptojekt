@@ -180,6 +180,9 @@
   // per-session memory of how the customer reacted
   const state = Object.assign({ greeted: false, choice: null, shown: [], nudgeCount: 0, lastNudgeAt: 0, cooldown: 20e3, offlineNoted: false }, ss.get("state") || {});
   const saveState = () => ss.set("state", state);
+  // the greeting was left open (the page reloaded or the visitor went elsewhere meanwhile) – that's
+  // "just looking", not "never ask": without this the offers of help would stay off for the whole visit
+  if (state.greeted && !state.choice) { state.choice = "declined"; saveState(); }
 
   const api = (window.AIProdavac = window.AIProdavac || {});
   api.__loaded = true;

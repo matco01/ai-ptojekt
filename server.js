@@ -324,7 +324,7 @@ app.post("/api/site-look", rateLimit("site-look", 10, 60e3), withClient(), async
 // the plans shops can choose (Sella price list)
 app.get("/api/plans", (req, res) => res.json({ plans: publicPlans() }));
 
-app.post("/api/proactive", rateLimit("proactive", 60, 60e3, { shared: true }), withClient(), async (req, res) => {
+app.post("/api/proactive", rateLimit("proactive", 300, 60e3, { shared: true }), withClient(), async (req, res) => {
   const { sessionId, trigger, signals } = req.body ?? {};
   if (!validSession(sessionId)) return res.status(400).json({ error: "Neplatná session." });
   const s = { ...cleanSignals(signals, req.cat), agentName: agentName(req.client), lang: req.lang };
