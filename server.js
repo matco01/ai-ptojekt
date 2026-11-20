@@ -1,5 +1,6 @@
 import "./lib/env.js"; // must stay first: loads .env / .env.local
 import express from "express";
+import { BlockList, isIPv4, isIPv6 } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
@@ -42,8 +43,17 @@ const PORT = Number(process.env.PORT) || 3000;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ""; // our master password (login ID "admin")
 
 // Vercel sets X-Forwarded-For itself (clients can't spoof it there), so req.ip is the visitor's IP.
-// Railway's edge proxy appends the visitor's IP as the last entry: trust that one hop only.
-app.set("trust proxy", process.env.VERCEL ? true : onRailway() ? 1 : "loopback");
+// Railway's edge proxy appends the address it was reached from: trust that hop – and one more when
+// that address is Cloudflare's (sella.chat behind its proxy), so req.ip is the visitor, not Cloudflare.
+// Anything else in the header was written by the client and is not believed.
+const CLOUDFLARE = new BlockList(); // https://www.cloudflare.com/ips/
+for (const net of ["173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18", "108.162.192.0/18",
+  "190.93.240.0/20", "188.114.96.0/20", "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13", "104.24.0.0/14",
+  "172.64.0.0/13", "131.0.72.0/22"]) CLOUDFLARE.addSubnet(net.split("/")[0], Number(net.split("/")[1]), "ipv4");
+for (const net of ["2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32"])
+  CLOUDFLARE.addSubnet(net.split("/")[0], Number(net.split("/")[1]), "ipv6");
+const fromCloudflare = (ip) => { const v4 = ip.replace(/^::ffff:/, ""); return isIPv4(v4) ? CLOUDFLARE.check(v4, "ipv4") : isIPv6(ip) && CLOUDFLARE.check(ip, "ipv6"); };
+app.set("trust proxy", process.env.VERCEL ? true : onRailway() ? (ip, hop) => hop === 0 || (hop === 1 && fromCloudflare(ip)) : "loopback");
 // Stripe's payment notifications: the signature is checked against the exact raw body (see lib/billing.js)
 app.post("/api/stripe/webhook", express.raw({ type: "*/*", limit: "1mb" }), async (req, res) => {
   try {

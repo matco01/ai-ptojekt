@@ -248,3 +248,7 @@ insert into clients (id, name, plan) values
   ('techmarket', 'TechMarket', 'internal'),
   ('kavarna', 'Bohème', 'internal')
 on conflict (id) do nothing;
+
+-- Sella's own assistant on sella.chat (its knowledge is in lib/sella.js).
+insert into clients (id, name, plan, domains) values ('sella', 'Sella', 'internal', '{sella.chat}')
+on conflict (id) do nothing;
