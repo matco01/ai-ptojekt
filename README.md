@@ -53,7 +53,7 @@ Obchod si Sellu založí sám, zaplatí kartou a teprve pak mu funguje kód pro 
 
 Volitelně `STRIPE_TRIAL_DAYS=14` dá novým obchodům zkušební dny zdarma (karta se zadá hned, strhne se až po nich). Lokálně bez `STRIPE_SECRET_KEY` se platba jen nasimuluje, takže jde celé proklikat; na serveru bez klíče platby nejdou a registrace bez databáze vrací 503.
 
-**Demo režim pro testování:** s `PAYMENTS=demo` (proměnná prostředí na Vercelu) se nový účet hned po „Vytvořit účet“ počítá jako zaplacený na měsíc, bez karty a bez Stripe; stejně tak změna tarifu v přehledu. Přehled to označí „Demo režim“. Jen pro testování – s opravdovými zákazníky ho vypněte, jinak by Sellu měli zadarmo.
+**Demo režim pro testování:** s `PAYMENTS=demo` (proměnná prostředí na Vercelu) se nový účet hned po „Vytvořit účet“ počítá jako zaplacený na měsíc, bez karty a bez Stripe; stejně tak změna tarifu v přehledu. Přehled to označí „Demo režim“. Jen pro testování – s opravdovými zákazníky ho vypněte, jinak by Sellu měli zadarmo. Po vypnutí (se Stripe klíčem) noční údržba účtům zaplaceným jen v demo režimu po konci jejich měsíce asistenta vypne a v přehledu jim ukáže „Zbývá zaplatit tarif“.
 
 ## E-mail majitele a zapomenuté heslo
 
@@ -130,9 +130,21 @@ Vzhled dorazí do widgetu spolu se startovní kontrolou (`/api/status` → `look
 
 - **Upozornění:** s `ALERT_WEBHOOK_URL` (Slack nebo Discord webhook) přijde zpráva při chybě serveru nebo Claude API, při rozbitém feedu a když se klient blíží limitu. Každé upozornění nejvýš jednou za čas, i když běží víc instancí.
 - **Dostupnost:** `/api/health` vrací 503, když nejde databáze – nastavte na ni monitor (např. UptimeRobot, Better Stack).
-- **Noční údržba:** Vercel Cron (`vercel.json`) volá každý den ve 3:00 UTC `/api/cron/daily` s `CRON_SECRET`: smaže stará data a staré počítadlo požadavků a znovu stáhne feedy všech klientů.
+- **Noční údržba** každý den ve 3:00 UTC: smaže stará data a staré počítadlo požadavků, vypne účty po konci zaplaceného období bez předplatného a znovu stáhne feedy všech klientů. Na Railway ji spouští server sám (jednou za noc, i při více instancích); na Vercelu ji volá Vercel Cron (`vercel.json`). Ručně: `GET /api/cron/daily` s hlavičkou `Authorization: Bearer <CRON_SECRET>`.
 - **Ochrana proti zneužití:** limity požadavků na AI, hlas a přihlášení se počítají v databázi společně pro všechny instance. Hlavička Origin se dá mimo prohlížeč podvrhnout, takže doménová kontrola chrání obchody před cizími weby, ne API před skripty – útratu proti skriptům drží limity požadavků a měsíční limity tarifů.
 - **Testy:** `npm test` (spouští je i GitHub Actions při každém pushi). Mimo jiné spustí schéma v in-memory Postgresu a ověří, že souhrn přehledu v databázi dává stejná čísla jako výpočet v JavaScriptu.
+
+## Nasazení na Railway
+
+Server běží na Railway jako obyčejná Node aplikace (`npm start`), nastavení je v `railway.json` (kontrola `/api/health`, restart při pádu).
+
+1. **Projekt:** railway.com → New Project → Deploy from GitHub repo → tento repozitář, větev `main`. Každý push na `main` nasadí novou verzi.
+2. **Proměnné:** service → Variables → Raw Editor: vložte stejné proměnné jako na Vercelu (seznam níže u Vercelu, vše viz `.env.example`). **`ADMIN_TOKEN` a `SESSION_SECRET` musí být přesně stejné** – šifruje se jimi dvoufázové ověření majitelů; s jinými se všem vypne a změní se hesla ukázkových obchodů. Railway sám nastaví `PORT` a `RAILWAY_ENVIRONMENT` (podle ní aplikace pozná ostrý provoz).
+3. **Vyzkoušení:** Settings → Networking → Generate Domain dá dočasnou adresu `…up.railway.app` (neindexuje se; kód pro web v přehledu i tak ukazuje sella.chat).
+4. **Doména:** Settings → Networking → Custom Domain → `sella.chat` (a `www.sella.chat`). V DNS (Cloudflare) nahraďte dosavadní záznamy Vercelu za CNAME na adresu, kterou Railway ukáže, se stavem „DNS only“, a přidejte ověřovací TXT záznam. Certifikát vystaví Railway sám.
+5. **Po přepnutí:** projekt na Vercelu smažte, ať tam nic neběží dvakrát (noční údržba). Stripe, Resend a Supabase se nemění – adresy zůstávají na sella.chat.
+
+Rozdíly proti Vercelu: žádný limit 4,5 MB na požadavek ani délky běhu, noční údržba v serveru (bez Vercel Cron), soubory v `data/` jsou ale pořád jen dočasné (po novém nasazení zmizí) – trvalá data jsou v Supabase.
 
 ## Nasazení na Vercel
 

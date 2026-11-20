@@ -21,7 +21,7 @@ import {
 } from "./lib/clients.js";
 import { mailEnabled, sendAccountMail, sendMail } from "./lib/mail.js";
 import { addPlanRequest, listPlanRequests, markPlanRequestDone, deletePlanRequest } from "./lib/requests.js";
-import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount } from "./lib/billing.js";
+import { startPayment, billingPortal, handleWebhook, paymentsEnabled, simulated, demoPayments, activateDemoAccount, endUnpaidPeriods } from "./lib/billing.js";
 import { db } from "./lib/db.js";
 import { ttsProvider, streamSpeech } from "./lib/tts.js";
 import { greeting, nextNudge } from "./lib/proactive.js";
@@ -32,7 +32,7 @@ import { alert } from "./lib/alerts.js";
 import { TERMS_VERSION } from "./lib/legal.js";
 import { validateBot, widgetLook, avatarImage, listDocs, addDoc, deleteDoc, fileText, LIMITS as BOT_LIMITS } from "./lib/bot.js";
 import {
-  MASTER, isProduction, hashPassword, verifyPassword, safeEqual, generatePassword, demoPassword,
+  MASTER, isProduction, onRailway, hashPassword, verifyPassword, safeEqual, generatePassword, demoPassword,
   createSession, readSession, sessionCookie, readCookie, createLink, readLink, passwordStamp,
 } from "./lib/auth.js";
 
@@ -42,7 +42,8 @@ const PORT = Number(process.env.PORT) || 3000;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ""; // our master password (login ID "admin")
 
 // Vercel sets X-Forwarded-For itself (clients can't spoof it there), so req.ip is the visitor's IP.
-app.set("trust proxy", process.env.VERCEL ? true : "loopback");
+// Railway's edge proxy appends the visitor's IP as the last entry: trust that one hop only.
+app.set("trust proxy", process.env.VERCEL ? true : onRailway() ? 1 : "loopback");
 // Stripe's payment notifications: the signature is checked against the exact raw body (see lib/billing.js)
 app.post("/api/stripe/webhook", express.raw({ type: "*/*", limit: "1mb" }), async (req, res) => {
   try {
@@ -1059,12 +1060,13 @@ app.get("/api/admin/usage.csv", async (req, res) => {
   } catch (err) { fail(res, err); }
 });
 
-// --- daily maintenance (Vercel Cron, see vercel.json) ----------------------
-// Deletes old data, clears old rate-limit counters and re-downloads every client's feed (a broken
-// feed raises an alert). Vercel calls it with "Authorization: Bearer <CRON_SECRET>".
-app.get("/api/cron/daily", async (req, res) => {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || !safeEqual(req.get("Authorization"), `Bearer ${secret}`)) return res.status(401).json({ error: "unauthorized" });
+// --- daily maintenance --------------------------------------------------------
+// Deletes old data, clears old rate-limit counters, ends unpaid periods and re-downloads every
+// client's feed (a broken feed raises an alert). On Railway (or any long-running server) the server
+// runs it itself every night at 3:00 UTC; on Vercel, Vercel Cron calls /api/cron/daily (vercel.json)
+// with "Authorization: Bearer <CRON_SECRET>" – the same URL also starts it by hand.
+// timeBudgetMs: how long the website reading may go on (a Vercel function stops after ~3 minutes)
+async function dailyMaintenance({ timeBudgetMs }) {
   const report = { purgedEvents: 0, feeds: [] };
   try {
     report.purgedEvents = await purgeOld();
@@ -1076,22 +1078,39 @@ app.get("/api/cron/daily", async (req, res) => {
         if (unconfirmed(c) && Date.parse(c.createdAt) < Date.now() - 14 * 864e5 && (await deleteUnconfirmed(c.id))) report.removedUnconfirmed++;
       }
     }
+    // with live payments, a shop paid only in demo mode (no Stripe subscription) stops when its month is over
+    report.paidPeriodEnded = await endUnpaidPeriods(await listClients());
+    if (report.paidPeriodEnded.length) alert("demo-ended", `Konec zaplaceného období bez předplatného ve Stripe – vypnuto: ${report.paidPeriodEnded.join(", ")}`, { everyMs: 864e5 });
     // feeds first (quick), then shops read from their websites (a minute or two each) while time is left
     const started = Date.now();
     const shops = (await listClients()).filter((c) => c.active && !c.feedXml && c.catalog !== "techmarket" && sourceOf(c) !== "none")
       .sort((a, b) => Number(sourceOf(a) === "web") - Number(sourceOf(b) === "web"));
     for (const client of shops) {
-      if (Date.now() - started > 150e3) { report.feeds.push({ id: client.id, skipped: "no time left – next night" }); continue; }
+      if (Date.now() - started > timeBudgetMs) { report.feeds.push({ id: client.id, skipped: "no time left – next night" }); continue; }
       await getCatalog(client, { refresh: true }); // alerts by itself when the download fails
       const s = catalogStatus(client);
       report.feeds.push({ id: client.id, source: s?.source, products: s?.products ?? 0, error: s?.error ?? null });
     }
-    res.json(report);
+    return report;
   } catch (err) {
     alert("cron", `Denní údržba selhala: ${err.message}`);
-    fail(res, err);
+    throw err;
   }
+}
+app.get("/api/cron/daily", async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || !safeEqual(req.get("Authorization"), `Bearer ${secret}`)) return res.status(401).json({ error: "unauthorized" });
+  try { res.json(await dailyMaintenance({ timeBudgetMs: process.env.VERCEL ? 150e3 : 20 * 60e3 })); } catch (err) { fail(res, err); }
 });
+// a long-running server keeps its own clock: once a night, at most once across instances and restarts
+if (isProduction() && !process.env.VERCEL) {
+  setInterval(async () => {
+    const now = new Date();
+    if (now.getUTCHours() !== 3) return;
+    if (!(await once(`daily-maintenance:${now.toISOString().slice(0, 10)}`, 23 * 3600e3).catch(() => false))) return;
+    dailyMaintenance({ timeBudgetMs: 20 * 60e3 }).then((r) => console.log("daily maintenance:", JSON.stringify(r).slice(0, 500))).catch(() => {});
+  }, 5 * 60e3).unref();
+}
 
 // short link to the second demo site, so it's not just the raw file path
 // the Sella site is the home page; the demo shops live at /techmarket/ and /kavarna
@@ -1109,7 +1128,16 @@ app.get("/demo/kavarna/img/:id.svg", (req, res) => {
 // --- static files: everything in public/ at the same path ------------------
 // (mirrors Vercel, which serves public/** from its CDN and ignores express.static):
 //   /  → the demo shop · /admin/ → dashboard · /admin/clients.html → clients · /widget/prodavac.js
-app.use(express.static(path.join(here, "public")));
+// The headers vercel.json gives on Vercel, given here for any other host (Railway):
+// only sella.chat is indexed, never the dashboards; icons and fonts are cached.
+app.use((req, res, next) => {
+  if (/\.(vercel\.app|up\.railway\.app)$/.test(req.hostname)) res.set("X-Robots-Tag", "noindex");
+  else if (req.path.startsWith("/admin/")) res.set("X-Robots-Tag", "noindex, nofollow");
+  if (/^\/(icons|og)\//.test(req.path)) res.set("Cache-Control", "public, max-age=604800");
+  else if (req.path.startsWith("/vendor/fonts/")) res.set("Cache-Control", "public, max-age=31536000, immutable");
+  next();
+});
+app.use(express.static(path.join(here, "public"))); // keeps a Cache-Control set above
 
 // unexpected errors: logged, reported to us, and a generic answer for the caller
 app.use((err, req, res, next) => {
@@ -1119,7 +1147,7 @@ app.use((err, req, res, next) => {
 });
 process.on("unhandledRejection", (err) => alert("unhandled", `Neošetřená chyba: ${err?.message ?? err}`));
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`AI prodavač běží:`);
   console.log(`  Sella:        http://localhost:${PORT}/`);
   console.log(`  TechMarket:   http://localhost:${PORT}/techmarket/`);
@@ -1130,3 +1158,5 @@ app.listen(PORT, () => {
   console.log(`  Data:         ${db ? "Supabase" : "lokální soubory (SUPABASE_URL / SUPABASE_SECRET_KEY nejsou nastaveny)"}, uchovávají se ${RETENTION_DAYS} dní`);
   if (isProduction() && !ADMIN_TOKEN) console.warn("  POZOR: ADMIN_TOKEN není nastaven – přihlášení provozovatele nefunguje.");
 });
+// a new version on Railway: stop taking requests, let the running ones (a chat answer) finish, then exit
+process.on("SIGTERM", () => { server.close(() => process.exit(0)); setTimeout(() => process.exit(0), 25e3).unref(); });

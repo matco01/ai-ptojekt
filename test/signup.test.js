@@ -8,7 +8,17 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { billingFromSubscription } from "../lib/billing.js";
+import { billingFromSubscription, paidPeriodOverWithoutSubscription } from "../lib/billing.js";
+
+test("a shop paid only in demo mode stops when its month is over; real and manual ones don't", () => {
+  const past = "2026-11-01T00:00:00Z", future = "2099-01-01T00:00:00Z", now = Date.parse("2026-11-20T00:00:00Z");
+  assert.equal(paidPeriodOverWithoutSubscription({ billing: "active", paidUntil: past }, now), true);
+  assert.equal(paidPeriodOverWithoutSubscription({ billing: "active", paidUntil: past, stripeSubscriptionId: "sim_x" }, now), true);
+  assert.equal(paidPeriodOverWithoutSubscription({ billing: "active", paidUntil: future }, now), false);
+  assert.equal(paidPeriodOverWithoutSubscription({ billing: "active", paidUntil: past, stripeSubscriptionId: "sub_123" }, now), false); // Stripe renews it
+  assert.equal(paidPeriodOverWithoutSubscription({ billing: "manual", paidUntil: past }, now), false);
+  assert.equal(paidPeriodOverWithoutSubscription({ billing: "unpaid", paidUntil: past }, now), false);
+});
 
 test("Stripe subscription states map to billing and the widget switch", () => {
   assert.deepEqual(billingFromSubscription("active"), { status: "active", active: true });
