@@ -247,6 +247,9 @@ app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req,
   if (!req.query.preview) await noteInstalled(req.client, pageOrigin(req), req.get("Host")).catch((err) => console.error("widget seen:", err.message));
   res.json({
     on: a.chat && req.client.active !== false, look: widgetLook(req.client), starters: openingChips(req.cat, req.lang),
+    // does she speak up on her own? The greeting is off unless the owner turned it on (our demo shops
+    // show it); offers of help when someone hesitates are on unless turned off
+    greet: req.client.persona?.greet ?? isBuiltIn(req.client.id), nudges: req.client.persona?.nudges !== false,
     lookSavedAt: req.client.siteLook?.at ?? null, // when the website's look was last saved (the widget sends it when it's missing or old)
   });
 });
@@ -375,13 +378,32 @@ app.post("/api/chat", rateLimit("chat", 30, 5 * 60e3, { shared: true }), withCli
       else if (err instanceof Anthropic.RateLimitError) { message = "AI je momentálně přetížená, zkuste to prosím za chvíli."; alert("anthropic-429", "Claude API vrací 429 (rate limit) – zvažte vyšší tier."); }
       else if (err instanceof Anthropic.APIError) { console.error(`Claude API error ${err.status}:`, err.message); if (err.status >= 500) alert("anthropic-5xx", `Claude API chyba ${err.status}: ${err.message}`); }
       else { console.error(err); alert("chat-error", `Chyba v chatu: ${err.message}`); }
-      send({ type: "error", message });
+      send({ type: "error", message: req.lang === "en" ? errorInEnglish(message) : message });
     }
   } finally {
     await recordUsage(req.client, { messages: used.length ? 1 : 0, claude: used, model: MODEL });
   }
   res.end();
 });
+
+// The chat's error messages for an English page (they're written in Czech where they arise).
+const ERRORS_EN = [
+  [/^Omlouvám se, něco se pokazilo/, () => "Sorry, something went wrong. Please try again."],
+  [/^AI teď není dostupná/, () => "The assistant isn't available right now, please try again later."],
+  [/^AI je momentálně přetížená/, () => "The assistant is busy right now, please try again in a moment."],
+  [/^Najednou můžete poslat nejvýš (\d+)/, (n) => `You can send at most ${n} attachments at once.`],
+  [/^Umím otevřít jen fotky/, () => "I can only open photos (JPG, PNG, WebP, GIF) and PDFs."],
+  [/^Příloha je poškozená/, () => "The attachment is damaged, please upload it again."],
+  [/^Přílohy jsou moc velké/, () => "The attachments are too big (3 MB in total at most)."],
+  [/^Prázdná zpráva/, () => "The message is empty."],
+  [/^Zpráva je příliš dlouhá \(max\. (\d+)/, (n) => `The message is too long (${n} characters at most).`],
+  [/^Počkejte prosím na dokončení/, () => "Please wait until the previous answer is finished."],
+  [/^Konverzace dosáhla limitu/, () => "This conversation has reached its limit. Please reload the page or contact the shop."],
+];
+function errorInEnglish(message) {
+  for (const [re, en] of ERRORS_EN) { const m = message.match(re); if (m) return en(m[1]); }
+  return "Sorry, something went wrong. Please try again.";
+}
 
 app.post("/api/events", rateLimit("events", 120, 60e3), withClient({ lenient: true }), async (req, res) => {
   const { sessionId, events } = req.body ?? {};

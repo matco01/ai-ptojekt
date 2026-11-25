@@ -110,5 +110,6 @@ test("the assistant's settings page: login required, checked input, look reaches
   // the widget's start-up check carries the look (nothing set for the demo café → empty)
   const status = await (await fetch(base + "/api/status?client=kavarna", { headers: own })).json();
   assert.deepEqual(status.look, {});
+  assert.equal(status.greet, true); // our demo shops show the greeting
   assert.equal((await fetch(base + "/api/avatar/kavarna")).status, 404);
 });

@@ -105,7 +105,11 @@ test("a signed-up shop sees its overview, but its widget works only after paying
   assert.equal(d.usage.planId, "standard");
   const status = await fetch(`${base}/api/status?client=${id}`, { headers: widget });
   assert.equal(status.status, 200);
-  assert.equal((await status.json()).on, true);
+  const st = await status.json();
+  assert.equal(st.on, true);
+  // a new shop: no greeting in the middle of the page until the owner turns it on; offers of help on
+  assert.equal(st.greet, false);
+  assert.equal(st.nudges, true);
   assert.equal((await fetch(`${base}/api/status?client=${id}`, { headers: { Origin: "https://evil.example" } })).status, 403);
 
   // now the domain is the paying shop's: no new sign-up, no paying for it and no adding it elsewhere

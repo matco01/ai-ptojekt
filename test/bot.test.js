@@ -20,6 +20,11 @@ test("the owner's settings are checked and cleaned", () => {
   assert.equal(v.persona.tone, "playful");
   assert.equal(v.persona.gender, "m");
   assert.equal(v.persona.instructions.length, 1500);
+  // speaking up on her own: the greeting only when turned on, offers of help unless turned off
+  assert.deepEqual([v.persona.greet, v.persona.nudges], [false, true]);
+  const q = validateBot({ persona: { greet: true, nudges: false } }).persona;
+  assert.deepEqual([q.greet, q.nudges], [true, false]);
+  assert.equal(validateBot({ persona: { greet: "yes" } }).persona.greet, false);
   assert.deepEqual(v.info, { Doprava: "Zdarma nad 1 000 Kč" });
 
   const d = validateBot({ appearance: { color: "red", theme: "neon", avatar: "?" }, persona: { tone: "rude" } });

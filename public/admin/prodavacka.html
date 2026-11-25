@@ -209,6 +209,20 @@
             </div>
           </div>
           <div class="pane card">
+            <h2 data-i18n="popH">Kdy se ozve sama</h2>
+            <p class="hint" data-i18n="popP">Prodavačka vždy čeká v pravém dolním rohu. Tady nastavíte, jestli zákazníka osloví i sama.</p>
+            <label class="l" data-i18n="greetL">Po příchodu na web</label>
+            <div class="choices" id="greet">
+              <button class="choice" data-v="off"><b data-i18n="greetOff">Jen čeká v rohu</b><span data-i18n="greetOffP">Zákazník ji otevře, až bude chtít.</span></button>
+              <button class="choice" data-v="on"><b data-i18n="greetOn">Přivítá zákazníka</b><span data-i18n="greetOnP">Vyskočí doprostřed a zeptá se, jestli má poradit – jednou za návštěvu.</span></button>
+            </div>
+            <label class="l" data-i18n="nudgeL">Když zákazník váhá</label>
+            <div class="choices" id="nudges">
+              <button class="choice" data-v="on"><b data-i18n="nudgeOn">Nabídne pomoc</b><span data-i18n="nudgeOnP">Malá bublina u rohu, např. když se dlouho dívá na jeden produkt. Nejvýš párkrát za návštěvu.</span></button>
+              <button class="choice" data-v="off"><b data-i18n="nudgeOff">Neruší</b><span data-i18n="nudgeOffP">Ozve se, jen když ji zákazník otevře.</span></button>
+            </div>
+          </div>
+          <div class="pane card">
             <h2 data-i18n="instrH">Vaše pokyny</h2>
             <p class="hint" data-i18n="instrP">Co má zdůrazňovat, doporučovat nebo jak se chovat. Pravidla o pravdivosti (žádné vymyšlené slevy ani ceny) platí vždy.</p>
             <textarea id="instructions" maxlength="1500" data-i18n-attr="placeholder=instrPh"></textarea>
@@ -284,6 +298,9 @@
         tFriendly: "Přátelská", tFriendlyP: "„Jasně, s tím vám ráda pomůžu! Na co ho budete používat?“",
         tPro: "Profesionální", tProP: "„Doporučuji tyto dva modely. Liší se hlavně výdrží baterie.“",
         tPlay: "Hravá", tPlayP: "„Ooo, dobrá volba! 🎧 Tyhle vás nezklamou ani v letadle.“",
+        popH: "Kdy se ozve sama", popP: "Prodavačka vždy čeká v pravém dolním rohu. Tady nastavíte, jestli zákazníka osloví i sama.",
+        greetL: "Po příchodu na web", greetOff: "Jen čeká v rohu", greetOffP: "Zákazník ji otevře, až bude chtít.", greetOn: "Přivítá zákazníka", greetOnP: "Vyskočí doprostřed a zeptá se, jestli má poradit – jednou za návštěvu.",
+        nudgeL: "Když zákazník váhá", nudgeOn: "Nabídne pomoc", nudgeOnP: "Malá bublina u rohu, např. když se dlouho dívá na jeden produkt. Nejvýš párkrát za návštěvu.", nudgeOff: "Neruší", nudgeOffP: "Ozve se, jen když ji zákazník otevře.",
         genderL: "Prodavačka, nebo prodavač?", gF: "Prodavačka", gFP: "„Ráda vám poradím.“", gM: "Prodavač", gMP: "„Rád vám poradím.“",
         instrH: "Vaše pokyny", instrP: "Co má zdůrazňovat, doporučovat nebo jak se chovat. Pravidla o pravdivosti (žádné vymyšlené slevy ani ceny) platí vždy.",
         instrPh: "Např.: Zmiňuj, že máme kamennou prodejnu v Brně, kde si zboží můžete vyzkoušet. U kávovarů vždy doporuč i odvápňovač.",
@@ -320,6 +337,9 @@
         tFriendly: "Friendly", tFriendlyP: "“Sure, happy to help! What will you use it for?”",
         tPro: "Professional", tProP: "“I recommend these two models. They differ mainly in battery life.”",
         tPlay: "Playful", tPlayP: "“Ooh, great pick! 🎧 These won't let you down even on a plane.”",
+        popH: "When it speaks up on its own", popP: "The assistant always waits in the bottom right corner. Here you choose whether it also approaches customers by itself.",
+        greetL: "When someone arrives", greetOff: "Just waits in the corner", greetOffP: "Customers open it when they want to.", greetOn: "Greets the customer", greetOnP: "Pops up in the middle and asks if they’d like help – once per visit.",
+        nudgeL: "When a customer hesitates", nudgeOn: "Offers help", nudgeOnP: "A small bubble by the corner, e.g. after a long look at one product. A few times per visit at most.", nudgeOff: "Stays quiet", nudgeOffP: "Speaks only when the customer opens it.",
         genderL: "Female or male (matters in Czech)", gF: "Female", gFP: "“Ráda vám poradím.”", gM: "Male", gMP: "“Rád vám poradím.”",
         instrH: "Your instructions", instrP: "What it should stress, recommend or how to behave. The truthfulness rules (no made-up discounts or prices) always apply.",
         instrPh: "E.g.: Mention we have a shop in Brno where customers can try things out. With coffee machines always suggest a descaler.",
@@ -380,6 +400,9 @@
     const paintFaceS = slider("face-s", "faceScale", 100, (v) => v + " %");
     const paintTone = choice("tone", () => S.persona.tone || "friendly", (v) => { S.persona.tone = v; });
     const paintGender = choice("gender", () => S.persona.gender || "f", (v) => { S.persona.gender = v; });
+    // the greeting is off unless the owner turns it on; offers of help are on unless turned off
+    const paintGreet = choice("greet", () => (S.persona.greet === true ? "on" : "off"), (v) => { S.persona.greet = v === "on"; });
+    const paintNudges = choice("nudges", () => (S.persona.nudges === false ? "off" : "on"), (v) => { S.persona.nudges = v === "on"; });
     function showAvatarBoxes() {
       $("letter-box").hidden = S.appearance.avatar !== "letter";
       $("image-box").hidden = S.appearance.avatar !== "image";
@@ -571,7 +594,7 @@
       if (S.appearance.avatarColor) $("avatar-color").value = S.appearance.avatarColor;
       if (S.appearance.image) $("thumb").src = S.appearance.image;
       $("instructions").value = S.persona.instructions || ""; $("instr-count").textContent = $("instructions").value.length;
-      paintTheme(); paintAvatar(); paintShape(); paintFace(); paintFaceY(); paintFaceS(); paintTone(); paintGender(); showAvatarBoxes(); renderTopics(); renderDocs(data.docs);
+      paintTheme(); paintAvatar(); paintShape(); paintFace(); paintFaceY(); paintFaceS(); paintTone(); paintGender(); paintGreet(); paintNudges(); showAvatarBoxes(); renderTopics(); renderDocs(data.docs);
       $("locked").hidden = !data.locked;
       if (data.locked) document.querySelectorAll("input, textarea, #save, #pick-image, #add-text").forEach((x) => { x.disabled = true; });
       preview();

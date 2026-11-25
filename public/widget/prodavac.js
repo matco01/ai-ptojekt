@@ -658,6 +658,9 @@
   let look = {};
   let lookSavedAt = null; // when the server last saved this website's look (reportLook)
   let starters = null; // the opening buttons written for this website (null = the shop's usual ones below)
+  // does she speak up on her own (the owner's settings)? Until the server says otherwise: no greeting
+  // in the middle of the page, small offers of help when someone hesitates
+  let speakUp = { greet: false, nudges: true };
   let siteOnly = false; // true while reading the website's own look for the settings preview (reportLook)
   const opts = () => {
     if (preview || siteOnly) return { ...(script?.dataset || {}) };
@@ -1686,13 +1689,16 @@
     if (checking || busy || !state.greeted || document.visibilityState !== "visible") return;
     if (floatEl) return;                                             // something is already on screen
     if (!state.choice) return;                                       // greeting still unanswered
+    if (!speakUp.nudges) return;                                     // the owner turned offers of help off
     if (mode === "voice") return;                                    // don't interrupt a spoken conversation
     if (mode === "chat" && Date.now() - lastChatActivity < 20e3) return; // they're talking to us already
     // "just looking" customers are left alone longer and get fewer tips – but a clearly
     // stuck customer can still get an offer of help (the server decides which tip fits)
-    const max = state.choice === "declined" ? 3 : 5;
+    // (no greeting at all – "quiet" – is treated the same: she hasn't been invited to talk)
+    const reserved = state.choice === "declined" || state.choice === "quiet";
+    const max = reserved ? 3 : 5;
     if (state.nudgeCount >= max) return;
-    const gap = state.choice === "declined" ? Math.max(state.cooldown, 25e3) : state.cooldown;
+    const gap = reserved ? Math.max(state.cooldown, 25e3) : state.cooldown;
     if (Date.now() - state.lastNudgeAt < gap) return;
     checking = true;
     try {
@@ -1728,7 +1734,7 @@
       note = L("noVoice");
     }
     mode = m;
-    if (!state.choice) { state.choice = m; saveState(); }
+    if (!state.choice || state.choice === "quiet") { state.choice = m; saveState(); } // opened her herself = talking now
     hideFloat();
     launcher.style.display = "none";
     if (!panel) buildPanel();
@@ -2639,7 +2645,7 @@
     // the owner's preview takes only the opening buttons written for the website (its look is the unsaved one)
     const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}${preview ? "&preview=1" : ""}`).then(async (r) => {
       if (preview) { const st = r.ok ? await r.json() : {}; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return true; }
-      if (r.ok) { const st = await r.json(); look = st.look || {}; lookSavedAt = st.lookSavedAt ?? null; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return st.on !== false; }
+      if (r.ok) { const st = await r.json(); look = st.look || {}; lookSavedAt = st.lookSavedAt ?? null; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; speakUp = { greet: st.greet === true, nudges: st.nudges !== false }; return st.on !== false; }
       if (r.status >= 500 || r.status === 429) return true;
       console.warn("[Sella]", (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
       return false;
@@ -2665,6 +2671,9 @@
     if (reopen) { ss.set("reopen", null); nameReady.then(() => openPanel(reopen === "voice" ? "chat" : reopen)); return; }
     // greet once she knows her name and what page the customer is on (the greeting can mention
     // the product) – but never keep the customer waiting more than 5 s
+    // with the greeting off she just waits in the corner; offers of help can still come (as sparingly as
+    // after "just looking")
+    if (!speakUp.greet && !state.greeted) { state.greeted = true; state.choice = "quiet"; saveState(); }
     if (!state.greeted) setTimeout(() => Promise.race([Promise.all([nameReady, pageReady]), new Promise((r) => setTimeout(r, 5000))]).then(greet), cfg.greetDelay);
   }
   document.readyState === "loading" ? addEventListener("DOMContentLoaded", boot) : boot();
