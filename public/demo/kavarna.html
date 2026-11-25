@@ -198,6 +198,36 @@
       transition: all .45s var(--ease); pointer-events: none; }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
 
+    /* the cart: a panel from the right (the whole screen on phones) */
+    .drawer-bg { position: fixed; inset: 0; z-index: 80; background: rgba(35,26,20,.38); opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
+    .drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 81; width: min(440px, 100%); background: var(--bg); display: flex; flex-direction: column;
+      transform: translateX(104%); transition: transform .42s var(--ease); box-shadow: -30px 0 80px -40px rgba(35,26,20,.5); }
+    .cart-open .drawer { transform: none; } .cart-open .drawer-bg { opacity: 1; pointer-events: auto; }
+    .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 24px 18px; border-bottom: 1px solid var(--line); }
+    .drawer-head h2 { margin: 0; font: 500 26px/1.1 var(--serif); }
+    .drawer-x { width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--sand); color: var(--ink); font-size: 20px; cursor: pointer; }
+    .free { padding: 16px 24px; border-bottom: 1px solid var(--line); font-size: 13.5px; color: var(--ink-2); }
+    .free .bar { height: 6px; border-radius: 6px; background: var(--line); margin-top: 9px; overflow: hidden; }
+    .free .bar i { display: block; height: 100%; background: var(--caramel); border-radius: inherit; transition: width .4s var(--ease); }
+    .lines { flex: 1; overflow-y: auto; padding: 8px 24px; }
+    .line { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
+    .line .thumb { width: 64px; height: 64px; border-radius: 14px; background: var(--sand); display: grid; place-items: center; overflow: hidden; }
+    .line .thumb svg { width: 46px; height: 56px; }
+    .line a { color: var(--ink); font-weight: 600; font-size: 15px; text-decoration: none; } .line a:hover { color: var(--caramel); }
+    .line .each { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .qty { display: inline-flex; align-items: center; gap: 2px; margin-top: 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); }
+    .qty button { width: 30px; height: 30px; border: 0; background: none; color: var(--ink); font-size: 17px; cursor: pointer; border-radius: 50%; }
+    .qty span { min-width: 22px; text-align: center; font-size: 14px; font-weight: 600; }
+    .line .right { text-align: right; } .line .sum { font-weight: 700; font-size: 15px; white-space: nowrap; }
+    .line .rm { display: block; margin: 8px 0 0 auto; border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+    .empty { padding: 60px 10px; text-align: center; color: var(--muted); }
+    .empty b { display: block; font: 500 22px/1.3 var(--serif); color: var(--ink); margin-bottom: 8px; }
+    .drawer-foot { padding: 18px 24px calc(22px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--paper); }
+    .drawer-foot .tot { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; margin-bottom: 14px; }
+    .drawer-foot .tot b { font: 500 26px/1 var(--serif); }
+    .checkout { display: block; width: 100%; border: 0; border-radius: 999px; padding: 16px; background: var(--ink); color: #fff; font: 600 15px var(--sans); cursor: pointer; }
+    .checkout:hover { background: var(--espresso); }
+
     /* reveal on scroll */
     .reveal { opacity: 0; transform: translateY(28px); transition: opacity 1s var(--ease), transform 1s var(--ease); }
     .reveal.in { opacity: 1; transform: none; }
@@ -429,6 +459,15 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- the cart -->
+  <div class="drawer-bg" id="drawer-bg"></div>
+  <aside class="drawer" id="kosik" aria-labelledby="cart-title" aria-hidden="true">
+    <div class="drawer-head"><h2 id="cart-title" data-t="cart">Košík</h2><button class="drawer-x" id="drawer-x" aria-label="Zavřít" data-t-attr="aria-label=close">×</button></div>
+    <div class="free" id="free"></div>
+    <div class="lines" id="lines"></div>
+    <div class="drawer-foot"><div class="tot"><span data-t="total">Celkem</span><b id="total"></b></div><button class="checkout" id="checkout" data-t="checkout">Pokračovat k pokladně</button></div>
+  </aside>
+
   <script>
     // ---------- the page's two languages (demo-lang.js) ----------
     const LG = window.DemoLang ?? { lang: "cs", use: () => (k) => k };
@@ -455,6 +494,9 @@
         "ft.help": "Pomoc", "ft.ship": "Doprava a platba", "ft.returns": "Vrácení zboží", "ft.contact": "Kontakt", "ft.faq": "Časté dotazy",
         "ft.legal": "© 2026 Bohème · Ukázkový web – smyšlený obchod pro demo AI prodavače", "ft.addr": "Brno · Údolní 12 · po–so 8–18",
         forEspresso: "Pro espresso", decaf: "Bez kofeinu", forFilter: "Pro filtr", roast: "Pražení", perPack: "/ 250 g", addNamed: (n) => "Přidat " + n + " do košíku", inCart: (n) => n + " je v košíku", subscription: "Předplatné", bagLabel: "250 G · ZRNKOVÁ",
+        close: "Zavřít", total: "Celkem", checkout: "Pokračovat k pokladně", remove: "Odebrat", less: "Ubrat", more: "Přidat",
+        emptyH: "Košík je zatím prázdný", emptyP: "Vyberte si kávu z aktuální nabídky.", toFree: (n) => `Do dopravy zdarma zbývá <b>${n}</b>`, freeOk: "Máte <b>dopravu zdarma</b> ☕",
+        demoCheckout: "Tohle je ukázkový obchod – objednávku tu dokončit nejde ☕",
         tagNew: "Novinka", tagLimited: "Limitka", tagBest: "Bestseller",
       },
       en: {
@@ -478,6 +520,9 @@
         "ft.help": "Help", "ft.ship": "Delivery & payment", "ft.returns": "Returns", "ft.contact": "Contact", "ft.faq": "FAQ",
         "ft.legal": "© 2026 Bohème · Demo website – a made-up shop for the AI salesperson demo", "ft.addr": "Brno · Údolní 12 · Mon–Sat 8–18",
         forEspresso: "For espresso", decaf: "Decaf", forFilter: "For filter", roast: "Roast", perPack: "/ 250 g", addNamed: (n) => "Add " + n + " to cart", inCart: (n) => n + " is in your cart", subscription: "Subscription", bagLabel: "250 G · WHOLE BEAN",
+        close: "Close", total: "Total", checkout: "Continue to checkout", remove: "Remove", less: "One less", more: "One more",
+        emptyH: "Your cart is empty", emptyP: "Pick a coffee from this week's offer.", toFree: (n) => `<b>${n}</b> away from free delivery`, freeOk: "You've got <b>free delivery</b> ☕",
+        demoCheckout: "This is a demo shop – orders can't be completed here ☕",
         tagNew: "New", tagLimited: "Limited", tagBest: "Bestseller",
       },
     });
@@ -574,22 +619,57 @@
     });
 
     // ---------- cart ----------
-    let count = 0;
+    // Kept for the visit (sessionStorage). Every line has the product's link, its price and a "Remove" button –
+    // the way most shops build a cart, so the AI salesperson can see what's in it and take things out.
+    const FREE_FROM = 990;
     const toastEl = document.getElementById("toast");
     function toast(t) { toastEl.textContent = t; toastEl.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove("show"), 2200); }
-    function addToCart(name) {
-      count++;
-      document.getElementById("cart-n").textContent = count;
+    let cart = [];
+    try { cart = JSON.parse(sessionStorage.getItem("boheme-cart")) || []; } catch {}
+    const saveCart = () => { try { sessionStorage.setItem("boheme-cart", JSON.stringify(cart)); } catch {} };
+    // standard Google Analytics 4 e-commerce events – what most shops already send; the AI widget reads them
+    const dl = (event, item, quantity) => (window.dataLayer = window.dataLayer || []).push({ event, ecommerce: { currency: "CZK", value: item.price * quantity, items: [{ item_id: item.id, item_name: item.name, price: item.price, quantity }] } });
+    function addToCart(item) {
+      const line = cart.find((l) => l.id === item.id);
+      if (line) line.qty++; else cart.push({ ...item, qty: 1 });
+      saveCart(); renderCart();
       const pill = document.getElementById("cart"); pill.classList.remove("bump"); void pill.offsetWidth; pill.classList.add("bump");
-      toast(t("inCart", name));
+      toast(t("inCart", item.name));
+      dl("add_to_cart", item, 1);
     }
+    function changeQty(id, by) {
+      const line = cart.find((l) => l.id === id); if (!line) return;
+      const n = Math.max(0, line.qty + by), gone = line.qty - n;
+      if (gone > 0) dl("remove_from_cart", line, gone); else dl("add_to_cart", line, n - line.qty);
+      line.qty = n; cart = cart.filter((l) => l.qty > 0);
+      saveCart(); renderCart();
+    }
+    function renderCart() {
+      const n = cart.reduce((a, l) => a + l.qty, 0), sum = cart.reduce((a, l) => a + l.qty * l.price, 0);
+      document.getElementById("cart-n").textContent = n;
+      document.getElementById("total").textContent = price(sum);
+      document.getElementById("free").innerHTML = (sum >= FREE_FROM ? t("freeOk") : t("toFree", price(FREE_FROM - sum))) + `<div class="bar"><i style="width:${Math.min(100, sum / FREE_FROM * 100)}%"></i></div>`;
+      const p = (id) => products.find((x) => x.id === id);
+      document.getElementById("lines").innerHTML = cart.length ? cart.map((l) => `
+        <div class="line">
+          <span class="thumb">${p(l.id) ? bagSVG(p(l.id).tone, origin(p(l.id).origin), p(l.id).region) : ""}</span>
+          <div><a href="/kavarna?kava=${l.id}">${l.name}</a><span class="each">${price(l.price)}</span>
+            <span class="qty"><button data-qty="${l.id}" data-by="-1" aria-label="${t("less")}">−</button><span>${l.qty}</span><button data-qty="${l.id}" data-by="1" aria-label="${t("more")}">+</button></span></div>
+          <div class="right"><span class="sum">${price(l.qty * l.price)}</span><button class="rm" data-rm="${l.id}" aria-label="${t("remove")} ${l.name}">${t("remove")}</button></div>
+        </div>`).join("") : `<div class="empty"><b>${t("emptyH")}</b>${t("emptyP")}</div>`;
+    }
+    const openCart = (open) => { document.body.classList.toggle("cart-open", open); document.getElementById("kosik").setAttribute("aria-hidden", String(!open)); };
+    document.getElementById("cart").addEventListener("click", (e) => { e.preventDefault(); openCart(true); });
+    document.getElementById("drawer-x").onclick = document.getElementById("drawer-bg").onclick = () => openCart(false);
+    addEventListener("keydown", (e) => { if (e.key === "Escape") openCart(false); });
+    document.getElementById("checkout").onclick = () => toast(t("demoCheckout"));
     document.addEventListener("click", (e) => {
+      const q = e.target.closest("[data-qty]"); if (q) return changeQty(q.dataset.qty, Number(q.dataset.by));
+      const r = e.target.closest("[data-rm]"); if (r) return changeQty(r.dataset.rm, -Infinity);
       const b = e.target.closest("[data-add]"); if (!b) return;
       const p = products.find((x) => x.id === b.dataset.add);
-      addToCart(p.name);
+      addToCart({ id: p.id, name: p.name, price: p.price });
       b.classList.add("done"); b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
-      // standard Google Analytics 4 e-commerce event – what most shops already send; the AI widget reads it
-      (window.dataLayer = window.dataLayer || []).push({ event: "add_to_cart", ecommerce: { currency: "CZK", value: p.price, items: [{ item_id: p.id, item_name: p.name, price: p.price, quantity: 1 }] } });
     });
 
     // product links from the shop's feed (/kavarna?kava=et) show that coffee
@@ -615,8 +695,13 @@
       seg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
       plan[seg.dataset.k] = b.dataset.v; renderPlan();
     }));
-    document.getElementById("plan-add").addEventListener("click", (e) => { e.preventDefault(); addToCart(t("subscription")); });
+    document.getElementById("plan-add").addEventListener("click", (e) => {
+      e.preventDefault();
+      const full = BASE[plan.size] + (plan.method === "mix" ? 40 : 0);
+      addToCart({ id: `sub-${plan.method}-${plan.size}`, name: `${t("subscription")} · ${plan.size} g`, price: Math.round(full * 0.85) });
+    });
     renderPlan();
+    renderCart();
 
     // ---------- header on scroll + reveal on scroll ----------
     const header = document.getElementById("header");

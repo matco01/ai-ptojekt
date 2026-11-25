@@ -1151,6 +1151,16 @@
       .input { margin: 4px 10px 10px; }
       .field textarea { font-size: 16px; } /* under 16px iOS zooms the page in when typing */
       .tip { width: 100%; }
+      /* the hello by the corner: a small card above her, not a sheet over half the page */
+      .tip.hello { width: min(300px, 100%); margin-left: auto; padding: 13px 13px 11px; }
+      .tip.hello .who { gap: 9px; margin-bottom: 7px; }
+      .tip.hello .who .av { --s: 32px !important; }
+      .tip.hello .who b { font-size: 14.5px; } .tip.hello .who span { display: none; }
+      .tip.hello .x { top: 9px; right: 9px; width: 26px; height: 26px; font-size: 13px; }
+      .tip.hello p { font-size: 14px; line-height: 1.45; min-height: 0; margin-bottom: 10px; }
+      .tip.hello .chips { gap: 6px; }
+      .tip.hello .chip { padding: 7px 11px; font-size: 13px; }
+      .tip.hello .g-data { margin-top: 9px; padding-top: 8px; font-size: 11px; line-height: 1.4; }
       .quip { max-width: min(290px, 100%); }
       .launch-label { display: none; }
       .chip, .gbtn, .send { -webkit-tap-highlight-color: transparent; }
