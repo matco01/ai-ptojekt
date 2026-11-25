@@ -2688,6 +2688,8 @@
     // server refuses the shop (not registered, not paid, or this website isn't one of its domains).
     // A passing server error or a network hiccup doesn't switch it off.
     // the owner's preview takes only the opening buttons written for the website (its look is the unsaved one)
+    // the preview's look is all in its data-* attributes, so the mascot can load while the server answers
+    const earlyBlob = preview && wantsBlob() ? loadBlob() : null;
     const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}${preview ? "&preview=1" : ""}`).then(async (r) => {
       if (preview) {
         const st = r.ok ? await r.json() : {};
@@ -2702,15 +2704,17 @@
       return false;
     }).catch(() => true);
     if (!on) { off = true; return; }
-    const blobReady = wantsBlob() ? loadBlob() : null;
-    await contentReady();
+    const blobReady = earlyBlob ?? (wantsBlob() ? loadBlob() : null);
+    // the preview's sample page is drawn already (and has too few links to tell) – no waiting there
+    if (!preview) await contentReady();
     theme = detectTheme();
     await blobReady;
     AV = detectPersona();
     nameReady = loadName();
     // the blob's shape comes from her name: once the server has confirmed it, she takes her own shape
     nameReady.then(() => root.querySelectorAll(".av.blob").forEach((av) => poseBlob(av, Object.keys(BLOB_EXPR).find((m) => av.classList.contains(m)) || "")));
-    const pageReady = autoInit().catch(() => {});
+    // (the preview's sample page has no products to find, and the greeting would wait for the search)
+    const pageReady = preview ? Promise.resolve() : autoInit().catch(() => {});
     pageReady.then(finishAdding); // a product opened to be added to the cart
     launcher.innerHTML = avatar(60) + `<span class="launch-label">${L("launch")}</span>`;
     nameReady.then(() => { launcher.setAttribute("aria-label", L("openNamed", cfg.name)); reportLook(); });

@@ -529,7 +529,7 @@
       const a = S.appearance, dark = site ? site.mode === "dark" : pvBg === "dark";
       // her name on the website: the one set here, else the one the website got (made from the shop's name)
       const name = S.name.trim() || (!data.name && site?.name) || data.defaultName;
-      const attrs = { client: data.client.id, preview: "1", greetDelay: "0.3", name, brand: site?.siteName || data.client.name };
+      const attrs = { client: data.client.id, preview: "1", greetDelay: "0", name, brand: site?.siteName || data.client.name };
       // how she greets, as chosen here (saved or not)
       const g = S.persona.greet;
       attrs.greet = g === true || g === "center" ? "center" : g === false || g === "off" ? "off" : "corner";
@@ -568,7 +568,7 @@
       <main><h2>${esc(t("pvHello"))}</h2><div class="bar" style="width:80%"></div><div class="bar" style="width:62%"></div><div class="bar" style="width:70%"></div><span class="btn">${esc(t("pvShop"))}</span></main>
       <script src="${location.origin}/widget/prodavac.js" ${dataAttrs} defer><\/script></body></html>`;
     }
-    const schedulePreview = () => { clearTimeout(pvTimer); pvTimer = setTimeout(preview, 450); };
+    const schedulePreview = () => { clearTimeout(pvTimer); pvTimer = setTimeout(preview, 250); };
 
     // --------------------------------------------------------- save state
     function changed(look = true) {
