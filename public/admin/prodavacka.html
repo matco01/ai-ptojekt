@@ -521,6 +521,9 @@
      * then takes the site's background, text, font and button style, and what is "automatic" in the settings
      * (colour, light/dark, mascot from the logo, her name) is what the widget worked out there.
      */
+    // the widget is cached for hours on the shops' sites; the preview takes the newest one on every visit
+    // to this page (and reuses it while the owner keeps clicking)
+    const PV_FRESH = Date.now().toString(36);
     function preview() {
       if (!data) return;
       const site = pvBg === "site" ? data.siteLook : null;
@@ -566,7 +569,7 @@
         main{padding:28px 20px;opacity:.55} .bar{height:12px;border-radius:6px;background:currentColor;opacity:.12;margin:10px 0} .btn{display:inline-block;margin-top:14px;padding:10px 18px;background:${brand};color:#fff;${btn}}
       </style></head><body><header>${logo}<b>${esc(site?.siteName || data.client.name)}</b></header>
       <main><h2>${esc(t("pvHello"))}</h2><div class="bar" style="width:80%"></div><div class="bar" style="width:62%"></div><div class="bar" style="width:70%"></div><span class="btn">${esc(t("pvShop"))}</span></main>
-      <script src="${location.origin}/widget/prodavac.js" ${dataAttrs} defer><\/script></body></html>`;
+      <script src="${location.origin}/widget/prodavac.js?v=${PV_FRESH}" ${dataAttrs} defer><\/script></body></html>`;
     }
     const schedulePreview = () => { clearTimeout(pvTimer); pvTimer = setTimeout(preview, 250); };
 
