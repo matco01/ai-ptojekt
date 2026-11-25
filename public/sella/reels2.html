@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sella – reels 2</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/vendor/fonts/fonts.css">
+  <!-- The second set of vertical videos for Instagram and TikTok (1080 × 1920), like reels.html: every frame
+       is a pure function of time (render(t)), recorded frame by frame with scripts/record-film.mjs:
+       node scripts/record-film.mjs reels2 cs --q v=1 --size 1080x1920 --name reel-4-cs --out <folder>
+       ?v=1 night → dawn ("You sleep. Sella doesn't.") · 2 a crowd of blobs, one for every shop
+         · 3 "What are you looking for?" with products as stickers · 4 split screen: without / with Sella
+       &lang=cs|en. Each looks like one of the launch films in the whatships.com catalogue (night clock and
+       glass cards, the Grok Bot mascots, Pause 1.0's cream and serif, a before/after split).
+       Everything that matters stays inside TikTok's and Instagram's safe area (x 80–960, y 200–1540). -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #111; overflow: hidden; }
+    body { display: grid; place-items: center; font-family: "Geist", -apple-system, Arial, sans-serif; color: #2f3133; -webkit-font-smoothing: antialiased; }
+    #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #f7f7f5; transform-origin: center; flex: none; }
+    #stage * { box-sizing: border-box; }
+    .abs { position: absolute; will-change: transform, opacity; }
+    .serif { font-family: "Old Standard TT", Didot, Georgia, serif; font-weight: 400; }
+    .layer { position: absolute; inset: 0; }
+    .blob svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    #grain { position: absolute; inset: 0; opacity: .14; mix-blend-mode: soft-light; pointer-events: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+
+    /* full-frame containers: their children are placed in the frame's own coordinates */
+    #pairs, #stickers, #picks, #sparks { left: 0; top: 0; width: 1080px; height: 1920px; }
+
+    /* chat bubbles, shared */
+    .bq { padding: 26px 32px; border-radius: 40px; border-bottom-right-radius: 12px; font: 500 38px/1.3 "Geist", sans-serif; letter-spacing: -.015em; }
+    .ba { display: flex; align-items: flex-end; gap: 16px; }
+    .ba .tx { padding: 26px 32px; border-radius: 40px; border-bottom-left-radius: 12px; background: #fff; color: #23262a; font: 500 38px/1.3 "Geist", sans-serif; letter-spacing: -.015em; box-shadow: 0 30px 60px -36px rgba(10,20,40,.5); }
+    .ba .av { width: 84px; height: 84px; flex: none; }
+
+    /* 1 · night → dawn */
+    #sky1 { }
+    #stars { left: 0; top: 0; width: 1080px; height: 1920px; }
+    #stars i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
+    #sun { left: 240px; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, #fff1d6 0 30%, rgba(255,214,160,.85) 45%, rgba(255,190,140,0) 70%); }
+    #clock { left: 0; right: 0; top: 210px; text-align: center; }
+    #clock b { display: block; font: 500 230px/1 "Geist", sans-serif; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+    #clock span { display: block; margin-top: 10px; font: 500 30px/1 "Geist Mono", monospace; letter-spacing: .2em; text-transform: uppercase; }
+    .pair { left: 90px; right: 90px; top: 640px; display: flex; flex-direction: column; gap: 22px; }
+    .pair .ts { align-self: flex-end; font: 500 26px/1 "Geist Mono", monospace; letter-spacing: .14em; color: rgba(210,225,255,.7); margin-right: 8px; }
+    .pair .bq { align-self: flex-end; max-width: 86%; background: rgba(255,255,255,.12); color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,.16); backdrop-filter: blur(8px); }
+    .pair .ba { max-width: 92%; }
+    #line1 { left: 70px; right: 70px; top: 1240px; text-align: center; font: 600 96px/1.04 "Geist", sans-serif; letter-spacing: -.045em; }
+    #line1 .acc { font-family: "Old Standard TT", Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -.01em; }
+    #morning { left: 90px; right: 90px; top: 640px; padding: 40px; border-radius: 48px; background: rgba(255,255,255,.72); box-shadow: inset 0 0 0 2px rgba(255,255,255,.9), 0 50px 100px -50px rgba(40,50,80,.5); backdrop-filter: blur(14px); }
+    #morning .hd { display: flex; align-items: center; justify-content: space-between; font: 600 30px/1 "Geist", sans-serif; color: #4d5257; }
+    #morning .hd em { font: 500 22px/1 "Geist Mono", monospace; font-style: normal; letter-spacing: .12em; text-transform: uppercase; color: #8a9099; }
+    #morning .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+    #morning .tile { padding: 28px; border-radius: 32px; background: #fff; }
+    #morning .tile.wide { grid-column: 1 / -1; }
+    #morning .k { font: 500 22px/1.2 "Geist Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: #8a9099; }
+    #morning .v { margin-top: 12px; font: 400 92px/1 "Old Standard TT", serif; color: #2f3133; }
+    #morning .v.sm { font-size: 52px; }
+
+    /* 2 · a crowd of blobs */
+    #crowd { left: 0; top: 0; width: 1080px; height: 1920px; }
+    #crowd .m { position: absolute; }
+    #crowd .tag { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); white-space: nowrap; padding: 14px 24px; border-radius: 99px; background: #fff; box-shadow: 0 16px 36px -20px rgba(20,30,50,.45); font: 600 28px/1 "Geist", sans-serif; letter-spacing: -.01em; }
+    #say2 { left: 80px; right: 80px; top: 760px; text-align: center; }
+    #say2 div { font: 600 104px/1.02 "Geist", sans-serif; letter-spacing: -.05em; color: #1f2124; }
+    #say2 div.acc { font-family: "Old Standard TT", Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -.015em; font-size: 124px; color: #2f3133; }
+
+    /* 3 · what are you looking for */
+    #cream { background: radial-gradient(1200px 900px at 50% 30%, #fbf7f0 0%, #f2ebdf 70%, #ece3d4 100%); }
+    #ask3 { left: 60px; right: 60px; text-align: center; color: #2b2a28; }
+    #ask3 div { font: 400 136px/1 "Old Standard TT", Georgia, serif; letter-spacing: -.025em; }
+    #ask3 em { font-style: italic; color: #d4602a; }
+    #box3 { left: 70px; right: 70px; top: 700px; height: 150px; border-radius: 48px; background: #fff; display: flex; align-items: center; gap: 22px; padding: 0 22px 0 42px;
+      box-shadow: 0 0 0 2px rgba(60,40,20,.06), 0 40px 80px -40px rgba(70,50,30,.45); }
+    #box3 .q { flex: 1; font: 500 40px/1.2 "Geist", sans-serif; letter-spacing: -.02em; color: #2b2a28; white-space: nowrap; overflow: hidden; }
+    #box3 .q.ph { color: #a9a197; }
+    #box3 .cur { display: inline-block; width: 4px; height: 46px; background: #d4602a; vertical-align: -8px; margin-left: 3px; }
+    #box3 .go { width: 104px; height: 104px; border-radius: 50%; background: #2b2a28; display: grid; place-items: center; flex: none; }
+    .stk { position: absolute; width: 190px; height: 190px; margin: -95px 0 0 -95px; border-radius: 40px; background: #fff; display: grid; place-items: center; box-shadow: 0 0 0 2px rgba(60,40,20,.05), 0 24px 44px -24px rgba(70,50,30,.5); }
+    .stk img { width: 140px; height: 140px; }
+    #ans3 { left: 90px; right: 90px; top: 900px; }
+    .pick { position: absolute; left: 90px; right: 90px; height: 150px; display: flex; align-items: center; gap: 26px; padding: 0 30px 0 18px; border-radius: 40px; background: #fff;
+      box-shadow: 0 0 0 2px rgba(60,40,20,.05), 0 30px 60px -36px rgba(70,50,30,.5); }
+    .pick .im { width: 116px; height: 116px; border-radius: 28px; background: #f4efe6; display: grid; place-items: center; flex: none; }
+    .pick .im img { width: 92px; height: 92px; }
+    .pick b { display: block; font: 600 36px/1.1 "Geist", sans-serif; letter-spacing: -.02em; }
+    .pick small { display: block; margin-top: 6px; font: 500 28px/1.1 "Geist", sans-serif; color: #8a8178; }
+    .pick .pr { margin-left: auto; font: 600 34px/1 "Geist", sans-serif; white-space: nowrap; }
+
+    /* 4 · without / with Sella */
+    #top4 { left: 0; top: 0; width: 1080px; height: 960px; background: #e4e5e8; overflow: hidden; }
+    #bot4 { left: 0; top: 960px; width: 1080px; height: 960px; overflow: hidden; background: linear-gradient(180deg, #cfdcea, #e9eef4); }
+    .lab { position: absolute; left: 90px; font: 500 28px/1 "Geist Mono", monospace; letter-spacing: .2em; text-transform: uppercase; display: flex; align-items: center; gap: 14px; }
+    .lab i { width: 18px; height: 18px; border-radius: 50%; }
+    .q4 { position: absolute; right: 90px; max-width: 760px; background: #2f3133; color: #fff; }
+    .wait { position: absolute; left: 90px; right: 90px; text-align: center; }
+    .wait b { display: block; font: 500 150px/1 "Geist Mono", monospace; letter-spacing: -.04em; color: #9aa0a8; font-variant-numeric: tabular-nums; }
+    .wait span { display: block; margin-top: 16px; font: 500 32px/1.3 "Geist", sans-serif; color: #8a9099; }
+    .gone { position: absolute; left: 90px; right: 90px; text-align: center; font: 600 64px/1.1 "Geist", sans-serif; letter-spacing: -.03em; color: #6b7178; }
+    .card4 { position: absolute; left: 90px; right: 90px; display: flex; align-items: center; gap: 24px; padding: 22px; border-radius: 40px; background: #fff; box-shadow: 0 30px 60px -36px rgba(20,30,50,.5); }
+    .card4 .im { width: 120px; height: 120px; border-radius: 28px; background: #eef2f6; display: grid; place-items: center; flex: none; }
+    .card4 .im img { width: 96px; height: 96px; }
+    .card4 b { display: block; font: 600 38px/1.1 "Geist", sans-serif; } .card4 small { display: block; margin-top: 6px; font-size: 30px; color: #7b8188; }
+    .card4 .add { margin-left: auto; padding: 22px 28px; border-radius: 26px; background: #2f3133; color: #fff; font: 600 30px/1 "Geist", sans-serif; white-space: nowrap; }
+    .card4 .add.done { background: #22a06b; }
+    #verdict { left: 90px; right: 90px; top: 890px; padding: 34px 40px; border-radius: 99px; background: #2f3133; color: #fff; text-align: center; font: 600 56px/1.1 "Geist", sans-serif; letter-spacing: -.03em; box-shadow: 0 40px 80px -30px rgba(10,20,40,.6); }
+    #verdict em { font-family: "Old Standard TT", Georgia, serif; font-style: italic; font-weight: 400; color: #bcd3ec; }
+    .spark { position: absolute; width: 22px; height: 22px; border-radius: 6px; }
+
+    /* the end card: Sella, the name written in, sella.chat */
+    #end { left: 0; right: 0; top: 560px; text-align: center; }
+    #end .emas { display: block; margin: 0 auto 6px; width: 220px; height: 220px; }
+    #end .mark { position: relative; display: inline-block; font-size: 290px; line-height: 1; letter-spacing: -.02em; color: #2f3133; }
+    #end .pen { position: absolute; left: 6%; right: 6%; bottom: -14px; height: 10px; }
+    #end .line { font-size: 46px; margin-top: 40px; font-weight: 500; letter-spacing: -.015em; color: #4d5257; }
+    #end .cta { display: inline-block; margin-top: 52px; padding: 30px 60px; border-radius: 99px; font-size: 48px; font-weight: 600; letter-spacing: -.01em; background: #2f3133; color: #f3f5f7; }
+  </style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer" id="sky1"><div class="abs" id="stars"></div><div class="abs" id="sun"></div></div>
+  <div class="layer" id="cream"></div>
+  <div class="layer" id="white" style="background:#f7f7f5"></div>
+  <div class="layer" id="sky" style="background:linear-gradient(180deg,#cfdcea,#eef2f6)"></div>
+
+  <!-- 1 -->
+  <div class="abs" id="clock"><b id="clk"></b><span id="date"></span></div>
+  <div class="abs" id="pairs"></div>
+  <div class="abs" id="morning">
+    <div class="hd"><span id="mh"></span><em id="mtag"></em></div>
+    <div class="tiles">
+      <div class="tile"><div class="k" id="mk1"></div><div class="v" id="mv1">0</div></div>
+      <div class="tile"><div class="k" id="mk2"></div><div class="v" id="mv2">0</div></div>
+      <div class="tile wide"><div class="k" id="mk3"></div><div class="v sm" id="mv3"></div></div>
+    </div>
+  </div>
+  <div class="abs" id="line1"></div>
+
+  <!-- 2 -->
+  <div class="abs" id="crowd"></div>
+  <div class="abs" id="say2"><div id="s2a"></div><div id="s2b"></div><div class="acc" id="s2c"></div></div>
+
+  <!-- 3 -->
+  <div class="abs" id="stickers"></div>
+  <div class="abs" id="ask3"><div><span id="a3a"></span> <em id="a3b"></em></div></div>
+  <div class="abs" id="box3"><div class="q" id="q3"></div><span class="go"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+  <div class="abs blob" id="b3" style="width:150px;height:150px"></div>
+  <div class="abs ba" id="ans3"><span class="tx" id="ans3t"></span></div>
+  <div class="abs" id="picks"></div>
+
+  <!-- 4 -->
+  <div class="abs" id="top4">
+    <span class="lab" style="top:200px;color:#7b8188"><i style="background:#b9bec5"></i><span id="lt"></span></span>
+    <div class="bq q4" id="q4a" style="top:290px"></div>
+    <div class="wait" id="wait" style="top:520px"><b id="waitt"></b><span id="waitl"></span></div>
+    <div class="gone" id="gone" style="top:560px"></div>
+  </div>
+  <div class="abs" id="bot4">
+    <span class="lab" style="top:70px;color:#3f6fa3"><i style="background:#22a06b"></i><span id="lb"></span></span>
+    <div class="bq q4" id="q4b" style="top:150px"></div>
+    <div class="ba" id="a4" style="position:absolute;left:90px;right:90px;top:300px"><span class="av blob" id="b4"></span><span class="tx" id="a4t"></span></div>
+    <div class="card4" id="c4" style="top:480px"><span class="im"><img src="/api/img/a3.svg" alt=""></span><div><b>Tono Buds Lite</b><small id="c4p"></small></div><span class="add" id="c4add"></span></div>
+  </div>
+  <div class="abs" id="sparks"></div>
+  <div class="abs" id="verdict"></div>
+
+  <div class="abs" id="end"><span class="emas blob" id="emas"></span><div><span class="mark serif" id="emark">Sella<svg class="pen" viewBox="0 0 100 10" preserveAspectRatio="none"><path id="penp" d="M1 6 C 25 2, 55 9, 99 4" fill="none" stroke="#3f6fa3" stroke-width="2.4" stroke-linecap="round" pathLength="1"/></svg></span></div><div class="line" id="eline"></div><span class="cta">sella.chat</span></div>
+  <div class="abs" id="grain" style="inset:0"></div>
+</div>
+
+<script src="/vendor/blobatar/blobatar.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const LANG = params.get("lang") === "en" ? "en" : "cs";
+  const V = ["1", "2", "3", "4"].includes(params.get("v")) ? Number(params.get("v")) : 1;
+  const T = {
+    cs: {
+      line: "AI prodavačka pro e-shopy",
+      date: "středa · 26. listopadu",
+      night: [["Stihne to doprava do pátku?", "Ano – objednáte-li do 14:00, přijde ve čtvrtek."], ["Je v balení nabíječka?", "Ano, 30W nabíječka je v balení."],
+        ["Sluchátka do vlaku do 2 000 Kč?", "Tono Buds Lite za 1 290 Kč, s pouzdrem až 30 hodin."], ["Dá se to vrátit?", "Ano, do 14 dnů bez udání důvodu."]],
+      l1a: "Vy spíte.", l1b: "Sella ne.", l1c: "Ráno víte, na co se ptali.",
+      mh: "Ranní přehled", mtag: "ukázka", mk1: "Rozhovory přes noc", mk2: "Bez odpovědi", mk3: "Nejčastější otázka", mv3: "Doprava a termíny",
+      s2a: "Každý e-shop", s2b: "dostane vlastní", s2c: "prodavačku.",
+      shops: ["Pekárna Pod Hrází", "TechMarket", "Květiny Váza", "Kavárna U Lípy", "Horský svět", "Sýrárna", "Knihy Pod Lampou"],
+      a3a: "Co dnes", a3b: "hledáte?", ph: "Napište, co potřebujete…", q3: "dárek pro tátu, co rád běhá",
+      ans3: "Tyhle tři by ho potěšily:", picks: [["w1", "Nova Watch 6", "GPS na běhání", 7490], ["a2", "Tono Buds Pro", "do sportu, odolná potu", 4490], ["w2", "Pulse Fit 3", "výdrž 14 dní", 1490]],
+      l3: ["Napíšou, co chtějí.", "Sella najde, co sedí."],
+      lt: "Bez Selly", lb: "Se Sellou", q4: "Stihne to doprava do pátku?", waitl: "čeká na odpověď e-mailem…", gone: "Zákazník odešel.",
+      a4: "Ano! Objednáte-li do 14:00, přijde ve čtvrtek.", add: "Do košíku", added: "V košíku ✓", v4a: "Odpovídá hned.", v4b: "I ve 2 ráno.",
+      price: (n) => n.toLocaleString("cs-CZ").replace(/\s/g, " ") + " Kč",
+    },
+    en: {
+      line: "An AI salesperson for online shops",
+      date: "wednesday · 26 november",
+      night: [["Will it arrive by Friday?", "Yes – order by 2 pm and it comes on Thursday."], ["Is a charger in the box?", "Yes, a 30 W charger is included."],
+        ["Train headphones under CZK 2,000?", "Tono Buds Lite, CZK 1,290, up to 30 hours with the case."], ["Can I return it?", "Yes, within 14 days, no reason needed."]],
+      l1a: "You sleep.", l1b: "Sella doesn't.", l1c: "By morning you know what they asked.",
+      mh: "Morning overview", mtag: "sample", mk1: "Chats overnight", mk2: "Unanswered", mk3: "Most asked about", mv3: "Delivery and dates",
+      s2a: "Every shop", s2b: "gets its own", s2c: "salesperson.",
+      shops: ["Bakery by the Dam", "TechMarket", "Vase Flowers", "Linden Café", "Mountain World", "The Cheese Room", "Lamp Books"],
+      a3a: "What are you", a3b: "looking for?", ph: "Tell us what you need…", q3: "a gift for a dad who runs",
+      ans3: "He'd love these three:", picks: [["w1", "Nova Watch 6", "GPS for running", 7490], ["a2", "Tono Buds Pro", "for sport, sweat-resistant", 4490], ["w2", "Pulse Fit 3", "14-day battery", 1490]],
+      l3: ["They say what they want.", "Sella finds what fits."],
+      lt: "Without Sella", lb: "With Sella", q4: "Will it arrive by Friday?", waitl: "waiting for an e-mail reply…", gone: "The customer left.",
+      a4: "Yes! Order by 2 pm and it comes on Thursday.", add: "Add to cart", added: "In cart ✓", v4a: "It answers at once.", v4b: "Even at 2 am.",
+      price: (n) => "CZK " + n.toLocaleString("en-GB"),
+    },
+  }[LANG];
+  document.documentElement.lang = LANG;
+  const $ = (id) => document.getElementById(id);
+
+  // ---- timing helpers
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  const out = (x) => 1 - Math.pow(1 - clamp(x), 3);
+  const back = (x, c = 1.9) => { x = clamp(x); return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const io = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const on = (t, a, b, fi = 0.4, fo = 0.3) => Math.min(out((t - a) / fi), out((b - t) / fo));
+  const type = (text, t, a, cps = 40) => text.slice(0, Math.max(0, Math.floor((t - a) * cps)));
+  const set = (el, op, tf = "") => { el.style.opacity = op; el.style.transform = tf; el.style.visibility = op > 0.001 ? "visible" : "hidden"; };
+  const pop = (el, t, a, d = 0.38) => { const k = back((t - a) / d), o = out((t - a) / (d * 0.6)); set(el, o, `translateY(${(1 - k) * 40}px) scale(${0.82 + 0.18 * k})`); };
+  const mix = (c1, c2, k) => { const p = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)); const a = p(c1), b = p(c2); return `rgb(${a.map((x, i) => Math.round(lerp(x, b[i], k))).join(",")})`; };
+
+  // ---- blobs (Sella's mascot, blobatar): a shape for a name, posed frame by frame
+  const B = window.SellaBlob;
+  const EXPR = { idle: undefined, happy: "happy", think: "thinking", wow: "surprised", love: "love" };
+  function makeBlob(host, { seed = "Sella", head = "#2f3133", eye = "#f3f5f7", shadow = true } = {}) {
+    const cache = {};
+    const inner = (m) => cache[m] ??= B.parts(seed, { palette: { head, eye }, expression: EXPR[m] && B.expressions[EXPR[m]] }).inner;
+    host.innerHTML = `<svg viewBox="0 0 100 100">${shadow ? '<ellipse cx="49" cy="92" rx="30" ry="3.4" fill="rgba(15,24,40,.16)"/>' : ""}<g class="mv" style="transform-origin:49px 84px"></g></svg>`;
+    const mv = host.querySelector(".mv");
+    let mood = null, eyes = [], eyesG = null;
+    const phase = (seed.length * 0.37) % 3.1;
+    return {
+      pose(t, { m = "idle", look = [0, 0], squash = 0, talk = 0, blink = null } = {}) {
+        if (m !== mood) { mood = m; mv.innerHTML = inner(m); eyes = [...mv.querySelectorAll(".mo-eye")]; eyesG = mv.querySelector(".mo-eyes"); }
+        const br = Math.sin(t * 2.4 + phase) * 0.018, bob = Math.sin(t * 1.7 + phase) * 1.4, tk = talk ? Math.abs(Math.sin(t * 13)) * 0.05 * talk : 0;
+        mv.style.transform = `translateY(${bob}px) scale(${1 + br + squash + tk}, ${1 - br - squash - tk})`;
+        const shut = blink ?? (((t + phase) % 3.1) < 0.14); // blinks every 3.1 s, unless told when
+        for (const e of eyes) e.style.transform = `scaleY(${shut ? 0.12 : 1})`;
+        if (eyesG) eyesG.style.transform = `translate(${look[0]}px, ${look[1]}px)`;
+      },
+    };
+  }
+
+  // ---- scenes (seconds)
+  const REELS = { 1: [8.6, 4.4, 3.4], 2: [2.2, 3.6, 3.4, 0.45, 3.4], 3: [2.4, 3.6, 5.2, 2.4, 3.4], 4: [0.8, 6.6, 2.6, 3.4] };
+  const S = [];
+  let acc = 0;
+  REELS[V].forEach((d) => { S.push(acc); acc += d; });
+  const DURATION = acc, END = S[S.length - 1];
+
+  const LAYERS = ["sky1", "cream", "white", "sky"];
+  const ITEMS = ["clock", "pairs", "morning", "line1", "crowd", "say2", "stickers", "ask3", "box3", "b3", "ans3", "picks", "top4", "bot4", "sparks", "verdict", "end"];
+  const only = (layer) => { for (const l of LAYERS) $(l).style.visibility = l === layer ? "visible" : "hidden"; };
+  const emas = makeBlob($("emas"));
+  $("eline").textContent = T.line;
+
+  // the end card: Sella drops in, her name is written in with a pen stroke under it
+  function endCard(t) {
+    const ev = on(t, END, DURATION + 9, 0.45, 0.1);
+    set($("end"), ev, `translateY(${(1 - ev) * 30}px)`);
+    const w = io((t - END - 0.35) / 0.9);
+    $("emark").style.clipPath = `inset(-20% ${(1 - w) * 100}% -40% 0)`;
+    $("penp").style.strokeDasharray = "1 1"; $("penp").style.strokeDashoffset = 1 - io((t - END - 1.0) / 0.6);
+    const land = t - END - 0.45;
+    $("emas").style.transform = `translateY(${land < 0 ? -280 * (1 - out((t - END) / 0.45)) : 0}px)`;
+    emas.pose(t, { m: t > END + 1.3 ? "happy" : "idle", squash: land > 0 ? 0.16 * Math.exp(-7 * land) * Math.cos(land * 14) : 0 });
+  }
+
+  // ---- 1 · night → dawn: "You sleep. Sella doesn't."
+  const STARS = Array.from({ length: 90 }, (_, i) => [((i * 7919) % 1000) / 1000 * 1080, ((i * 104729) % 1000) / 1000 * 1500, 0.5 + ((i * 31) % 10) / 10]);
+  if (V === 1) {
+    $("stars").innerHTML = STARS.map(([x, y, s]) => `<i style="left:${x}px;top:${y}px;transform:scale(${s})"></i>`).join("");
+    $("date").textContent = T.date;
+    $("pairs").innerHTML = T.night.map(([q, a], i) => `<div class="pair abs" id="pr${i}"><span class="ts" id="ts${i}"></span><div class="bq">${q}</div><div class="ba"><span class="av blob" id="pb${i}"></span><span class="tx">${a}</span></div></div>`).join("");
+    $("mh").textContent = T.mh; $("mtag").textContent = T.mtag; $("mk1").textContent = T.mk1; $("mk2").textContent = T.mk2; $("mk3").textContent = T.mk3; $("mv3").textContent = T.mv3;
+  }
+  const pblobs = V === 1 ? T.night.map((_, i) => makeBlob($("pb" + i), { shadow: false })) : [];
+  const KEYS = [[0, 167], [2.3, 195], [4.4, 242], [6.5, 330], [8.5, 420]]; // the clock: 02:47 → 03:15 → 04:02 → 05:30 → 07:00
+  const minutesAt = (t) => { let m = KEYS[0][1]; for (let i = 1; i < KEYS.length; i++) m = lerp(m, KEYS[i][1], io((t - KEYS[i][0]) / 0.55)); return Math.round(m); };
+  function reel1(t) {
+    const [night, dawn] = S;
+    only("sky1");
+    const d = io((t - dawn + 0.5) / 2.2); // night → morning
+    $("sky1").style.background = `linear-gradient(180deg, ${mix("#050814", "#8fb3dc", d)} 0%, ${mix("#0b1430", "#c9d9ea", d)} 55%, ${mix("#13224a", "#f6cda6", d)} 100%)`;
+    [...$("stars").children].forEach((s, i) => { s.style.opacity = (0.35 + 0.65 * Math.abs(Math.sin(t * (0.8 + (i % 5) * 0.3) + i))) * (1 - d); });
+    $("sun").style.top = lerp(2000, 1240, out((t - dawn + 0.2) / 2.6)) + "px"; $("sun").style.opacity = d;
+    // the clock
+    const m = minutesAt(t), hh = String(Math.floor(m / 60)).padStart(2, "0"), mm = String(m % 60).padStart(2, "0");
+    $("clk").textContent = `${hh}:${mm}`;
+    const ink = mix("#f4f7ff", "#2f3133", d);
+    $("clk").style.color = ink; $("date").style.color = d > 0.5 ? "#4d5257" : "rgba(210,225,255,.75)";
+    const ring = t > KEYS[4][0] + 0.5 && t < KEYS[4][0] + 1.6 ? Math.sin(t * 60) * 3 : 0; // 07:00 – the alarm
+    set($("clock"), on(t, 0, END, 0.6, 0.3), `rotate(${ring}deg)`);
+    // questions light up through the night and get answered, then rise away like stars
+    if (t < dawn + 0.2) {
+      set($("pairs"), 1);
+      T.night.forEach((_, i) => {
+        const a = KEYS[i][0] + 0.55, b = (KEYS[i + 1]?.[0] ?? dawn) + 0.15, el = $("pr" + i);
+        const gone = out((t - b + 0.35) / 0.5);
+        set(el, t > a - 0.05 && t < b + 0.3 ? 1 - gone : 0, `translateY(${-gone * 140}px) scale(${1 - gone * 0.25})`);
+        el.style.filter = `blur(${gone * 6}px)`;
+        $("ts" + i).textContent = `${String(Math.floor(KEYS[i][1] / 60)).padStart(2, "0")}:${String(KEYS[i][1] % 60).padStart(2, "0")}`;
+        pop(el.querySelector(".bq"), t, a); pop(el.querySelector(".ba"), t, a + 0.75);
+        pblobs[i].pose(t, { m: t < a + 0.75 ? "think" : "happy", talk: t > a + 0.75 && t < a + 1.4 ? 1 : 0 });
+      });
+    }
+    // the words underneath
+    const l = $("line1");
+    set(l, on(t, 0.6, END, 0.5, 0.3));
+    const morning = t > dawn + 0.9;
+    const html = morning ? `<span style="color:#2f3133">${T.l1c}</span>` : `<span style="color:#f4f7ff">${T.l1a}</span><br><span class="acc" style="color:#9fc4ea;opacity:${out((t - 3.4) / 0.5)}">${T.l1b}</span>`;
+    if (l.dataset.h !== html) { l.dataset.h = html; l.innerHTML = html; }
+    if (morning) { l.style.fontSize = "64px"; l.style.top = "1330px"; } else { l.style.fontSize = ""; l.style.top = ""; }
+    // the morning overview
+    const mv = on(t, dawn + 0.6, END, 0.6, 0.3);
+    set($("morning"), mv, `translateY(${(1 - mv) * 90}px)`);
+    const cnt = out((t - dawn - 1.0) / 1.6);
+    $("mv1").textContent = Math.round(14 * cnt); $("mv2").textContent = "0";
+    $("mv3").style.opacity = out((t - dawn - 1.8) / 0.5);
+  }
+
+  // ---- 2 · a crowd of blobs: one of a kind for every shop
+  const CROWD = [
+    { c: "#e0663a", x: -70, y: 170, s: 430, r: 12, from: [-1, -1] }, { c: "#3a7bd5", x: 700, y: 110, s: 400, r: -10, from: [1, -1] },
+    { c: "#22a06b", x: -220, y: 700, s: 400, r: 18, from: [-1, 0] }, { c: "#c84b8f", x: 880, y: 600, s: 380, r: -16, from: [1, 0] },
+    { c: "#f2b33d", x: -50, y: 1250, s: 420, r: 8, from: [-1, 1] }, { c: "#7a5af5", x: 690, y: 1210, s: 430, r: -8, from: [1, 1] },
+    { c: "#3aa7b5", x: 360, y: 1500, s: 340, r: 0, from: [0, 1] },
+  ];
+  const crowd = [];
+  if (V === 2) {
+    $("crowd").innerHTML = CROWD.map((b, i) => `<div class="m" id="cm${i}" style="left:${b.x}px;top:${b.y}px;width:${b.s}px;height:${b.s}px"><span class="blob" id="cb${i}" style="display:block;width:100%;height:100%"></span><span class="tag" id="ct${i}" style="color:${b.c}">${T.shops[i]}</span></div>`).join("");
+    CROWD.forEach((b, i) => crowd.push(makeBlob($("cb" + i), { seed: T.shops[i], head: b.c, eye: "#ffffff", shadow: false })));
+    $("s2a").textContent = T.s2a; $("s2b").textContent = T.s2b; $("s2c").textContent = T.s2c;
+  }
+  function reel2(t) {
+    const [intro, popIn, look, leave] = S;
+    only("white");
+    set($("say2"), t < END ? 1 : 0);
+    [["s2a", intro + 0.15], ["s2b", popIn + 0.35], ["s2c", look + 0.2]].forEach(([id, a]) => {
+      const k = back((t - a) / 0.45), o = out((t - a) / 0.25), g = out((t - leave) / 0.3);
+      $(id).style.opacity = o * (1 - g); $(id).style.transform = `translateY(${(1 - k) * 50 - g * 40}px) scale(${0.85 + 0.15 * k})`; $(id).style.filter = `blur(${(1 - o) * 10 + g * 8}px)`;
+    });
+    if (t >= popIn - 0.1 && t < END) {
+      set($("crowd"), 1);
+      CROWD.forEach((b, i) => {
+        const a = popIn + 0.1 + i * 0.16, k = back((t - a) / 0.5, 1.6), lv = io((t - leave - i * 0.04) / 0.45);
+        const dx = b.from[0] * 520 * (1 - k) + b.from[0] * 700 * lv, dy = b.from[1] * 520 * (1 - k) + b.from[1] * 700 * lv + (b.from[1] === 0 ? 0 : 0);
+        const land = t - a - 0.5;
+        set($("cm" + i), out((t - a) / 0.15), `translate(${dx}px, ${dy}px) rotate(${b.r * (1 - lv)}deg)`);
+        // they all look at the words in the middle, and blink together
+        const cx = b.x + b.s / 2, cy = b.y + b.s / 2, vx = 540 - cx, vy = 960 - cy, n = Math.hypot(vx, vy) || 1;
+        const looking = t > look - 0.2;
+        const sync = looking && ((t > look + 0.9 && t < look + 1.04) || (t > look + 2.3 && t < look + 2.44));
+        crowd[i].pose(t, { m: t < a + 0.45 ? "wow" : t > look + 1.2 ? "happy" : "idle", look: looking ? [vx / n * 3.2, vy / n * 2.4] : [0, 0], blink: looking ? sync : null,
+          squash: land > 0 && land < 1 ? 0.14 * Math.exp(-6 * land) * Math.cos(land * 12) : 0 });
+        const tg = $("ct" + i), ta = look + 0.3 + i * 0.1;
+        tg.style.opacity = out((t - ta) / 0.3) * (1 - lv); tg.style.transform = `translateX(-50%) translateY(${(1 - back((t - ta) / 0.4)) * 30}px)`;
+      });
+    }
+  }
+
+  // ---- 3 · "What are you looking for?" – products as stickers, Sella picks three
+  const STICK = ["m1", "a3", "n1", "w1", "x1", "a2", "m2", "w2", "n3", "w3"];
+  // around and under the box – never over the question above it
+  const SPOT = [[180, 1010], [540, 980], [900, 1010], [320, 1210], [760, 1200], [150, 1420], [540, 1400], [930, 1420], [330, 1620], [750, 1620]];
+  if (V === 3) {
+    $("stickers").innerHTML = STICK.map((id, i) => `<span class="stk" id="sk${i}"><img src="/api/img/${id}.svg" alt=""></span>`).join("");
+    $("a3a").textContent = T.a3a; $("a3b").textContent = T.a3b; $("ans3t").textContent = T.ans3;
+    $("picks").innerHTML = T.picks.map(([id, n, why, p], i) => `<div class="pick" id="pk${i}" style="top:${1010 + i * 176}px"><span class="im"><img src="/api/img/${id}.svg" alt=""></span><div><b>${n}</b><small>${why}</small></div><span class="pr">${T.price(p)}</span></div>`).join("");
+  }
+  const b3 = V === 3 ? makeBlob($("b3")) : null;
+  function reel3(t) {
+    const [askA, typeA, pick, says] = S;
+    only("cream");
+    // the question: big in the middle, then up to make room
+    const up = io((t - typeA + 0.2) / 0.6);
+    set($("ask3"), on(t, 0.1, END, 0.5, 0.3), `translateY(${lerp(720, 330, up)}px) scale(${lerp(1, 0.82, up)})`);
+    ["a3a", "a3b"].forEach((id, i) => { const k = back((t - 0.2 - i * 0.35) / 0.5), o = out((t - 0.2 - i * 0.35) / 0.3); $(id).style.opacity = o; $(id).style.transform = `translateY(${(1 - k) * 60}px)`; $(id).style.filter = `blur(${(1 - o) * 10}px)`; });
+    // at the end the question gives way to the line about what Sella does, two lines in the middle
+    const sayIt = t >= says;
+    if ($("ask3").dataset.s !== String(sayIt)) {
+      $("ask3").dataset.s = sayIt;
+      $("a3a").textContent = sayIt ? T.l3[0] : T.a3a; $("a3b").textContent = sayIt ? T.l3[1] : T.a3b;
+      $("ask3").querySelector("div").style.fontSize = sayIt ? "100px" : "";
+      $("a3a").style.display = $("a3b").style.display = sayIt ? "block" : "inline-block";
+    }
+    if (sayIt) {
+      set($("ask3"), on(t, says, END, 0.3, 0.3), "translateY(760px)");
+      ["a3a", "a3b"].forEach((id, i) => { const k = back((t - says - 0.1 - i * 0.3) / 0.5), o = out((t - says - 0.1 - i * 0.3) / 0.3); $(id).style.opacity = o; $(id).style.transform = `translateY(${(1 - k) * 50}px)`; $(id).style.filter = `blur(${(1 - o) * 10}px)`; });
+    }
+    // the box: the wish typed in, sent
+    const bv = on(t, typeA, says, 0.5, 0.35);
+    set($("box3"), bv, `translateY(${(1 - bv) * 60}px) scale(${t > pick && t < pick + 0.15 ? 0.98 : 1})`);
+    const typed = type(T.q3, t, typeA + 0.6, 22);
+    $("q3").className = "q" + (typed ? "" : " ph");
+    $("q3").innerHTML = (typed || T.ph) + (t < pick && Math.floor(t * 2.6) % 2 ? '<span class="cur"></span>' : "");
+    // stickers float around, then only the three that fit stay
+    if (t >= typeA - 0.2 && t < says + 0.3) {
+      set($("stickers"), 1);
+      STICK.forEach((id, i) => {
+        const el = $("sk" + i), a = typeA + 0.2 + i * 0.12, [x, y] = SPOT[i];
+        const k = back((t - a) / 0.5), fl = Math.sin(t * 1.3 + i) * 12, rot = Math.sin(t * 0.9 + i * 2) * 8 + (i % 2 ? 6 : -6);
+        const away = io((t - pick - 0.3 - (i % 4) * 0.05) / 0.5), dir = x < 540 ? -1 : 1;
+        el.style.left = x + dir * away * 600 + "px"; el.style.top = y + fl - away * 120 + "px";
+        el.style.opacity = out((t - a) / 0.25) * (1 - away);
+        el.style.transform = `rotate(${rot}deg) scale(${(0.6 + 0.4 * k) * (1 - away * 0.4)})`;
+      });
+    }
+    // Sella hops onto the box and answers with three picks
+    if (t >= pick + 0.2 && t < says + 0.3) {
+      const land = t - pick - 0.2 - 0.45, hv = on(t, pick + 0.2, says + 0.2, 0.15, 0.3);
+      const u = clamp((t - pick - 0.2) / 0.45);
+      set($("b3"), hv, `translate(${lerp(1000, 860, u)}px, ${lerp(560, 590, u) - 200 * 4 * u * (1 - u)}px)`);
+      b3.pose(t, { m: t < pick + 1.3 ? "think" : "happy", squash: land > 0 ? 0.18 * Math.exp(-6 * land) * Math.cos(land * 12) : 0, look: [-2.5, 1.5] });
+      pop($("ans3"), t, pick + 1.1);
+      set($("picks"), 1);
+      T.picks.forEach((_, i) => pop($("pk" + i), t, pick + 1.6 + i * 0.35, 0.45));
+      $("ans3").style.opacity = Math.min(Number($("ans3").style.opacity), 1 - out((t - says + 0.1) / 0.3));
+      $("picks").style.opacity = 1 - out((t - says + 0.1) / 0.3);
+    }
+  }
+
+  // ---- 4 · without / with Sella: the same question, two endings
+  const b4 = V === 4 ? makeBlob($("b4"), { shadow: false }) : null;
+  if (V === 4) {
+    $("lt").textContent = T.lt; $("lb").textContent = T.lb; $("q4a").textContent = T.q4; $("q4b").textContent = T.q4;
+    $("waitl").textContent = T.waitl; $("gone").textContent = T.gone; $("a4t").textContent = T.a4; $("c4p").textContent = T.price(1290);
+    $("verdict").innerHTML = `${T.v4a} <em>${T.v4b}</em>`;
+    $("sparks").innerHTML = Array.from({ length: 16 }, (_, i) => `<span class="spark" style="background:${["#4e7fb4", "#22a06b", "#ead2ae", "#2f3133"][i % 4]}"></span>`).join("");
+  }
+  function reel4(t) {
+    const [, run, verdict] = S;
+    only("sky");
+    const split = on(t, 0, END, 0.5, 0.35);
+    set($("top4"), split, `translateY(${(1 - split) * -80}px)`); set($("bot4"), split, `translateY(${(1 - split) * 80}px)`);
+    pop($("q4a"), t, run + 0.1); pop($("q4b"), t, run + 0.1);
+    // without: the hours go by…
+    const hrs = Math.max(0, (t - run - 0.8)) ** 2.2 * 260; // seconds, faster and faster
+    const h = Math.floor(hrs / 3600), mi = Math.floor(hrs / 60) % 60, se = Math.floor(hrs) % 60;
+    $("waitt").textContent = `${h}:${String(mi).padStart(2, "0")}:${String(se).padStart(2, "0")}`;
+    const left = run + 4.6;
+    set($("wait"), on(t, run + 0.7, left, 0.3, 0.3));
+    pop($("gone"), t, left + 0.1);
+    $("top4").style.filter = `grayscale(1) brightness(${1 - 0.25 * out((t - left) / 0.6)})`;
+    // with: answered in two seconds, into the cart
+    pop($("a4"), t, run + 1.3);
+    b4.pose(t, { m: t < run + 1.3 ? "think" : "happy", talk: t > run + 1.3 && t < run + 2 ? 1 : 0, look: [1.5, -1] });
+    $("a4t").textContent = type(T.a4, t, run + 1.35, 60) || "…";
+    pop($("c4"), t, run + 2.6);
+    const added = run + 3.9;
+    $("c4add").textContent = t > added ? T.added : T.add; $("c4add").classList.toggle("done", t > added);
+    $("c4add").style.transform = `scale(${t > added ? 1 + 0.3 * Math.exp(-7 * (t - added)) : 1})`;
+    const bt = t - added, ox = 860, oy = 960 + 480 + 82;
+    set($("sparks"), bt > 0 && bt < 1.2 && t < END ? 1 : 0);
+    [...$("sparks").children].forEach((s, i) => {
+      const ang = (i / 16) * Math.PI * 2 + 0.3, v = 380 + (i % 3) * 120;
+      s.style.transform = `translate(${ox + Math.cos(ang) * v * bt}px, ${oy + Math.sin(ang) * v * bt + 450 * bt * bt}px) rotate(${bt * 720 + i * 40}deg)`; s.style.opacity = 1 - clamp(bt / 1.2);
+    });
+    // the verdict, across the seam
+    const vv = on(t, verdict, END, 0.45, 0.3);
+    set($("verdict"), vv, `scale(${0.8 + 0.2 * back((t - verdict) / 0.45)})`);
+  }
+
+  function render(t) {
+    for (const id of ITEMS) set($(id), 0);
+    ({ 1: reel1, 2: reel2, 3: reel3, 4: reel4 })[V](t);
+    if (t >= END) { only({ 1: "sky1", 2: "white", 3: "cream", 4: "sky" }[V]); endCard(t); }
+  }
+
+  const fit = () => { const k = Math.min(innerWidth / 1080, innerHeight / 1920); $("stage").style.transform = `scale(${k})`; };
+  addEventListener("resize", fit); fit();
+
+  window.__duration = DURATION;
+  window.__scenes = S;
+  window.__render = render;
+  window.__ready = Promise.all([document.fonts.ready, ...[...document.images].map((im) => im.complete ? 0 : new Promise((r) => { im.onload = im.onerror = r; }))]).then(() => true);
+  if (!params.has("rec")) {
+    let t0 = null;
+    const loop = (now) => { t0 ??= now; render(((now - t0) / 1000) % DURATION); requestAnimationFrame(loop); };
+    window.__ready.then(() => requestAnimationFrame(loop));
+  } else render(0);
+</script>
+</body>
+</html>

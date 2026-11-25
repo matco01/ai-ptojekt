@@ -10,7 +10,9 @@ import { execFileSync } from "node:child_process";
 
 const [reel = "1", outFile = "reel.wav"] = process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && !all[i - 1]?.startsWith("--"));
 const opt = (name) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : null; };
-const SCENES = { 1: [2.6, 1.4, 5.6, 2.0, 3.2], 2: [2.2, 3.0, 9.6, 3.4], 3: [3.0, 3.6, 3.8, 3.0, 3.2], 4: [3.6, 0], 5: [2.4, 5.0, 0], 6: [0, 3.2] };
+// 1–6 = reels.html, 2-1 … 2-4 = reels2.html (?v=1…4)
+const SCENES = { 1: [2.6, 1.4, 5.6, 2.0, 3.2], 2: [2.2, 3.0, 9.6, 3.4], 3: [3.0, 3.6, 3.8, 3.0, 3.2], 4: [3.6, 0], 5: [2.4, 5.0, 0], 6: [0, 3.2],
+  "2-1": [8.6, 4.4, 3.4], "2-2": [2.2, 3.6, 3.4, 0.45, 3.4], "2-3": [2.4, 3.6, 5.2, 2.4, 3.4], "2-4": [0.8, 6.6, 2.6, 3.4] };
 const lens = (opt("d") || "").split(",").map(Number);
 const S = [];
 let acc = 0;
@@ -59,7 +61,7 @@ const impact = (bus, t0, g = 0.8) => { kick(bus, t0, g); add(bus, t0, 0.4, (t) =
 function typing(bus, a, b, cps, g = 0.07) { for (let t = a; t < b; t += 1 / cps) click(bus, t + (rnd() * 0.012), g * (0.7 + 0.3 * Math.abs(rnd()))); }
 function riser(bus, a, b, g = 0.2) { let lp = 0; add(bus, a, b - a, (t) => { const u = t / (b - a); lp += (rnd() - lp) * (0.02 + 0.5 * u * u); return lp * u * u * g; }); add(bus, a, b - a, (t) => Math.sin(TAU * (80 + 400 * (t / (b - a)) ** 2) * t) * (t / (b - a)) ** 2 * g * 0.3); }
 
-const N = { A2: 110, F2: 87.31, C3: 130.81, G2: 98, A3: 220, C4: 261.63, E4: 329.63, G4: 392, B4: 493.88, C5: 523.25, E5: 659.25, G5: 783.99, B5: 987.77, A4: 440, F4: 349.23, D2: 73.42, F3: 174.61, D4: 293.66 };
+const N = { A2: 110, F2: 87.31, C3: 130.81, G2: 98, A3: 220, C4: 261.63, E4: 329.63, G4: 392, B4: 493.88, C5: 523.25, E5: 659.25, G5: 783.99, B5: 987.77, A4: 440, F4: 349.23, D2: 73.42, F3: 174.61, D4: 293.66, D3: 146.83, E3: 164.81, G3: 196, B3: 246.94 };
 
 // ---- 1 · kinetic type → the drop → a chat close-up → kinetic type → end
 if (reel === "1") {
@@ -143,6 +145,77 @@ if (reel === "5") {
   pop(buf, chat + 2.9, 0.2, 380); click(buf, chat + 4.0, 0.25); ding(buf, chat + 4.1); sparkle(buf, chat + 4.12);
 }
 if (reel === "6") { whoosh(buf, 0, 0.4, 0.25, true); impact(buf, 0.45, 0.5); boing(buf, 0.5, 0.18); ding(buf, 1.2, 0.1); pad(music, 0.2, DUR - 0.2, [N.A3, N.C4, N.E4, N.G4], 0.05); }
+
+// ---- reels2.html ----
+// the end card they share: she drops in, her name is written, a soft chord
+function endSting(t0, chord = [N.A3, N.C4, N.E4, N.G4]) {
+  whoosh(buf, t0 - 0.15, 0.5, 0.22, true); impact(buf, t0 + 0.45, 0.45); boing(buf, t0 + 0.5, 0.16);
+  for (let t = t0 + 0.35; t < t0 + 1.25; t += 0.045) click(buf, t, 0.02); // the name being written
+  pad(music, t0 + 0.2, DUR - t0 - 0.2, chord, 0.05); ding(buf, t0 + 1.35, 0.09);
+}
+const chirp = (bus, t0, g = 0.05) => { let ph = 0; add(bus, t0, 0.12, (t) => { ph += TAU * (3200 + 1400 * Math.sin(t * 60)) / SR; return Math.sin(ph) * Math.sin(Math.PI * t / 0.12) * g; }); };
+
+// 2-1 · night → dawn: a dreamy night, the clock, soft chimes for every answer, then morning
+if (reel === "2-1") {
+  const [, dawn] = S, keys = [0, 2.3, 4.4, 6.5, 8.5];
+  pad(music, 0, dawn + 0.6, [N.D2 * 2, N.A2, N.F3, N.C4], 0.045); bass(music, 0, dawn + 0.4, N.D2, 0.12);
+  for (let t = 0.2; t < dawn; t += 1.0) { click(music, t, 0.05); click(music, t + 0.5, 0.03); } // a quiet clock
+  keys.slice(1).forEach((k) => { for (let t = k; t < k + 0.55; t += 0.06) click(buf, t, 0.06); }); // the minutes rolling on
+  const chime = [N.E5, N.G5, N.A4 * 2, N.C5 * 2];
+  keys.slice(0, 4).forEach((k, i) => { pop(buf, k + 0.55, 0.12, 420); pluck(buf, k + 1.3, chime[i], 0.14); pluck(buf, k + 1.38, chime[i] * 1.5, 0.07); });
+  for (let i = 0; i < 3; i++) { tone(buf, keys[4] + 0.5 + i * 0.36, 0.14, 1760, 0.07, { attack: 0.004 }); tone(buf, keys[4] + 0.67 + i * 0.36, 0.14, 1318.5, 0.07, { attack: 0.004 }); } // 07:00
+  pad(music, dawn + 0.3, DUR - dawn - 0.3, [N.C4, N.E4, N.G4, N.C5], 0.05); bass(music, dawn + 0.3, DUR - dawn - 0.6, N.C3, 0.14);
+  for (let i = 0; i < 7; i++) chirp(buf, dawn + 1.0 + i * 0.47 + (i % 2) * 0.13, 0.04);
+  for (let i = 0; i < 14; i++) click(buf, dawn + 1.0 + (i / 14) ** 0.6 * 1.6, 0.05); // the counter
+  endSting(END, [N.C4, N.E4, N.G4, N.B4]);
+}
+
+// 2-2 · the crowd: a bouncy marimba, a pop for every blob, a blink in sync
+if (reel === "2-2") {
+  const [intro, popIn, look, leave] = S, beat = 0.5, mel = [N.C5, N.E5, N.G5, N.E5, N.A4, N.C5, N.E5, N.C5];
+  for (let t = 0, i = 0; t < END; t += beat / 2, i++) { pluck(music, t, mel[i % 8], 0.1); if (i % 4 === 0) kick(music, t, 0.3); if (i % 4 === 2) hat(music, t, 0.07); }
+  [intro + 0.15, popIn + 0.35, look + 0.2].forEach((a) => { pop(buf, a, 0.2, 300); kick(buf, a, 0.25); });
+  for (let i = 0; i < 7; i++) { const a = popIn + 0.1 + i * 0.16; pop(buf, a + 0.08, 0.2, 380 + i * 90); boing(buf, a + 0.45, 0.08); }
+  for (const b of [look + 0.9, look + 2.3]) { tone(buf, b, 0.07, 2093, 0.08, { attack: 0.002, decay: 30 }); tone(buf, b + 0.09, 0.07, 2637, 0.08, { attack: 0.002, decay: 30 }); }
+  for (let i = 0; i < 7; i++) click(buf, look + 0.3 + i * 0.1, 0.05);
+  whoosh(buf, leave - 0.1, 0.5, 0.3, false);
+  endSting(END, [N.C4, N.E4, N.G4, N.C5]);
+}
+
+// 2-3 · cream lo-fi: warm chords, typing, stickers, three picks snapping in
+if (reel === "2-3") {
+  const [, typeA, pick, says] = S, beat = 0.7;
+  const chords = [[N.F3, N.A3, N.C4, N.E4], [N.E3, N.G3, N.B3, N.D4], [N.D3, N.F3, N.A3, N.C4], [N.C3, N.E3, N.G3, N.B3]]; // Fmaj7 · Em7 · Dm7 · Cmaj7
+  for (let t = 0, i = 0; t < END; t += beat, i++) {
+    if (i % 2 === 0) kick(music, t, 0.4); else clap(music, t, 0.08);
+    hat(music, t + beat / 2, 0.06);
+    if (i % 4 === 0) { const ch = chords[(i / 4) % 4]; ch.forEach((f, k) => pluck(music, t + k * 0.03, f * 2, 0.06)); pad(music, t, beat * 4, ch, 0.025); }
+  }
+  pop(buf, 0.2, 0.2, 300); pop(buf, 0.55, 0.16, 420);
+  typing(buf, typeA + 0.6, typeA + 0.6 + 27 / 22, 22, 0.07);
+  for (let i = 0; i < 10; i++) pop(buf, typeA + 0.2 + i * 0.12, 0.09, 500 + (i % 5) * 70);
+  click(buf, pick, 0.25); whoosh(buf, pick + 0.25, 0.6, 0.25, true);
+  boing(buf, pick + 0.65, 0.15); pop(buf, pick + 1.1, 0.16, 420);
+  for (let i = 0; i < 3; i++) { pop(buf, pick + 1.6 + i * 0.35, 0.2, 340); click(buf, pick + 1.7 + i * 0.35, 0.12); }
+  ding(buf, pick + 2.7, 0.08);
+  whoosh(buf, says - 0.2, 0.5, 0.2, true);
+  endSting(END, [N.F3, N.A3, N.C4, N.E4]);
+}
+
+// 2-4 · without / with: a clock ticking away on top, an answer and a ding below
+if (reel === "2-4") {
+  const [, run, verdict] = S;
+  pad(music, 0, END, [N.A2, N.C3, N.E3], 0.03);
+  for (let t = run + 0.8, k = 0; t < run + 4.6; k++) { click(buf, t, 0.09); t += Math.max(0.07, 0.5 - k * 0.04); } // the hours, faster and faster
+  tone(buf, run + 4.75, 0.35, 220, 0.12, { attack: 0.01, harm: [1, 0.5, 0.3] }); tone(buf, run + 5.1, 0.6, 175, 0.12, { attack: 0.01, harm: [1, 0.5, 0.3], vib: 0.02 }); // womp womp
+  pop(buf, run + 0.1, 0.2, 300);
+  for (let t = run + 0.4; t < run + 1.3; t += 0.3) click(buf, t, 0.04);
+  pop(buf, run + 1.3, 0.2, 420); typing(buf, run + 1.35, run + 2.1, 30, 0.03);
+  pop(buf, run + 2.6, 0.2, 380); click(buf, run + 3.8, 0.25); ding(buf, run + 3.9); sparkle(buf, run + 3.92);
+  impact(buf, verdict, 0.55); whoosh(buf, verdict - 0.2, 0.4, 0.2, true);
+  for (let t = verdict, i = 0; t < END; t += 0.5, i++) { kick(music, t, 0.35); hat(music, t + 0.25, 0.07); }
+  endSting(END);
+}
 
 // ---- the voice (reel 2): the music ducks under it
 const voice = opt("voice");
