@@ -4,6 +4,9 @@
 //   npm i --no-save puppeteer-core ffmpeg-static
 // Usage: node scripts/record-film.mjs navod cs [--audio voice.mp3] [--chrome "C:/…/chrome.exe"]
 //   → public/sella/video/navod-cs.mp4 and navod-cs.jpg (the poster)
+// The reels for Instagram and TikTok (reels.html, 1080 × 1920):
+//   node scripts/record-film.mjs reels cs --q "v=2&d=2.6,3,7.4,3.4" --size 1080x1920 --name reel-2-cs --out <folder>
+//     [--audio answer.mp3 --audio-at 6] – a voice clip that starts at that second (the rest is silence)
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -15,7 +18,8 @@ const [film = "navod", lang = "cs"] = process.argv.slice(2).filter((a, i, all) =
 const opt = (name) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : null; };
 const FPS = 30;
 const base = process.env.APP_URL || "http://localhost:3000";
-const out = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "sella", "video", `${film}-${lang}`);
+const out = path.join(opt("out") || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "sella", "video"), opt("name") || `${film}-${lang}`);
+const [W, H] = (opt("size") || "1280x720").split("x").map(Number);
 const chrome = opt("chrome") || [
   "C:/Program Files/Google/Chrome/Application/chrome.exe",
   "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
@@ -24,9 +28,9 @@ const chrome = opt("chrome") || [
 ].find((p) => fs.existsSync(p));
 if (!chrome) throw new Error("Chrome not found – pass --chrome <path>");
 
-const browser = await puppeteer.launch({ executablePath: chrome, defaultViewport: { width: 1280, height: 720 } });
+const browser = await puppeteer.launch({ executablePath: chrome, defaultViewport: { width: W, height: H } });
 const page = await browser.newPage();
-await page.goto(`${base}/sella/${film}.html?lang=${lang}&rec=1`, { waitUntil: "networkidle0" });
+await page.goto(`${base}/sella/${film}.html?lang=${lang}&rec=1${opt("q") ? "&" + opt("q") : ""}`, { waitUntil: "networkidle0" });
 await page.evaluate(() => window.__ready);
 const duration = await page.evaluate(() => window.__duration);
 const frames = Math.ceil(duration * FPS);
@@ -35,7 +39,8 @@ console.log(`${film} (${lang}): ${duration.toFixed(1)} s, ${frames} frames`);
 const audio = opt("audio");
 const enc = spawn(ffmpeg, [
   "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",
-  ...(audio ? ["-i", audio, "-c:a", "aac", "-b:a", "128k", "-shortest"] : []),
+  // the audio is padded with silence, so the film's own length decides where it ends
+  ...(audio ? ["-i", audio, "-af", `${opt("audio-at") ? `adelay=${Math.round(Number(opt("audio-at")) * 1000)}:all=1,` : ""}apad`, "-c:a", "aac", "-b:a", "128k", "-shortest"] : []),
   "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "slow", "-crf", "26", "-movflags", "+faststart", `${out}.mp4`,
 ], { stdio: ["pipe", "inherit", "inherit"] });
 const write = (buf) => new Promise((ok) => (enc.stdin.write(buf) ? ok() : enc.stdin.once("drain", ok)));
