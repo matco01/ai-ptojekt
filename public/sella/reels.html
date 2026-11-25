@@ -6,383 +6,472 @@
   <title>Sella – reels</title>
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="/vendor/fonts/fonts.css">
-  <!-- Short vertical videos for Instagram and TikTok (1080 × 1920). Like film.html, every frame is a
-       pure function of time (render(t)), so it plays live here and is recorded frame by frame:
+  <!-- Short vertical videos for Instagram and TikTok (1080 × 1920), each in its own style. Like film.html,
+       every frame is a pure function of time (render(t)), so it plays live here and is recorded frame by frame:
        node scripts/record-film.mjs reels cs --q v=1 --size 1080x1920 --name reel-1-cs --out <folder>
-       ?v=1 customers (hesitates → asks → cart) · 2 voice · 3 shop owners (one line of code)
-       &lang=cs|en &d=<scene lengths in seconds, e.g. fitted to the voice>. Big words, since most
-       people watch muted; everything important stays inside TikTok's and Instagram's safe area. -->
+       ?v=1 kinetic type → a chat close-up (customers) · 2 dark, glowing voice · 3 white orbit (shop owners)
+       &lang=cs|en &d=<scene lengths> &cps=<letters a second of the voice's subtitle>.
+       The mascot is Sella's own blob (blobatar), posed by hand so every frame is the same on each recording.
+       Everything that matters stays inside TikTok's and Instagram's safe area (x 80–960, y 200–1540). -->
   <style>
-    html, body { margin: 0; height: 100%; background: #d0d9e1; overflow: hidden; }
+    html, body { margin: 0; height: 100%; background: #111; overflow: hidden; }
     body { display: grid; place-items: center; font-family: "Geist", -apple-system, Arial, sans-serif; color: #2f3133; -webkit-font-smoothing: antialiased; }
     #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #d0d9e1; transform-origin: center; flex: none; }
     #stage * { box-sizing: border-box; }
     .abs { position: absolute; will-change: transform, opacity; }
     .serif { font-family: "Old Standard TT", Didot, Georgia, serif; font-weight: 400; }
+    .layer { position: absolute; inset: 0; }
 
+    /* backgrounds */
+    #sky { background: #d0d9e1; overflow: hidden; }
     .cl { position: absolute; border-radius: 50%; filter: blur(80px); }
     #c1 { width: 1300px; height: 1300px; right: -520px; top: -260px; background: radial-gradient(circle at 45% 45%, #8fb3d8 0 38%, #a7c7d6 58%, transparent 70%); }
     #c2 { width: 1200px; height: 1200px; left: -620px; bottom: -380px; filter: blur(60px); opacity: .55; background: radial-gradient(circle at 46% 40%, transparent 0 52%, #ead2ae 60%, #bcd8cf 66%, transparent 72%); }
-    #c3 { width: 700px; height: 480px; left: -120px; top: 60px; background: radial-gradient(closest-side, #b7cbdc, transparent); }
+    #ink { background: #24272a; }
+    #dark { background: radial-gradient(1200px 900px at 50% 46%, #0f1c2b 0%, #070a0f 60%, #05070a 100%); }
+    #scan { background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 2px, transparent 2px 5px); }
+    #paper { background: #f4f5f7; }
     #grain { position: absolute; inset: 0; opacity: .16; mix-blend-mode: soft-light; pointer-events: none;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
 
-    /* the headline: big words that pop in one by one */
-    #hl { left: 70px; right: 70px; top: 200px; height: 330px; display: flex; align-items: center; justify-content: center; text-align: center; z-index: 30; }
-    #hl div { font: 650 88px/1.06 "Geist", Arial, sans-serif; letter-spacing: -.035em; }
+    /* kinetic words */
+    #kw { left: 40px; right: 40px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
+    #kw b { font: 700 200px/0.92 "Manrope", "Geist", Arial, sans-serif; letter-spacing: -.055em; text-transform: uppercase; color: #f3f5f7; display: block; }
+    #kwsub { left: 0; right: 0; top: 1180px; text-align: center; font: 500 34px/1.3 "Geist Mono", monospace; letter-spacing: .16em; text-transform: uppercase; color: #8fb3d8; }
+    .pimg { width: 210px; height: 210px; border-radius: 40px; background: #31353a; display: grid; place-items: center; }
+    .pimg img { width: 150px; height: 150px; }
+
+    /* the headline over the sky */
+    #hl { left: 80px; right: 80px; top: 230px; text-align: center; }
+    #hl div { font: 600 86px/1.06 "Geist", Arial, sans-serif; letter-spacing: -.04em; }
     #hl span { display: inline-block; margin: 0 .12em; }
     #hl .acc { font-family: "Old Standard TT", Georgia, serif; font-style: italic; font-weight: 400; color: #3f6fa3; letter-spacing: -.01em; font-size: 1.08em; }
 
-    /* TechMarket on a phone-sized screen */
-    #shop { left: 90px; top: 600px; width: 900px; height: 1080px; border-radius: 44px; background: #f3f5f8; overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.7), 0 60px 120px -50px rgba(30,50,80,.6); }
-    #shop .demo { height: 36px; background: #ffd94a; font-size: 18px; font-weight: 600; color: #2f2a10; display: grid; place-items: center; }
-    #shop .head { height: 104px; display: flex; align-items: center; gap: 22px; padding: 0 34px; background: #fff; border-bottom: 4px solid #1c2663; }
-    .tmlogo { display: flex; align-items: center; gap: 9px; }
-    .tmlogo .mk { width: 50px; height: 50px; border-radius: 11px; background: #1c2663; color: #fff; display: grid; place-items: center; font: italic 900 36px/1 Arial, sans-serif; }
-    .tmlogo .wd { font: 900 34px/1 Arial, sans-serif; color: #1c2663; letter-spacing: -.8px; }
-    .tmlogo .wd b { color: #2288e5; font-weight: 700; }
-    #shop .cart { position: relative; margin-left: auto; width: 56px; height: 56px; display: grid; place-items: center; }
-    #badge { position: absolute; right: -8px; top: -6px; width: 32px; height: 32px; border-radius: 50%; background: #e0282e; color: #fff; font-size: 18px; font-weight: 700; display: grid; place-items: center; }
-    #grid { position: absolute; left: 30px; right: 30px; top: 170px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    .prod { height: 278px; border-radius: 20px; background: #fff; border: 2px solid #e3e7ec; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; transition: none; }
-    .prod .img { flex: 1; display: grid; place-items: center; min-height: 0; }
-    .prod .img img { height: 130px; }
-    .prod .n { font-size: 22px; color: #1e70bf; line-height: 1.25; height: 28px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .prod .p { font-size: 28px; font-weight: 800; color: #1a1d21; }
-    .prod.hot { box-shadow: 0 0 0 5px #2288e5; border-color: #2288e5; }
+    /* the blob: Sella's mascot */
+    .blob { display: block; }
+    .blob svg { display: block; width: 100%; height: 100%; overflow: visible; }
 
-    #tap { left: 0; top: 0; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; background: rgba(255,255,255,.55); box-shadow: 0 0 0 3px rgba(47,49,51,.35), 0 10px 30px -8px rgba(20,30,60,.4); z-index: 35; }
+    /* chat close-up */
+    #chat { left: 70px; right: 70px; top: 600px; display: flex; flex-direction: column; gap: 26px; }
+    .msg { max-width: 82%; padding: 30px 36px; border-radius: 46px; font-size: 44px; line-height: 1.32; letter-spacing: -.01em; }
+    .msg.me { align-self: flex-end; background: #2f3133; color: #f6f7f8; border-bottom-right-radius: 14px; }
+    .msg.bot { align-self: flex-start; background: #fff; border-bottom-left-radius: 14px; box-shadow: 0 30px 60px -36px rgba(20,30,50,.45); }
+    .row { display: flex; align-items: flex-end; gap: 18px; }
+    .dots { display: inline-flex; gap: 12px; padding: 34px 38px; border-radius: 46px; border-bottom-left-radius: 14px; background: #fff; }
+    .dots i { width: 18px; height: 18px; border-radius: 50%; background: #9aa3ad; }
+    .card { display: flex; align-items: center; gap: 28px; padding: 28px; border-radius: 44px; background: #fff; box-shadow: 0 40px 80px -40px rgba(20,30,50,.5); }
+    .card .im { width: 170px; height: 170px; border-radius: 32px; background: #eef2f6; display: grid; place-items: center; flex: none; }
+    .card .im img { width: 130px; height: 130px; }
+    .card b { display: block; font-size: 44px; letter-spacing: -.02em; } .card small { display: block; color: #7b8188; font-size: 34px; margin-top: 4px; }
+    .card .add { margin-left: auto; padding: 26px 32px; border-radius: 28px; background: #2f3133; color: #fff; font-size: 34px; font-weight: 600; white-space: nowrap; }
+    .card .add.done { background: #22a06b; }
+    #tap { left: 0; top: 0; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; background: rgba(255,255,255,.5); box-shadow: 0 0 0 4px rgba(47,49,51,.3), 0 14px 34px -10px rgba(20,30,60,.45); z-index: 30; }
+    .spark { position: absolute; width: 22px; height: 22px; border-radius: 6px; }
 
-    #mascot { width: 150px; height: 150px; z-index: 25; transform-origin: 50% 100%; }
-    .who { font-size: 24px; font-weight: 700; color: #2288e5; margin-bottom: 8px; }
-    .bub { background: #fff; border-radius: 30px; box-shadow: 0 40px 80px -36px rgba(20,30,70,.55), 0 0 0 1px rgba(28,38,99,.06); }
-    #greet { left: 120px; top: 1180px; width: 720px; padding: 30px 32px 28px; z-index: 26; transform-origin: 85% 110%; }
-    #greet p { margin: 0 0 22px; font-size: 32px; line-height: 1.4; min-height: 90px; }
-    #greet .acts { display: flex; gap: 14px; }
-    #greet .acts span { flex: 1; height: 70px; border-radius: 20px; display: grid; place-items: center; font-size: 28px; font-weight: 600; background: #eef2f6; }
-    #greet .acts span.pri { background: #2288e5; color: #fff; }
+    /* dark + glow */
+    .glow { color: #cfe6ff; text-shadow: 0 0 18px rgba(120,190,255,.75), 0 0 46px rgba(80,150,255,.45); }
+    #term { left: 90px; right: 90px; top: 760px; font: 500 52px/1.35 "Geist Mono", monospace; text-align: center; }
+    #term .cur { display: inline-block; width: 30px; height: 58px; background: #cfe6ff; vertical-align: -10px; box-shadow: 0 0 18px rgba(120,190,255,.9); margin-left: 6px; }
+    #ask { left: 70px; right: 70px; top: 330px; text-align: center; font: 600 110px/1.02 "Geist", sans-serif; letter-spacing: -.045em; color: #fff; }
+    #ask span { display: inline-block; margin: 0 .1em; }
+    #scope { left: 0; top: 820px; width: 1080px; height: 300px; }
+    #rings { left: 540px; top: 900px; width: 0; height: 0; }
+    #rings i { position: absolute; left: 0; top: 0; border-radius: 50%; border: 3px solid rgba(140,200,255,.6); }
+    #say { left: 80px; right: 80px; top: 1000px; text-align: center; font: 500 50px/1.36 "Geist", sans-serif; letter-spacing: -.015em; color: rgba(207,230,255,.28); }
+    #say span { display: inline-block; margin: 0 .14em; }
+    #say span.on { color: #fff; text-shadow: 0 0 20px rgba(120,190,255,.8); }
+    #gcard { left: 130px; right: 130px; top: 1230px; display: flex; align-items: center; gap: 26px; padding: 26px; border-radius: 40px; background: rgba(255,255,255,.08);
+      box-shadow: inset 0 0 0 2px rgba(160,210,255,.35), 0 0 60px rgba(80,150,255,.25); backdrop-filter: blur(10px); color: #fff; }
+    #gcard .im { width: 150px; height: 150px; border-radius: 30px; background: rgba(255,255,255,.9); display: grid; place-items: center; flex: none; }
+    #gcard .im img { width: 112px; height: 112px; }
+    #gcard b { font-size: 44px; display: block; letter-spacing: -.02em; } #gcard small { font-size: 32px; color: #9fc4ea; }
 
-    #chat { left: 110px; top: 640px; width: 860px; height: 1000px; border-radius: 44px; background: #fff; z-index: 27;
-      box-shadow: 0 60px 120px -50px rgba(20,30,70,.65), 0 0 0 1px rgba(28,38,99,.06); padding: 30px; display: flex; flex-direction: column; gap: 22px; }
-    #chat .top { display: flex; align-items: center; gap: 18px; padding-bottom: 20px; border-bottom: 2px solid #edf0f3; }
-    #chat .top b { font-size: 30px; } #chat .top small { display: block; font-size: 22px; color: #7b8188; }
-    .msg { max-width: 86%; padding: 20px 24px; border-radius: 30px; font-size: 31px; line-height: 1.42; }
-    .msg.me { align-self: flex-end; background: linear-gradient(120deg, #2288e5, #3b62d6); color: #fff; border-bottom-right-radius: 10px; }
-    .msg.bot { align-self: flex-start; background: #f1f4f8; border-bottom-left-radius: 10px; }
-    .card { width: 100%; display: flex; gap: 22px; align-items: center; padding: 20px; border-radius: 28px; background: #fff; box-shadow: 0 0 0 2px #e3e7ec, 0 16px 36px -20px rgba(20,30,70,.35); }
-    .card img { width: 100px; height: 100px; flex: none; }
-    .card b { display: block; font-size: 29px; } .card small { color: #7b8188; font-size: 24px; }
-    .card .add { margin-left: auto; padding: 16px 22px; border-radius: 18px; background: #2288e5; color: #fff; font-size: 24px; font-weight: 700; white-space: nowrap; }
-    .card .add.done { background: #22b573; }
-
-    /* voice: a big mascot that listens and answers */
-    #voice { left: 90px; top: 600px; width: 900px; height: 1080px; border-radius: 48px; background: rgba(255,255,255,.5); z-index: 20;
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,.85), 0 60px 120px -50px rgba(30,50,80,.5); }
-    #vmascot { left: 300px; top: 280px; width: 300px; height: 300px; transform-origin: 50% 100%; }
-    #wave { left: 150px; right: 150px; top: 650px; height: 120px; display: flex; align-items: center; justify-content: center; gap: 12px; }
-    #wave i { width: 16px; border-radius: 8px; background: linear-gradient(#4e7fb4, #8fb3d8); }
-    #vstate { left: 0; right: 0; top: 800px; text-align: center; font-size: 28px; letter-spacing: .14em; text-transform: uppercase; color: #6f7781; font-weight: 500; }
-    #vq { right: 50px; top: 60px; max-width: 700px; z-index: 2; }
-    #va { left: 50px; right: 50px; top: 860px; z-index: 2; font-size: 31px; }
-    #vcard { left: 50px; right: 50px; top: 880px; z-index: 3; }
-
-    #code { left: 90px; top: 800px; width: 900px; padding: 44px 46px; border-radius: 36px; background: #23262a; color: #e8ecf0; font: 400 30px/1.6 "Geist Mono", ui-monospace, monospace;
-      box-shadow: 0 50px 110px -50px rgba(20,30,50,.75); white-space: pre; min-height: 300px; }
-    #code .t { color: #8fb3d8; } #code .a { color: #ead2ae; } #code .s { color: #a9d6b8; }
-    #code .caret { display: inline-block; width: 18px; height: 40px; background: #8fb3d8; vertical-align: -6px; margin-left: 3px; }
-    #plat { left: 90px; right: 90px; top: 1250px; display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; }
-    #plat span { padding: 20px 34px; border-radius: 99px; background: rgba(255,255,255,.75); box-shadow: inset 0 0 0 2px rgba(255,255,255,.9), 0 14px 30px -18px rgba(20,30,70,.4); font-size: 36px; font-weight: 600; }
-    #plat span.any { background: #2f3133; color: #f3f5f7; }
-
-    #board { left: 90px; top: 600px; width: 900px; height: 1080px; border-radius: 48px; background: rgba(255,255,255,.5); padding: 50px 46px;
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,.85), 0 60px 120px -50px rgba(30,50,80,.5); }
-    #board .bw { display: inline-flex; align-items: center; gap: 12px; padding: 10px 24px 10px 10px; border-radius: 99px; background: #fff; font-size: 24px; font-weight: 600; box-shadow: 0 14px 30px -16px rgba(20,30,70,.45); }
-    #board h3 { margin: 40px 0 26px; font-size: 46px; }
-    .qs { display: grid; gap: 18px; }
-    .qs div { padding: 24px 30px; border-radius: 26px; background: rgba(255,255,255,.82); font-size: 32px; }
-    .bars { display: grid; gap: 22px; }
-    .bar { display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; font-size: 28px; }
-    .bar .tr { grid-column: 1 / -1; height: 16px; border-radius: 16px; background: rgba(47,49,51,.08); overflow: hidden; }
+    /* white orbit */
+    #orbit { left: 540px; top: 960px; width: 0; height: 0; }
+    #orbit .ring { position: absolute; border-radius: 50%; border: 2px solid #dfe3e8; }
+    #orbit .dot { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #2f3133; }
+    .chip { position: absolute; padding: 22px 34px; border-radius: 99px; background: #fff; box-shadow: 0 0 0 2px #e6e9ed, 0 20px 40px -24px rgba(20,30,50,.35); font: 600 38px/1 "Geist", sans-serif; letter-spacing: -.02em; white-space: nowrap; transform: translate(-50%, -50%); }
+    .chip.any { background: #2f3133; color: #fff; box-shadow: none; }
+    #codep { left: 540px; top: 960px; padding: 40px 46px; border-radius: 40px; background: #24272a; color: #e8ecf0; font: 400 29px/1.55 "Geist Mono", monospace; white-space: pre; transform-origin: 50% 50%; box-shadow: 0 50px 100px -50px rgba(20,30,50,.7); }
+    #codep .t { color: #8fb3d8; } #codep .a { color: #ead2ae; } #codep .s { color: #a9d6b8; }
+    #codep .caret { display: inline-block; width: 16px; height: 38px; background: #8fb3d8; vertical-align: -6px; margin-left: 3px; }
+    .q { position: absolute; padding: 26px 34px; border-radius: 40px; border-bottom-left-radius: 12px; background: #fff; box-shadow: 0 0 0 2px #e6e9ed, 0 24px 50px -28px rgba(20,30,50,.4); font: 500 38px/1.2 "Geist", sans-serif; letter-spacing: -.015em; white-space: nowrap; }
+    .q i { font-style: normal; display: inline-grid; place-items: center; width: 46px; height: 46px; margin-left: 16px; border-radius: 50%; background: #22a06b; color: #fff; font-size: 28px; vertical-align: 2px; }
+    #board { left: 90px; right: 90px; top: 1230px; padding: 34px 38px; border-radius: 44px; background: #fff; box-shadow: 0 0 0 2px #e6e9ed, 0 40px 80px -40px rgba(20,30,50,.4); }
+    #board h3 { margin: 0 0 22px; font-size: 44px; }
+    .bar { display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; font-size: 32px; margin-top: 18px; }
+    .bar .tr { grid-column: 1 / -1; height: 16px; border-radius: 16px; background: #eef0f3; overflow: hidden; }
     .bar .fi { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8fb3d8, #4e7fb4); }
 
-    #end { left: 0; right: 0; top: 640px; text-align: center; }
-    #end .mark { font-size: 290px; line-height: 1; color: #434445; letter-spacing: -.02em; }
+    /* the end card */
+    #end { left: 0; right: 0; top: 560px; text-align: center; }
+    #end .mark { font-size: 290px; line-height: 1; letter-spacing: -.02em; }
     #end .mark span { display: inline-block; }
-    #end .line { font-size: 44px; color: #4d5257; margin-top: 34px; font-weight: 500; letter-spacing: -.01em; }
-    #end .cta { display: inline-block; margin-top: 60px; padding: 30px 60px; border-radius: 99px; background: #2f3133; color: #f3f5f7; font-size: 46px; font-weight: 600; letter-spacing: -.01em; }
-    #end .emas { display: block; margin: 0 auto 30px; width: 170px; height: 170px; }
+    #end .line { font-size: 46px; margin-top: 30px; font-weight: 500; letter-spacing: -.015em; }
+    #end .cta { display: inline-block; margin-top: 56px; padding: 30px 60px; border-radius: 99px; font-size: 48px; font-weight: 600; letter-spacing: -.01em; }
+    #end .emas { display: block; margin: 0 auto 10px; width: 220px; height: 220px; }
+    #end.light .mark { color: #2f3133; } #end.light .line { color: #4d5257; } #end.light .cta { background: #2f3133; color: #f3f5f7; }
+    #end.dark .mark { color: #eaf3ff; text-shadow: 0 0 30px rgba(120,190,255,.6); } #end.dark .line { color: #9fc4ea; } #end.dark .cta { background: #eaf3ff; color: #0b1018; box-shadow: 0 0 50px rgba(120,190,255,.5); }
   </style>
 </head>
 <body>
 <div id="stage">
-  <div class="abs cl" id="c1"></div><div class="abs cl" id="c2"></div><div class="abs cl" id="c3"></div>
+  <div class="layer" id="sky"><div class="cl" id="c1"></div><div class="cl" id="c2"></div></div>
+  <div class="layer" id="ink"></div>
+  <div class="layer" id="dark"><div class="layer" id="scan"></div></div>
+  <div class="layer" id="paper"></div>
 
+  <!-- 1 -->
+  <div class="abs" id="prods"></div>
+  <div class="abs" id="kw"><b id="kwt"></b></div>
+  <div class="abs" id="kwsub"></div>
   <div class="abs" id="hl"><div id="hlt"></div></div>
-
-  <div class="abs" id="shop">
-    <div class="demo" id="demo"></div>
-    <div class="head"><span class="tmlogo"><span class="mk">t</span><span class="wd">techmarket<b>.cz</b></span></span>
-      <span class="cart"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#1c2663" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21.5 8H6"/></svg><span id="badge">1</span></span></div>
-    <div id="grid"></div>
-  </div>
-
-  <div class="abs bub" id="greet"><div class="who">Teko</div><p id="gtext"></p><div class="acts"><span class="pri" id="gb1"></span><span id="gb2"></span></div></div>
-
   <div class="abs" id="chat">
-    <div class="top"><span id="chatMascot"></span><div><b>Teko</b><small id="csub"></small></div></div>
     <div class="msg me" id="m1"></div>
-    <div class="msg bot" id="m2"></div>
-    <div class="card" id="m3"><img src="/api/img/a3.svg" alt=""><div><b>Tono Buds Lite</b><small id="m3price"></small></div><span class="add" id="m3add"></span></div>
+    <div class="row" id="r2"><span class="blob" id="cblob" style="width:110px;height:110px;flex:none"></span><div class="dots" id="dots"><i></i><i></i><i></i></div><div class="msg bot" id="m2"></div></div>
+    <div class="card" id="m3"><span class="im"><img src="/api/img/a3.svg" alt=""></span><div><b>Tono Buds Lite</b><small id="m3price"></small></div><span class="add" id="m3add"></span></div>
   </div>
-
-  <div class="abs" id="voice">
-    <div class="abs msg me" id="vq"></div>
-    <div class="abs" id="vmascot"></div>
-    <div class="abs" id="wave"></div>
-    <div class="abs" id="vstate"></div>
-    <div class="abs msg bot" id="va"></div>
-  </div>
-
-  <div class="abs" id="code"></div>
-  <div class="abs" id="plat"></div>
-
-  <div class="abs" id="board">
-    <span class="bw"><span class="tmlogo"><span class="mk" style="width:44px;height:44px;font-size:30px">t</span></span><span id="bwho"></span></span>
-    <h3 class="serif" id="qh"></h3><div class="qs" id="qs"></div>
-    <h3 class="serif" id="bh"></h3><div class="bars" id="bars"></div>
-  </div>
-
+  <div class="abs" id="sparks"></div>
   <div class="abs" id="tap"></div>
-  <div class="abs" id="mascot"></div>
 
-  <div class="abs" id="end"><span class="emas" id="emas"></span><div class="mark serif" id="emark"><span>S</span><span>e</span><span>l</span><span>l</span><span>a</span></div><div class="line" id="eline"></div><span class="cta">sella.chat</span></div>
+  <!-- 2 -->
+  <div class="abs glow" id="term"></div>
+  <div class="abs" id="ask"></div>
+  <svg class="abs" id="scope" viewBox="0 0 1080 300"><path id="wave" fill="none" stroke="#bfe0ff" stroke-width="6" stroke-linecap="round" style="filter: drop-shadow(0 0 14px rgba(120,190,255,.9))"/></svg>
+  <div class="abs" id="rings"><i></i><i></i><i></i></div>
+  <div class="abs" id="say"></div>
+  <div class="abs" id="gcard"><span class="im"><img src="/api/img/a2.svg" alt=""></span><div><b>Tono Buds Pro</b><small id="gprice"></small></div></div>
+
+  <!-- 3 -->
+  <div class="abs" id="orbit"></div>
+  <div class="abs" id="codep"></div>
+  <div class="abs" id="qs"></div>
+  <div class="abs" id="board"><h3 class="serif" id="bh"></h3><div id="bars"></div></div>
+
+  <!-- the mascot (moves between scenes) and the end card -->
+  <div class="abs blob" id="hero"></div>
+  <div class="abs" id="end"><span class="emas blob" id="emas"></span><div class="mark serif" id="emark"><span>S</span><span>e</span><span>l</span><span>l</span><span>a</span></div><div class="line" id="eline"></div><span class="cta">sella.chat</span></div>
 
   <div class="abs" id="grain" style="inset:0"></div>
 </div>
 
+<script src="/vendor/blobatar/blobatar.js"></script>
 <script>
   const params = new URLSearchParams(location.search);
   const LANG = params.get("lang") === "en" ? "en" : "cs";
   const V = ["1", "2", "3"].includes(params.get("v")) ? Number(params.get("v")) : 1;
-  // headlines: [words, which of them are the accent]
   const T = {
     cs: {
-      demo: "DEMO obchod pro ukázku AI prodavačky", line: "AI prodavačka pro e-shopy",
-      r1: [["Váš e-shop nemá prodavače.", ["prodavače."]], ["Zákazník váhá… a odejde.", ["odejde."]], ["Sella se ho zeptá.", ["zeptá."]], ["Poradí jen z vašeho zboží.", ["vašeho"]]],
-      r2: [["Zákazník se zeptá nahlas.", ["nahlas."]], ["Sella poslouchá.", ["poslouchá."]], ["A odpoví. Česky.", ["Česky."]]],
-      r3: [["AI prodavačka pro váš e-shop?", ["AI"]], ["Stačí jeden řádek kódu.", ["jeden"]], ["Funguje na každém webu.", ["každém"]], ["A vy víte, na co se lidé ptají.", ["ptají."]]],
-      greet: "Dobrý den! Chcete s něčím poradit, nebo se radši porozhlédnete sami?", b1: "Napsat", b2: "Promluvit si", csub: "prodavač · AI asistent",
-      m1: "Hledám sluchátka do vlaku, do 3 000 Kč.", m2: "Do vlaku se vyplatí sluchátka, která vydrží celou cestu. Tyhle mají s pouzdrem až 30 hodin:",
+      line: "AI prodavačka pro e-shopy",
+      k1: ["Zákazník", "váhá.", "Prohlíží.", "Odchází."], k1sub: "a nikdo se ho nezeptal",
+      h1: ["Sella se zeptá za vás.", ["zeptá"]],
+      m1: "Hledám sluchátka do vlaku, do 3 000 Kč.", m2: "Tyhle vydrží s pouzdrem až 30 hodin. Na celou cestu tam i zpátky.",
       price: (n) => n.toLocaleString("cs-CZ") + " Kč", stock: "skladem", add: "Do košíku", added: "V košíku ✓",
-      vq: "Jaká sluchátka na běhání?", va: "Na běhání bych vzal Tono Buds Pro. Odolají potu, mají potlačení hluku a stojí 4 490 korun.",
-      listening: "Poslouchám…", speaking: "Mluví",
-      client: "vas-obchod", plat: ["Shoptet", "WordPress", "Shopify", "Google Tag Manager"], any: "jakýkoli web",
-      bwho: "TechMarket · přehled", qh: "Na co se zákazníci ptají", bh: "Kde váhají",
-      qs: ["„Je v balení nabíječka?“", "„Stihne to doprava do pátku?“", "„Vydrží baterie celý den?“"],
-      bars: [["Porovnávají dva telefony", 41], ["Dlouho stojí v košíku", 27], ["Hledají a nic nenajdou", 13]],
+      k2: ["Poradí.", "Doporučí.", "Prodá."],
+      term: "zákazník se ptá nahlas", ask: "Jaká sluchátka na běhání?",
+      va: "Na běhání bych vzal Tono Buds Pro. Odolají potu, mají potlačení hluku a stojí 4 490 korun.", gsub: "odolná potu · ANC",
+      line2: "Rozumí. Odpoví. Česky.",
+      h3: [["Jeden řádek kódu.", ["Jeden"]], ["Funguje na každém webu.", ["každém"]], ["Odpovídá zákazníkům. Nonstop.", ["Nonstop."]], ["A vy víte, co chtějí.", ["chtějí."]]],
+      client: "vas-obchod", plat: ["Shoptet", "WordPress", "Shopify", "Tag Manager"], any: "jakýkoli web",
+      qs: ["Je v balení nabíječka?", "Stihne to do pátku?", "Máte to skladem?"], bh: "Na co se ptají",
+      bars: [["Doprava a termíny", 38], ["Rozdíly mezi modely", 31], ["Co je v balení", 18]],
     },
     en: {
-      demo: "DEMO shop showing the AI salesperson", line: "An AI salesperson for online shops",
-      r1: [["Your shop has no salesperson.", ["salesperson."]], ["Customers hesitate… and leave.", ["leave."]], ["Sella asks them.", ["asks"]], ["It recommends only your products.", ["your"]]],
-      r2: [["Customers just ask out loud.", ["out", "loud."]], ["Sella listens.", ["listens."]], ["And it answers.", ["answers."]]],
-      r3: [["An AI salesperson for your shop?", ["AI"]], ["It takes one line of code.", ["one"]], ["Works on any website.", ["any"]], ["And you see what people ask.", ["ask."]]],
-      greet: "Hi! Can I help you find something, or would you rather browse?", b1: "Chat", b2: "Talk", csub: "shop assistant · AI",
-      m1: "I need headphones for the train, under CZK 3,000.", m2: "For the train you want headphones that last the whole trip. These give you up to 30 hours with the case:",
+      line: "An AI salesperson for online shops",
+      k1: ["Shoppers", "hesitate.", "Browse.", "Leave."], k1sub: "and nobody asked them",
+      h1: ["Sella asks for you.", ["asks"]],
+      m1: "I need headphones for the train, under CZK 3,000.", m2: "These last up to 30 hours with the case. The whole trip there and back.",
       price: (n) => "CZK " + n.toLocaleString("en-GB"), stock: "in stock", add: "Add to cart", added: "In cart ✓",
-      vq: "Which earbuds are good for running?", va: "For running I'd go with the Tono Buds Pro. They're sweat-resistant, have noise cancelling and cost CZK 4,490.",
-      listening: "Listening…", speaking: "Speaking",
-      client: "your-shop", plat: ["Shoptet", "WordPress", "Shopify", "Google Tag Manager"], any: "any website",
-      bwho: "TechMarket · insights", qh: "What customers ask", bh: "Where they hesitate",
-      qs: ["“Is a charger in the box?”", "“Will it arrive by Friday?”", "“Does the battery last all day?”"],
-      bars: [["Comparing two phones", 41], ["Lingering in the cart", 27], ["Searching and finding nothing", 13]],
+      k2: ["Advises.", "Recommends.", "Sells."],
+      term: "a customer asks out loud", ask: "Which earbuds for running?",
+      va: "For running I'd go with the Tono Buds Pro. They're sweat-resistant, have noise cancelling and cost CZK 4,490.", gsub: "sweat-resistant · ANC",
+      line2: "Understands. Answers. Out loud.",
+      h3: [["One line of code.", ["One"]], ["Works on any website.", ["any"]], ["Answers customers. 24/7.", ["24/7."]], ["And you see what they want.", ["want."]]],
+      client: "your-shop", plat: ["Shoptet", "WordPress", "Shopify", "Tag Manager"], any: "any website",
+      qs: ["Is a charger in the box?", "Will it arrive by Friday?", "Is it in stock?"], bh: "What they ask",
+      bars: [["Delivery and dates", 38], ["Differences between models", 31], ["What's in the box", 18]],
     },
   }[LANG];
   document.documentElement.lang = LANG;
   const $ = (id) => document.getElementById(id);
 
-  // ---- static content
-  $("demo").textContent = T.demo; $("eline").textContent = T.line;
-  $("gb1").textContent = T.b1; $("gb2").textContent = T.b2; $("csub").textContent = T.csub;
-  $("m1").textContent = T.m1; $("m3price").textContent = `${T.price(1290)} · ${T.stock}`;
-  $("vq").textContent = T.vq;
-  $("plat").innerHTML = T.plat.map((p) => `<span>${p}</span>`).join("") + `<span class="any">${T.any}</span>`;
-  $("bwho").textContent = T.bwho; $("qh").textContent = T.qh; $("bh").textContent = T.bh;
-  $("qs").innerHTML = T.qs.map((q) => `<div>${q}</div>`).join("");
-  $("bars").innerHTML = T.bars.map(([n, v]) => `<div class="bar"><span>${n}</span><em style="font-style:normal;color:#7b8188">${v} %</em><div class="tr"><div class="fi" data-w="${v}"></div></div></div>`).join("");
-  $("wave").innerHTML = "<i></i>".repeat(17);
-  const PRODUCTS = [["m1", "Nova X15 Pro 256 GB", 24990], ["m2", "Nova X15 128 GB", 17990], ["a3", "Tono Buds Lite", 1290], ["a2", "Tono Buds Pro", 4490], ["w1", "Nova Watch 6 44 mm", 7490], ["n1", "Vektor Air 14", 29990]];
-  $("grid").innerHTML = PRODUCTS.map(([id, name, price], i) =>
-    `<div class="prod" id="p${i}"><div class="img"><img src="/api/img/${id}.svg" alt=""></div><div class="n">${name}</div><div class="p">${T.price(price)}</div></div>`).join("");
-
-  // the TechMarket mascot (the same as in film.html: what the widget makes from the shop's logo)
-  const TEE = "M42.6 29.6 L52.2 24.9 L52.2 42 L57.4 42 Q58.6 42 58.6 43.2 L58.6 48.3 Q58.6 49.5 57.4 49.5 L52.2 49.5 L52.2 57.4 Q52.2 60.4 55.2 60.4 L57.6 60.4 Q58.8 60.4 58.8 61.6 L58.8 66 Q58.8 67.1 57.6 67.3 Q55 67.7 52.6 67.7 Q42.6 67.7 42.6 57.8 L42.6 49.5 L37.6 49.5 Q36.4 49.5 36.4 48.3 L36.4 43.2 Q36.4 42 37.6 42 L42.6 42 Z";
-  const face = (s, key) => `<svg width="${s}" height="${s}" viewBox="0 0 100 100"><defs><linearGradient id="g${key}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a4aa0"/><stop offset=".45" stop-color="#26347a"/><stop offset="1" stop-color="#141c4d"/></linearGradient></defs>
-    <ellipse cx="52" cy="102" rx="38" ry="3.6" fill="rgba(15,24,73,.16)"/>
-    <g transform="rotate(-4.5 50 50)"><rect x="4" y="4" width="92" height="92" rx="25" fill="url(#g${key})"/>
-    <path d="M11.5 27 Q12.5 11.5 28 9.6" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.6" stroke-linecap="round"/>
-    <path d="${TEE}" fill="#fff"/>
-    <path d="M13.3 27.6 Q20 17 28.4 20.5" fill="none" stroke="#0d1440" stroke-width="3.8" stroke-linecap="round"/><path d="M70 22 Q79 16 86.5 25.5" fill="none" stroke="#0d1440" stroke-width="3.8" stroke-linecap="round"/>
-    <circle cx="20" cy="50.4" r="12.6" fill="#fff" stroke="#0d1440" stroke-width="1.4"/><circle cx="80" cy="49.3" r="12.6" fill="#fff" stroke="#0d1440" stroke-width="1.4"/>
-    <g class="pupils"><circle cx="23" cy="50.4" r="8.8" fill="#101850"/><circle cx="77" cy="49.3" r="8.8" fill="#101850"/><circle cx="26.9" cy="52.5" r="2.5" fill="#fff"/><circle cx="80.9" cy="51.4" r="2.5" fill="#fff"/></g>
-    <path class="mouth" d="M33.5 72.5 Q47 81 61.5 72" fill="none" stroke="#0d1440" stroke-width="3.2" stroke-linecap="round"/></g></svg>`;
-  $("mascot").innerHTML = face(150, "a"); $("chatMascot").innerHTML = face(64, "b"); $("vmascot").innerHTML = face(300, "c"); $("emas").innerHTML = face(170, "d");
-
   // ---- timing helpers
   const clamp = (x) => Math.max(0, Math.min(1, x));
   const out = (x) => 1 - Math.pow(1 - clamp(x), 3);
-  const back = (x) => { x = clamp(x); const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const back = (x) => { x = clamp(x); const c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
   const io = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
   const lerp = (a, b, k) => a + (b - a) * k;
-  const on = (t, a, b, fi = 0.5, fo = 0.4) => Math.min(out((t - a) / fi), out((b - t) / fo));
+  const on = (t, a, b, fi = 0.4, fo = 0.3) => Math.min(out((t - a) / fi), out((b - t) / fo));
   const type = (text, t, a, cps = 40) => text.slice(0, Math.max(0, Math.floor((t - a) * cps)));
   const set = (el, op, tf = "") => { el.style.opacity = op; el.style.transform = tf; el.style.visibility = op > 0.001 ? "visible" : "hidden"; };
-  const show = (id, t, a) => { const k = out((t - a) / 0.35); $(id).style.opacity = k; $(id).style.visibility = k > 0.001 ? "visible" : "hidden"; $(id).style.transform = `translateY(${(1 - k) * 18}px)`; };
-  function hop(t, a, d, x0, y0, x1, y1, h) {
-    const u = clamp((t - a) / d);
-    const x = lerp(x0, x1, u), y = lerp(y0, y1, u) - h * 4 * u * (1 - u);
-    const land = clamp((t - a - d) / 0.5);
-    const sq = t > a + d ? 1 - 0.18 * Math.exp(-6 * land) * Math.cos(land * 9) : 1;
-    return `translate(${x}px, ${y}px) scale(${2 - sq}, ${sq})`;
+  const pop = (el, t, a, d = 0.35) => { const k = back((t - a) / d), o = out((t - a) / (d * 0.6)); set(el, o, `translateY(${(1 - k) * 40}px) scale(${0.8 + 0.2 * k})`); };
+
+  // ---- Sella's blob, posed frame by frame: breathing, a little bob, blinking, where it looks, its mood
+  const B = window.SellaBlob;
+  const EXPR = { idle: undefined, happy: "happy", think: "thinking", wow: "surprised", love: "love" };
+  function makeBlob(host, { head = "#2f3133", eye = "#f3f5f7" } = {}) {
+    const cache = {};
+    const inner = (m) => cache[m] ??= B.parts("Sella", { palette: { head, eye }, expression: EXPR[m] && B.expressions[EXPR[m]] }).inner;
+    host.innerHTML = `<svg viewBox="0 0 100 100"><ellipse class="sh" cx="49" cy="92" rx="30" ry="3.4" fill="rgba(15,24,40,.16)"/><g class="mv" style="transform-origin:49px 84px"></g></svg>`;
+    const mv = host.querySelector(".mv");
+    let mood = null, eyes = [], eyesG = null;
+    return {
+      pose(t, { m = "idle", look = [0, 0], squash = 0, talk = 0 } = {}) {
+        if (m !== mood) { mood = m; mv.innerHTML = inner(m); eyes = [...mv.querySelectorAll(".mo-eye")]; eyesG = mv.querySelector(".mo-eyes"); }
+        const br = Math.sin(t * 2.4) * 0.018, bob = Math.sin(t * 1.7) * 1.4, tk = talk ? Math.abs(Math.sin(t * 13)) * 0.05 * talk : 0;
+        const sx = 1 + br + squash + tk, sy = 1 - br - squash - tk;
+        mv.style.transform = `translateY(${bob}px) scale(${sx}, ${sy})`;
+        const ph = (t + 0.7) % 3.1, blink = ph < 0.14 ? 0.12 : 1; // blinks every 3.1 s
+        for (const e of eyes) e.style.transform = `scaleY(${blink})`;
+        if (eyesG) eyesG.style.transform = `translate(${look[0]}px, ${look[1]}px)`;
+      },
+    };
   }
 
-  // ---- the scenes of each reel (seconds; ?d= overrides, e.g. to fit a recorded voice)
-  const REELS = { 1: [2.4, 3.2, 3.4, 5.6, 3.4], 2: [2.6, 3.0, 6.4, 3.4], 3: [2.4, 3.8, 2.8, 4.6, 3.4] };
+  // ---- scenes (seconds; ?d= overrides, e.g. to fit the recorded voice)
+  const REELS = { 1: [2.6, 1.4, 5.6, 2.0, 3.2], 2: [2.2, 3.0, 9.6, 3.4], 3: [3.0, 3.6, 3.8, 3.0, 3.2] };
   const lens = (params.get("d") || "").split(",").map(Number);
   const S = [];
   let acc = 0;
   REELS[V].forEach((d, i) => { S.push(acc); acc += lens[i] > 0 ? lens[i] : d; });
-  const DURATION = acc;
-  const END = S[S.length - 1];
-  const HEAD = T[`r${V}`];
+  const DURATION = acc, END = S[S.length - 1];
 
-  // the headline: words pop in one by one, the old line drops away
-  function headline(t) {
-    const i = S.findLastIndex((s) => t >= s);
-    const line = i < HEAD.length ? HEAD[i] : null;
+  const hero = makeBlob($("hero"));
+  const emas = makeBlob($("emas"), V === 2 ? { head: "#eaf3ff", eye: "#0b1018" } : {});
+  const cblob = makeBlob($("cblob"));
+  const darkHero = V === 2 ? makeBlob($("hero"), { head: "#eaf3ff", eye: "#0b1018" }) : null;
+
+  // ---- static content
+  $("eline").textContent = V === 2 ? T.line2 : T.line;
+  $("end").className = "abs " + (V === 2 ? "dark" : "light");
+  $("m1").textContent = T.m1; $("m3price").textContent = `${T.price(1290)} · ${T.stock}`;
+  $("gprice").textContent = `${T.price(4490)} · ${T.gsub}`;
+  $("say").innerHTML = T.va.split(" ").map((w) => `<span>${w}</span>`).join(" ");
+  $("ask").innerHTML = T.ask.split(" ").map((w) => `<span>${w}</span>`).join(" ");
+  $("bh").textContent = T.bh;
+  $("bars").innerHTML = T.bars.map(([n, v]) => `<div class="bar"><span>${n}</span><em style="font-style:normal;color:#7b8188">${v} %</em><div class="tr"><div class="fi" data-w="${v}"></div></div></div>`).join("");
+  $("prods").innerHTML = ["m1", "a2", "w1", "n1", "a3", "m2"].map((id) => `<span class="pimg abs"><img src="/api/img/${id}.svg" alt=""></span>`).join("");
+  $("orbit").innerHTML = [250, 370, 490].map((r) => `<span class="ring" style="left:${-r}px;top:${-r}px;width:${2 * r}px;height:${2 * r}px"></span>`).join("")
+    + "<span class='dot'></span><span class='dot'></span><span class='dot'></span>"
+    + [...T.plat, T.any].map((p, i) => `<span class="chip${i === T.plat.length ? " any" : ""}">${p}</span>`).join("");
+  $("qs").innerHTML = T.qs.map((q) => `<span class="q">${q}<i>✓</i></span>`).join("");
+  $("sparks").innerHTML = Array.from({ length: 16 }, (_, i) => `<span class="spark" style="background:${["#4e7fb4", "#22a06b", "#ead2ae", "#2f3133"][i % 4]}"></span>`).join("");
+
+  // the headline: words pop in one by one
+  function headline(t, line, a, b) {
     const el = $("hlt");
-    if (el.dataset.i !== String(i)) {
-      el.dataset.i = i;
-      el.innerHTML = line ? line[0].split(" ").map((w) => `<span class="${line[1].includes(w) ? "acc" : ""}">${w}</span>`).join(" ") : "";
-    }
-    if (!line) return;
-    const next = S[i + 1] ?? DURATION;
+    if (!line) { $("hl").style.visibility = "hidden"; return; }
+    if (el.dataset.k !== line[0]) { el.dataset.k = line[0]; el.innerHTML = line[0].split(" ").map((w) => `<span class="${line[1].includes(w) ? "acc" : ""}">${w}</span>`).join(" "); }
+    $("hl").style.visibility = "visible"; $("hl").style.opacity = 1;
     [...el.children].forEach((w, j) => {
-      const k = back((t - S[i] - 0.05 - j * 0.08) / 0.42), o = out((t - S[i] - j * 0.08) / 0.25);
-      const gone = out((t - (next - 0.22)) / 0.22);
+      const k = back((t - a - j * 0.07) / 0.4), o = out((t - a - j * 0.07) / 0.22), gone = out((t - (b - 0.2)) / 0.2);
       w.style.opacity = o * (1 - gone);
-      w.style.transform = `translateY(${(1 - k) * 60 + gone * -30}px) scale(${0.85 + 0.15 * k})`;
+      w.style.transform = `translateY(${(1 - k) * 60 - gone * 30}px) scale(${0.85 + 0.15 * k})`;
       w.style.filter = `blur(${(1 - o) * 12 + gone * 8}px)`;
     });
   }
+  // one huge word per beat (kinetic type)
+  function kinetic(t, words, a, beat) {
+    const i = Math.floor((t - a) / beat);
+    const w = words[Math.max(0, Math.min(words.length - 1, i))], dt = t - a - i * beat;
+    const el = $("kwt");
+    if (el.textContent !== w) el.textContent = w;
+    el.style.fontSize = Math.min(230, 1500 / Math.max(4, w.length)) + "px";
+    const k = out(dt / 0.16);
+    el.style.transform = `scale(${1.25 - 0.25 * k}) translateY(${(1 - k) * 20}px)`;
+    el.style.filter = `blur(${(1 - k) * 10}px)`;
+    el.style.opacity = k;
+  }
+
+  const LAYERS = ["sky", "ink", "dark", "paper"];
+  const ITEMS = ["prods", "kw", "kwsub", "hl", "chat", "sparks", "tap", "term", "ask", "scope", "rings", "say", "gcard", "orbit", "codep", "qs", "board", "hero", "end"];
+  function only(layer) { for (const l of LAYERS) $(l).style.visibility = l === layer ? "visible" : "hidden"; }
 
   function endCard(t) {
-    const ev = on(t, END, DURATION + 9, 0.6, 0.1);
+    const ev = on(t, END, DURATION + 9, 0.5, 0.1);
     set($("end"), ev, `translateY(${(1 - ev) * 30}px)`);
-    [...$("emark").children].forEach((s, i) => { const k = out((t - END - 0.15 - i * 0.09) / 0.7); s.style.opacity = k; s.style.transform = `translateY(${(1 - k) * 40}px)`; s.style.filter = `blur(${(1 - k) * 12}px)`; });
-    $("emas").style.transform = hop(t, END, 0.7, 0, 140, 0, 0, 120);
+    [...$("emark").children].forEach((s, i) => { const k = out((t - END - 0.25 - i * 0.08) / 0.6); s.style.opacity = k; s.style.transform = `translateY(${(1 - k) * 40}px)`; s.style.filter = `blur(${(1 - k) * 12}px)`; });
+    const land = t - END - 0.45;
+    $("emas").style.transform = `translateY(${land < 0 ? -260 * (1 - out((t - END) / 0.45)) : 0}px)`;
+    emas.pose(t, { m: t > END + 1.2 ? "happy" : "idle", squash: land > 0 ? 0.16 * Math.exp(-7 * land) * Math.cos(land * 14) : 0 });
   }
 
-  function hideAll() { for (const id of ["shop", "greet", "chat", "voice", "code", "plat", "board", "tap", "mascot", "end"]) set($(id), 0); }
-
-  // 1 · customers: the shop, a hesitating customer, Sella asks, recommends, adds to the cart
+  // ---- 1 · kinetic type → Sella drops in → a chat close-up → kinetic type → end
   function reel1(t) {
-    const [hook, hes, ask, chat] = S;
-    const sv = on(t, 0.1, END - 0.1, 0.7, 0.4);
-    set($("shop"), sv, `translateY(${(1 - sv) * 80}px) scale(${0.95 + 0.05 * sv})`);
-    // the customer taps between two phones, back and forth
-    const taps = [[hes + 0.2, 320, 1050], [hes + 0.9, 760, 1050], [hes + 1.6, 320, 1050], [hes + 2.3, 760, 1050], [hes + 3.0, 540, 1350]];
-    let x = 540, y = 1500;
-    for (let i = 0; i < taps.length; i++) {
-      const [ta, tx, ty] = taps[i], prev = taps[i - 1] ?? [hes - 0.3, 540, 1500];
-      if (t >= prev[0]) { const k = io((t - prev[0]) / Math.max(0.2, ta - prev[0] - 0.15)); x = lerp(prev[1], tx, k); y = lerp(prev[2], ty, k); }
+    const [k1, drop, chat, k2] = S;
+    const inInk = t < drop || (t >= k2 && t < END);
+    only(inInk ? "ink" : "sky");
+    if (t < drop) {
+      set($("kw"), 1); kinetic(t, T.k1, k1, 0.62);
+      // the products the customer keeps flicking through, behind the words
+      const n = $("prods").children.length;
+      set($("prods"), 1);
+      [...$("prods").children].forEach((p, i) => {
+        const ang = i / n * Math.PI * 2 + t * 0.5, r = 400 + (i % 2) * 90;
+        const k = out((t - 0.15 - i * 0.08) / 0.3), gone = out((t - (drop - 0.35)) / 0.3);
+        p.style.opacity = 0.55 * k * (1 - gone);
+        p.style.transform = `translate(${540 - 105 + Math.cos(ang) * r}px, ${960 - 105 + Math.sin(ang) * r * 1.25}px) rotate(${Math.sin(t * 1.3 + i) * 8}deg) scale(${0.8 + 0.2 * k})`;
+      });
+      set($("kwsub"), on(t, 1.9, drop, 0.2, 0.2)); $("kwsub").textContent = T.k1sub;
     }
-    const tapPress = taps.some(([ta]) => t > ta - 0.12 && t < ta + 0.05);
-    set($("tap"), on(t, hes, ask + 0.4, 0.3, 0.3), `translate(${x}px, ${y}px) scale(${tapPress ? 0.8 : 1})`);
-    const near = (ta) => t > ta && t < ask + 0.5;
-    $("p0").classList.toggle("hot", near(hes + 0.2) && !near(hes + 0.9) || near(hes + 1.6) && !near(hes + 2.3));
-    $("p1").classList.toggle("hot", near(hes + 0.9) && !near(hes + 1.6) || near(hes + 2.3) && !near(hes + 3.0));
-    // Sella hops into the corner and asks
-    const mv = t >= ask && t < chat + 0.2 ? 1 : 0;
-    set($("mascot"), mv, hop(t, ask, 0.9, 1100, 1500, 840, 1480, 200) + (t > ask + 1.6 ? ` rotate(${Math.sin((t - ask) * 6) * 3}deg)` : ""));
-    const gv = on(t, ask + 0.7, chat - 0.2, 0.4, 0.3);
-    set($("greet"), gv, `scale(${0.6 + 0.4 * back((t - ask - 0.7) / 0.45)})`);
-    $("gtext").textContent = type(T.greet, t, ask + 0.9, 48);
-    $("gb1").style.boxShadow = t > ask + 2.6 && t < chat ? "0 0 0 6px rgba(34,136,229,.35)" : "none";
-    if (t > ask + 2.4 && t < chat + 0.1) set($("tap"), on(t, ask + 2.4, chat + 0.1, 0.25, 0.2), `translate(${lerp(540, 300, io((t - ask - 2.4) / 0.5))}px, ${lerp(1500, 1450, io((t - ask - 2.4) / 0.5))}px) scale(${t > ask + 3.0 && t < ask + 3.2 ? 0.8 : 1})`);
-    // the chat: the question, the answer, the product, into the cart
-    const cv = on(t, chat, END - 0.15, 0.45, 0.35);
-    set($("chat"), cv, `translateY(${(1 - cv) * 60}px)`);
-    show("m1", t, chat + 0.35);
-    $("m2").textContent = type(T.m2, t, chat + 1.3, 60) || "…"; show("m2", t, chat + 1.1);
-    show("m3", t, chat + 3.0);
-    const added = chat + 4.3;
-    $("m3add").textContent = t > added ? T.added : T.add; $("m3add").classList.toggle("done", t > added);
-    $("m3add").style.transform = `scale(${t > added ? 1 + 0.25 * Math.exp(-7 * (t - added)) : 1})`;
-    if (t > chat + 3.5 && t < END) set($("tap"), on(t, chat + 3.5, END - 0.2, 0.25, 0.25), `translate(${lerp(540, 845, io((t - chat - 3.5) / 0.6))}px, ${lerp(1550, 1430, io((t - chat - 3.5) / 0.6))}px) scale(${t > added - 0.12 && t < added + 0.08 ? 0.8 : 1})`);
-    $("badge").style.opacity = t > added ? 1 : 0;
-    $("badge").style.transform = `scale(${t > added ? 1 + 0.6 * Math.exp(-8 * (t - added)) : 0})`;
+    // the drop: Sella falls into the empty sky and lands
+    if (t >= drop && t < chat + 0.6) {
+      const u = clamp((t - drop) / 0.55), land = t - drop - 0.55;
+      const y = lerp(-500, 820, u * u), sq = land > 0 ? 0.22 * Math.exp(-6 * land) * Math.cos(land * 12) : -0.08;
+      const k = t > chat ? 1 - out((t - chat) / 0.5) : 1;
+      set($("hero"), k, `translate(${340}px, ${y - (t > chat ? out((t - chat) / 0.5) * 300 : 0)}px) scale(${1 - (t > chat ? out((t - chat) / 0.5) * 0.6 : 0)})`);
+      $("hero").style.width = $("hero").style.height = "400px";
+      hero.pose(t, { m: land > 0.25 ? "happy" : "wow", squash: sq });
+      headline(t, T.h1, drop + 0.35, chat + 0.4);
+    }
+    // the chat close-up
+    if (t >= chat - 0.1 && t < k2) {
+      const cv = on(t, chat, k2, 0.35, 0.25);
+      set($("chat"), cv, `translateY(${(1 - cv) * 80}px)`);
+      pop($("m1"), t, chat + 0.15);
+      const typing = t > chat + 0.9 && t < chat + 1.9;
+      pop($("r2"), t, chat + 0.9);
+      $("dots").style.display = typing ? "inline-flex" : "none";
+      [...$("dots").children].forEach((d, i) => { d.style.transform = `translateY(${-Math.max(0, Math.sin(t * 9 - i * 0.8)) * 10}px)`; });
+      $("m2").style.display = typing ? "none" : "block";
+      $("m2").textContent = type(T.m2, t, chat + 1.9, 70);
+      cblob.pose(t, { m: typing ? "think" : t > chat + 4.3 ? "happy" : "idle", look: [1.5, -1], talk: !typing && t < chat + 3 ? 1 : 0 });
+      pop($("m3"), t, chat + 2.9);
+      const added = chat + 4.1;
+      $("m3add").textContent = t > added ? T.added : T.add; $("m3add").classList.toggle("done", t > added);
+      $("m3add").style.transform = `scale(${t > added ? 1 + 0.3 * Math.exp(-7 * (t - added)) : 1})`;
+      // the customer's tap on "add to cart"
+      const tv = on(t, chat + 3.3, chat + 4.7, 0.2, 0.25);
+      const r = $("m3add").getBoundingClientRect(), st = $("stage").getBoundingClientRect(), k = st.width / 1080;
+      const tx = (r.left + r.width / 2 - st.left) / k, ty = (r.top + r.height / 2 - st.top) / k;
+      set($("tap"), tv, `translate(${lerp(tx - 120, tx, io((t - chat - 3.3) / 0.6))}px, ${lerp(ty + 260, ty, io((t - chat - 3.3) / 0.6))}px) scale(${t > added - 0.12 && t < added + 0.08 ? 0.8 : 1})`);
+      // a burst of confetti from the button
+      const bt = t - added;
+      set($("sparks"), bt > 0 && bt < 1.2 ? 1 : 0);
+      [...$("sparks").children].forEach((s, i) => {
+        const ang = (i / 16) * Math.PI * 2 + 0.3, v = 380 + (i % 3) * 120, g = 900;
+        const x = tx + Math.cos(ang) * v * bt, y = ty + Math.sin(ang) * v * bt + 0.5 * g * bt * bt;
+        s.style.transform = `translate(${x}px, ${y}px) rotate(${bt * 720 + i * 40}deg)`; s.style.opacity = 1 - clamp(bt / 1.2);
+      });
+    }
+    // kinetic again: what she does
+    if (t >= k2 && t < END) { set($("kw"), 1); kinetic(t, T.k2, k2, 0.66); }
+    if (t >= END) only("sky");
   }
 
-  // 2 · voice: she listens to the question and answers out loud (the voice is the recording's audio)
+  // ---- 2 · dark and glowing: the question out loud, Sella answers (the voice is the recording's audio)
   function reel2(t) {
-    const [hook, ask, answer] = S;
-    const vv = on(t, 0.1, END - 0.1, 0.7, 0.4);
-    set($("voice"), vv, `translateY(${(1 - vv) * 80}px) scale(${0.95 + 0.05 * vv})`);
-    const listening = t >= hook + 0.8 && t < answer, speaking = t >= answer + 0.4 && t < END - 0.6;
-    $("vstate").textContent = speaking ? T.speaking : T.listening;
-    $("vstate").style.opacity = listening || speaking ? 1 : 0;
-    // the bars move with the voice: the customer's while she listens, hers while she speaks
-    const level = listening && t >= ask ? 1 : speaking ? 0.9 : 0.12;
-    [...$("wave").children].forEach((b, i) => {
-      const n = Math.abs(Math.sin(t * 9 + i * 1.7) * Math.sin(t * 5.3 + i * 0.6)) * (1 - Math.abs(i - 8) / 10);
-      b.style.height = 14 + n * 100 * level + "px";
-      b.style.opacity = 0.35 + 0.65 * level;
-    });
-    const bob = speaking ? Math.abs(Math.sin(t * 7)) * 0.05 : listening ? Math.sin(t * 2) * 0.02 : 0;
-    $("vmascot").style.transform = `scale(${1 + bob}, ${1 - bob})`;
-    $("vmascot").querySelector(".mouth").setAttribute("d", speaking && Math.sin(t * 14) > 0 ? "M33.5 71 Q47 88 61.5 70.5" : "M33.5 72.5 Q47 81 61.5 72");
-    $("vq").textContent = type(T.vq, t, ask + 0.2, 22) || "…"; show("vq", t, ask);
-    // her answer types at the pace of the recorded voice (?cps= letters a second)
-    $("va").textContent = type(T.va, t, answer + 0.4, Number(params.get("cps")) || 17); show("va", t, answer + 0.3);
+    const [term, ask, answer] = S;
+    only("dark");
+    if (t < ask + 0.2) {
+      set($("term"), on(t, 0.1, ask + 0.2, 0.3, 0.25));
+      $("term").innerHTML = "&gt; " + type(T.term, t, 0.3, 26) + (Math.floor(t * 2.5) % 2 ? '<span class="cur"></span>' : '<span class="cur" style="opacity:0"></span>');
+    }
+    // her voice line: the customer's speech wobbles it, then hers
+    const listening = t >= ask && t < answer, speaking = t >= answer + 0.4 && t < END - 0.3;
+    const amp = listening ? 1 : speaking ? 0.8 : 0.08;
+    set($("scope"), t > ask - 0.2 && t < END ? 1 : 0, `translateY(${speaking ? -180 : 0}px)`);
+    let d = "";
+    for (let x = 0; x <= 1080; x += 12) {
+      const env = Math.sin((x / 1080) * Math.PI);
+      const y = 150 + env * amp * (Math.sin(x * 0.021 + t * 9) * 55 + Math.sin(x * 0.047 - t * 13) * 28) * (0.6 + 0.4 * Math.abs(Math.sin(t * 3.1)));
+      d += (x ? "L" : "M") + x + " " + y.toFixed(1);
+    }
+    $("wave").setAttribute("d", d);
+    // the question, word by word, big
+    if (t >= ask && t < answer + 0.4) {
+      set($("ask"), on(t, ask, answer + 0.4, 0.2, 0.3));
+      [...$("ask").children].forEach((w, i) => { const k = back((t - ask - 0.2 - i * 0.32) / 0.4); w.style.opacity = out((t - ask - 0.2 - i * 0.32) / 0.25); w.style.transform = `translateY(${(1 - k) * 50}px)`; });
+    }
+    // Sella lights up and answers
+    if (t >= answer - 0.4 && t < END) {
+      const hv = on(t, answer - 0.4, END, 0.6, 0.3);
+      $("hero").style.width = $("hero").style.height = "380px";
+      set($("hero"), hv, `translate(350px, ${560 - (1 - hv) * 60}px) scale(${0.8 + 0.2 * out((t - answer + 0.4) / 0.7)})`);
+      $("hero").style.filter = "drop-shadow(0 0 40px rgba(120,190,255,.55))";
+      darkHero.pose(t, { m: t < answer + 0.4 ? "think" : speaking ? "happy" : "idle", talk: speaking ? 1 : 0 });
+      // rings pulse out of her while she speaks
+      set($("rings"), speaking ? 1 : 0, "translateY(-150px)");
+      [...$("rings").children].forEach((r, i) => { const p = ((t * 0.8 + i / 3) % 1), s = 220 + p * 420; r.style.width = r.style.height = s + "px"; r.style.left = r.style.top = -s / 2 + "px"; r.style.opacity = (1 - p) * 0.7; });
+      // the subtitle lights up word by word with the voice
+      set($("say"), on(t, answer + 0.3, END - 0.1, 0.3, 0.3));
+      const lit = Math.floor((t - answer - 0.4) * (Number(params.get("cps")) || 12) / 6.2);
+      [...$("say").children].forEach((w, i) => w.classList.toggle("on", i <= lit));
+      const gv = on(t, answer + 0.4 + (S[3] - answer) * 0.62, END, 0.4, 0.3);
+      set($("gcard"), gv, `translateY(${(1 - gv) * 50 + 110}px)`);
+    }
   }
 
-  // 3 · shop owners: one line of code, any website, and what customers ask
+  // ---- 3 · white orbit: one line of code becomes Sella, the platforms circle her, questions fly in
   const CODE = () => [["t", "<script"], ["", "\n  "], ["a", "src"], ["", "="], ["s", '"https://sella.chat/widget/prodavac.js"'], ["", "\n  "],
     ["a", "data-client"], ["", "="], ["s", `"${T.client}"`], ["", " "], ["a", "defer"], ["t", ">"], ["", "\n"], ["t", "<\/script>"]];
   function reel3(t) {
-    const [hook, code, plat, board] = S;
-    const mv = t < code ? 1 : 0;
-    set($("mascot"), mv * out((t - 0.2) / 0.3), hop(t, 0.2, 0.9, 1100, 1300, 465, 1050, 260) + (t > 1.4 ? ` rotate(${Math.sin(t * 5) * 3}deg)` : ""));
-    const kv = on(t, code, board - 0.1, 0.45, 0.35);
-    set($("code"), kv, `translateY(${(1 - kv) * 50 - (t > plat ? out((t - plat) / 0.5) * 120 : 0)}px)`);
-    let left = Math.max(0, Math.floor((t - code - 0.4) * 34)), html = "";
-    for (const [cls, text] of CODE()) {
-      if (left <= 0) break;
-      const part = text.slice(0, left); left -= text.length;
-      const safe = part.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]);
-      html += cls ? `<span class="${cls}">${safe}</span>` : safe;
+    const [code, plat, qsA, board] = S;
+    only("paper");
+    const hi = S.slice(0, 4).findLastIndex((s) => t >= s);
+    headline(t, t < END ? T.h3[hi] : null, S[hi], S[hi + 1]);
+    // the code types itself, then shrinks into her
+    if (t < plat + 0.5) {
+      const shrink = out((t - plat + 0.3) / 0.6);
+      set($("codep"), 1 - shrink, `translate(-50%, -50%) scale(${(0.85 + 0.15 * out(t / 0.4)) * (1 - shrink * 0.9)})`);
+      let left = Math.max(0, Math.floor((t - 0.4) * 40)), html = "";
+      for (const [cls, text] of CODE()) {
+        if (left <= 0) break;
+        const part = text.slice(0, left); left -= text.length;
+        const safe = part.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]);
+        html += cls ? `<span class="${cls}">${safe}</span>` : safe;
+      }
+      $("codep").innerHTML = html + (Math.floor(t * 2.4) % 2 ? '<span class="caret"></span>' : "");
     }
-    $("code").innerHTML = html + (Math.floor(t * 2.4) % 2 ? '<span class="caret"></span>' : "");
-    const pv = on(t, plat, board - 0.1, 0.3, 0.35);
-    set($("plat"), pv);
-    [...$("plat").children].forEach((c, i) => { const k = back((t - plat - 0.1 - i * 0.12) / 0.4); c.style.opacity = out((t - plat - i * 0.12) / 0.25); c.style.transform = `translateY(${(1 - k) * 40}px) scale(${0.8 + 0.2 * k})`; });
-    const ov = on(t, board, END - 0.1, 0.5, 0.35);
-    set($("board"), ov, `translateY(${(1 - ov) * 70}px)`);
-    [...$("qs").children].forEach((q, i) => { const k = out((t - board - 0.5 - i * 0.45) / 0.45); q.style.opacity = k; q.style.transform = `translateX(${(1 - k) * 30}px)`; });
-    $("bars").querySelectorAll(".fi").forEach((f, i) => { f.style.width = f.dataset.w * out((t - board - 1.8 - i * 0.2) / 1.2) + "%"; });
+    // Sella in the middle of it all
+    if (t >= plat - 0.3 && t < END) {
+      const hv = back((t - plat + 0.3) / 0.6), shrinkOut = t > board ? out((t - board) / 0.5) : 0;
+      $("hero").style.width = $("hero").style.height = "260px";
+      set($("hero"), clamp((t - plat + 0.3) / 0.2), `translate(410px, ${830 - shrinkOut * 330}px) scale(${hv * (1 - shrinkOut * 0.35)})`);
+      const q = S[2], qi = Math.floor((t - q - 0.3) / 0.9);
+      hero.pose(t, { m: t > q && t < board ? (((t - q - 0.3) % 0.9) < 0.35 ? "wow" : "happy") : "idle", look: [Math.sin(t * 1.3) * 2, Math.cos(t * 1.1) * 1] });
+    }
+    // the orbit: rings, travelling dots, the platforms
+    if (t >= plat - 0.2 && t < board + 0.4) {
+      const ov = on(t, plat - 0.2, board + 0.4, 0.5, 0.4);
+      set($("orbit"), ov, `scale(${0.9 + 0.1 * ov})`);
+      const dots = [...$("orbit").querySelectorAll(".dot")];
+      dots.forEach((d, i) => { const r = [250, 370, 490][i], a = t * (0.6 - i * 0.15) + i * 2; d.style.transform = `translate(${Math.cos(a) * r}px, ${Math.sin(a) * r}px)`; });
+      const chips = [...$("orbit").querySelectorAll(".chip")];
+      chips.forEach((c, i) => {
+        const r = i % 2 ? 370 : 490, a = (i / chips.length) * Math.PI * 2 - Math.PI / 2 + t * 0.12;
+        const k = back((t - plat - 0.1 - i * 0.12) / 0.45), fade = t > qsA ? 1 - 0.65 * out((t - qsA) / 0.5) : 1;
+        c.style.opacity = out((t - plat - i * 0.12) / 0.25) * fade;
+        c.style.transform = `translate(calc(-50% + ${Math.cos(a) * r * 0.78}px), calc(-50% + ${Math.sin(a) * r}px)) scale(${0.7 + 0.3 * k})`;
+      });
+    }
+    // customers' questions fly in to her and get answered
+    if (t >= qsA && t < board + 0.4) {
+      set($("qs"), on(t, qsA, board + 0.4, 0.2, 0.3));
+      const from = [[-760, -520], [700, -390], [-760, -260]], to = [[-460, -520], [-300, -390], [-460, -260]];
+      [...$("qs").children].forEach((q, i) => {
+        const a = qsA + 0.3 + i * 0.9, k = io((t - a) / 0.6), o = out((t - a) / 0.3);
+        q.style.opacity = o;
+        q.style.left = 540 + lerp(from[i][0], to[i][0], k) + "px"; q.style.top = 960 + lerp(from[i][1], to[i][1], k) + "px";
+        q.style.transform = `scale(${0.8 + 0.2 * k})`;
+        q.querySelector("i").style.transform = `scale(${back((t - a - 0.6) / 0.35)})`;
+      });
+    }
+    // the overview: what they ask about
+    if (t >= board && t < END) {
+      const bv = on(t, board + 0.2, END, 0.45, 0.3);
+      set($("board"), bv, `translateY(${(1 - bv) * 80 - 160}px)`);
+      $("bars").querySelectorAll(".fi").forEach((f, i) => { f.style.width = f.dataset.w * out((t - board - 0.6 - i * 0.2) / 1.0) + "%"; });
+    }
   }
 
   function render(t) {
     $("c1").style.transform = `translate(${Math.sin(t / 5) * 60}px, ${Math.cos(t / 6) * 50}px)`;
     $("c2").style.transform = `translate(${Math.sin(t / 6) * 70}px, ${Math.cos(t / 5) * 40}px)`;
-    $("c3").style.transform = `translate(${Math.cos(t / 4) * 40}px, ${Math.sin(t / 5) * 30}px)`;
-    hideAll();
-    headline(t);
+    for (const id of ITEMS) set($(id), 0);
+    $("hero").style.filter = "";
     ({ 1: reel1, 2: reel2, 3: reel3 })[V](t);
-    endCard(t);
-    // the headline makes room for the end card
-    $("hl").style.opacity = t > END - 0.1 ? 0 : 1;
+    if (t >= END) { only(V === 2 ? "dark" : V === 3 ? "paper" : "sky"); endCard(t); }
   }
 
   const fit = () => { const k = Math.min(innerWidth / 1080, innerHeight / 1920); $("stage").style.transform = `scale(${k})`; };
