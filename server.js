@@ -249,7 +249,7 @@ app.get("/api/status", rateLimit("status", 120, 60e3), withClient(), async (req,
     on: a.chat && req.client.active !== false, look: widgetLook(req.client), starters: openingChips(req.cat, req.lang),
     // does she speak up on her own? The greeting is off unless the owner turned it on (our demo shops
     // show it); offers of help when someone hesitates are on unless turned off
-    greet: req.client.persona?.greet ?? isBuiltIn(req.client.id), nudges: req.client.persona?.nudges !== false,
+    greet: greetMode(req.client), nudges: req.client.persona?.nudges !== false,
     lookSavedAt: req.client.siteLook?.at ?? null, // when the website's look was last saved (the widget sends it when it's missing or old)
   });
 });
@@ -385,6 +385,15 @@ app.post("/api/chat", rateLimit("chat", 30, 5 * 60e3, { shared: true }), withCli
   }
   res.end();
 });
+
+// How the assistant greets a new visitor: "center" (in the middle of the page), "corner" (a small card by
+// her corner) or "off". Never set: our demo shops greet in the middle, everyone else waits.
+function greetMode(client) {
+  const g = client.persona?.greet;
+  if (g === true || g === "center") return "center";
+  if (g === "corner") return "corner";
+  return g === undefined && isBuiltIn(client.id) ? "center" : "off";
+}
 
 // The chat's error messages for an English page (they're written in Czech where they arise).
 const ERRORS_EN = [

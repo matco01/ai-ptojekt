@@ -214,6 +214,7 @@
             <label class="l" data-i18n="greetL">Po příchodu na web</label>
             <div class="choices" id="greet">
               <button class="choice" data-v="off"><b data-i18n="greetOff">Jen čeká v rohu</b><span data-i18n="greetOffP">Zákazník ji otevře, až bude chtít.</span></button>
+              <button class="choice" data-v="corner"><b data-i18n="greetCorner">Pozdraví v rohu</b><span data-i18n="greetCornerP">Malá bublina u rohu se zeptá, jestli má poradit – neruší a sama zmizí.</span></button>
               <button class="choice" data-v="on"><b data-i18n="greetOn">Přivítá zákazníka</b><span data-i18n="greetOnP">Vyskočí doprostřed a zeptá se, jestli má poradit – jednou za návštěvu.</span></button>
             </div>
             <label class="l" data-i18n="nudgeL">Když zákazník váhá</label>
@@ -299,7 +300,7 @@
         tPro: "Profesionální", tProP: "„Doporučuji tyto dva modely. Liší se hlavně výdrží baterie.“",
         tPlay: "Hravá", tPlayP: "„Ooo, dobrá volba! 🎧 Tyhle vás nezklamou ani v letadle.“",
         popH: "Kdy se ozve sama", popP: "Prodavačka vždy čeká v pravém dolním rohu. Tady nastavíte, jestli zákazníka osloví i sama.",
-        greetL: "Po příchodu na web", greetOff: "Jen čeká v rohu", greetOffP: "Zákazník ji otevře, až bude chtít.", greetOn: "Přivítá zákazníka", greetOnP: "Vyskočí doprostřed a zeptá se, jestli má poradit – jednou za návštěvu.",
+        greetL: "Po příchodu na web", greetOff: "Jen čeká v rohu", greetOffP: "Zákazník ji otevře, až bude chtít.", greetCorner: "Pozdraví v rohu", greetCornerP: "Malá bublina u rohu se zeptá, jestli má poradit – neruší a sama zmizí.", greetOn: "Přivítá zákazníka", greetOnP: "Vyskočí doprostřed a zeptá se, jestli má poradit – jednou za návštěvu.",
         nudgeL: "Když zákazník váhá", nudgeOn: "Nabídne pomoc", nudgeOnP: "Malá bublina u rohu, např. když se dlouho dívá na jeden produkt. Nejvýš párkrát za návštěvu.", nudgeOff: "Neruší", nudgeOffP: "Ozve se, jen když ji zákazník otevře.",
         genderL: "Prodavačka, nebo prodavač?", gF: "Prodavačka", gFP: "„Ráda vám poradím.“", gM: "Prodavač", gMP: "„Rád vám poradím.“",
         instrH: "Vaše pokyny", instrP: "Co má zdůrazňovat, doporučovat nebo jak se chovat. Pravidla o pravdivosti (žádné vymyšlené slevy ani ceny) platí vždy.",
@@ -338,7 +339,7 @@
         tPro: "Professional", tProP: "“I recommend these two models. They differ mainly in battery life.”",
         tPlay: "Playful", tPlayP: "“Ooh, great pick! 🎧 These won't let you down even on a plane.”",
         popH: "When it speaks up on its own", popP: "The assistant always waits in the bottom right corner. Here you choose whether it also approaches customers by itself.",
-        greetL: "When someone arrives", greetOff: "Just waits in the corner", greetOffP: "Customers open it when they want to.", greetOn: "Greets the customer", greetOnP: "Pops up in the middle and asks if they’d like help – once per visit.",
+        greetL: "When someone arrives", greetOff: "Just waits in the corner", greetOffP: "Customers open it when they want to.", greetCorner: "Says hello in the corner", greetCornerP: "A small bubble by the corner asks if they’d like help – unobtrusive, fades by itself.", greetOn: "Greets the customer", greetOnP: "Pops up in the middle and asks if they’d like help – once per visit.",
         nudgeL: "When a customer hesitates", nudgeOn: "Offers help", nudgeOnP: "A small bubble by the corner, e.g. after a long look at one product. A few times per visit at most.", nudgeOff: "Stays quiet", nudgeOffP: "Speaks only when the customer opens it.",
         genderL: "Female or male (matters in Czech)", gF: "Female", gFP: "“Ráda vám poradím.”", gM: "Male", gMP: "“Rád vám poradím.”",
         instrH: "Your instructions", instrP: "What it should stress, recommend or how to behave. The truthfulness rules (no made-up discounts or prices) always apply.",
@@ -401,7 +402,8 @@
     const paintTone = choice("tone", () => S.persona.tone || "friendly", (v) => { S.persona.tone = v; });
     const paintGender = choice("gender", () => S.persona.gender || "f", (v) => { S.persona.gender = v; });
     // the greeting is off unless the owner turns it on; offers of help are on unless turned off
-    const paintGreet = choice("greet", () => (S.persona.greet === true ? "on" : "off"), (v) => { S.persona.greet = v === "on"; });
+    const paintGreet = choice("greet", () => (S.persona.greet === true || S.persona.greet === "center" ? "on" : S.persona.greet === "corner" ? "corner" : "off"),
+      (v) => { S.persona.greet = v === "on" ? "center" : v; });
     const paintNudges = choice("nudges", () => (S.persona.nudges === false ? "off" : "on"), (v) => { S.persona.nudges = v === "on"; });
     function showAvatarBoxes() {
       $("letter-box").hidden = S.appearance.avatar !== "letter";

@@ -660,7 +660,8 @@
   let starters = null; // the opening buttons written for this website (null = the shop's usual ones below)
   // does she speak up on her own (the owner's settings)? Until the server says otherwise: no greeting
   // in the middle of the page, small offers of help when someone hesitates
-  let speakUp = { greet: false, nudges: true };
+  // (greet: "off" | "corner" = a small card by her corner | "center" = she hops into the middle of the page)
+  let speakUp = { greet: "off", nudges: true };
   let siteOnly = false; // true while reading the website's own look for the settings preview (reportLook)
   const opts = () => {
     if (preview || siteOnly) return { ...(script?.dataset || {}) };
@@ -1550,6 +1551,7 @@
 
   async function greet() {
     if (state.greeted || mode) return;
+    if (speakUp.greet === "corner") return greetCorner();
     state.greeted = true; saveState();
     const stage = el(`
       <div class="arrive" role="dialog" aria-modal="true" aria-labelledby="aip-greet">
@@ -1623,6 +1625,47 @@
     greetingData = (await text) ?? { text: L("greet", cfg.name) };
     setAv(av, "talk");
     await typeInto(stage.querySelector(".g-text"), greetingData.text.replace(/\s*\p{Extended_Pictographic}️?/gu, ""));
+    setAv(av, "idle");
+  }
+
+  // The quieter hello: a small card by her corner, like an offer of help, instead of hopping into the
+  // middle of the page. Unanswered, it fades after a while and she counts as not invited to talk ("quiet").
+  async function greetCorner() {
+    state.greeted = true; state.choice = "quiet"; saveState();
+    const card = el(`
+      <div class="tip glass hello" role="dialog" aria-labelledby="aip-hello">
+        ${aurora}
+        <button class="x gbtn" data-m="no" aria-label="${L("close")}">${ICON.close}</button>
+        ${who()}
+        <p id="aip-hello"></p>
+        <div class="chips">
+          <button class="chip solid" data-m="chat" style="--i:2">${L("write")}</button>
+          <button class="chip" data-m="voice" style="--i:3">${L("talk")}</button>
+          <button class="chip ghost" data-m="no" style="--i:4">${L("skip")}</button>
+        </div>
+        ${siteDecides() || chatConsent !== null ? "" : `<p class="g-data">${L("greetData")} <button type="button" class="g-optin">${L("optIn")}</button> · <button type="button" class="g-optout">${L("optOut")}</button> · <a href="${esc(cfg.privacy)}" target="_blank" rel="noopener">${L("more")}</a></p>`}
+      </div>`);
+    for (const [cls, v] of [[".g-optin", true], [".g-optout", false]]) {
+      const b = card.querySelector(cls);
+      if (b) b.onclick = () => { answerConsent(v); b.parentElement.textContent = L(v ? "optedIn" : "optedOut"); };
+    }
+    card.onclick = (e) => {
+      const m = e.target.closest("[data-m]")?.dataset.m;
+      if (!m) return;
+      hideFloat();
+      if (m === "no") return declineGreeting();
+      state.choice = m; saveState();
+      api.track("offer_accepted", { mode: m });
+      openPanel(m, { fromGreeting: true });
+    };
+    showFloat(card, 30000);
+    api.track("offer_shown");
+    const av = card.querySelector(".av");
+    const data = await post("/api/proactive", { sessionId, trigger: "greeting", signals: signals() }).then((r) => { if (r.off) switchOff(); return r.greeting; }).catch(() => null);
+    if (floatEl !== card) return; // answered or gone meanwhile
+    greetingData = data ?? { text: L("greet", cfg.name) };
+    setAv(av, "talk");
+    await typeInto(card.querySelector("#aip-hello"), greetingData.text.replace(/\s*\p{Extended_Pictographic}️?/gu, ""), 6);
     setAv(av, "idle");
   }
 
@@ -2645,7 +2688,7 @@
     // the owner's preview takes only the opening buttons written for the website (its look is the unsaved one)
     const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}${preview ? "&preview=1" : ""}`).then(async (r) => {
       if (preview) { const st = r.ok ? await r.json() : {}; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return true; }
-      if (r.ok) { const st = await r.json(); look = st.look || {}; lookSavedAt = st.lookSavedAt ?? null; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; speakUp = { greet: st.greet === true, nudges: st.nudges !== false }; return st.on !== false; }
+      if (r.ok) { const st = await r.json(); look = st.look || {}; lookSavedAt = st.lookSavedAt ?? null; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; speakUp = { greet: st.greet === true ? "center" : ["center", "corner"].includes(st.greet) ? st.greet : "off", nudges: st.nudges !== false }; return st.on !== false; }
       if (r.status >= 500 || r.status === 429) return true;
       console.warn("[Sella]", (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
       return false;
@@ -2673,7 +2716,7 @@
     // the product) – but never keep the customer waiting more than 5 s
     // with the greeting off she just waits in the corner; offers of help can still come (as sparingly as
     // after "just looking")
-    if (!speakUp.greet && !state.greeted) { state.greeted = true; state.choice = "quiet"; saveState(); }
+    if (speakUp.greet === "off" && !state.greeted) { state.greeted = true; state.choice = "quiet"; saveState(); }
     if (!state.greeted) setTimeout(() => Promise.race([Promise.all([nameReady, pageReady]), new Promise((r) => setTimeout(r, 5000))]).then(greet), cfg.greetDelay);
   }
   document.readyState === "loading" ? addEventListener("DOMContentLoaded", boot) : boot();
