@@ -104,6 +104,20 @@
     .bar .fi { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8fb3d8, #4e7fb4); }
 
     /* the end card */
+    /* a shop's search that finds nothing */
+    #shopm { left: 60px; right: 60px; top: 300px; height: 1240px; border-radius: 48px; background: #fff; overflow: hidden; box-shadow: 0 60px 120px -50px rgba(20,30,50,.55); }
+    .sbar { height: 120px; display: flex; align-items: center; justify-content: space-between; padding: 0 44px; border-bottom: 2px solid #eef0f3; }
+    .slogo { font: 700 46px/1 "Manrope", sans-serif; letter-spacing: -.04em; color: #2f3133; } .slogo b { color: #e0663a; }
+    .snav { display: flex; gap: 14px; } .snav i { width: 46px; height: 46px; border-radius: 50%; background: #eef0f3; }
+    .sinput { margin: 40px 40px 0; height: 116px; border-radius: 30px; border: 3px solid #d6dbe1; display: flex; align-items: center; gap: 20px; padding: 0 30px; font: 500 42px/1 "Geist", sans-serif; color: #2f3133; white-space: nowrap; overflow: hidden; }
+    .scur { width: 4px; height: 52px; background: #2f3133; margin-left: -14px; }
+    .sempty { position: absolute; left: 60px; right: 60px; top: 420px; display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center; }
+    .sempty b { font: 600 46px/1.25 "Geist", sans-serif; letter-spacing: -.02em; color: #2f3133; } .sempty span { font-size: 36px; color: #8a9099; }
+    #hello { left: 110px; top: 1030px; width: 640px; padding: 30px 34px 30px; z-index: 26; transform-origin: 90% 110%; }
+    #hello .who { font-size: 26px; font-weight: 700; color: #2f3133; margin-bottom: 8px; }
+    #hello p { margin: 0 0 22px; font-size: 36px; line-height: 1.35; min-height: 98px; }
+    #hello .hb { display: inline-block; padding: 18px 34px; border-radius: 22px; background: #2f3133; color: #fff; font-size: 32px; font-weight: 600; }
+
     #end { left: 0; right: 0; top: 560px; text-align: center; }
     #end .mark { font-size: 290px; line-height: 1; letter-spacing: -.02em; }
     #end .mark span { display: inline-block; }
@@ -148,6 +162,14 @@
   <div class="abs" id="qs"></div>
   <div class="abs" id="board"><h3 class="serif" id="bh"></h3><div id="bars"></div></div>
 
+  <!-- 4–5: the shop's search finds nothing, Sella offers help (screen clips for the live-action video) -->
+  <div class="abs" id="shopm">
+    <div class="sbar"><span class="slogo">e<b>shop</b></span><span class="snav"><i></i><i></i><i></i></span></div>
+    <div class="sinput" id="sinput"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#7b8188" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span id="sq"></span><i class="scur" id="scur"></i></div>
+    <div class="sempty" id="sempty"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#c3c9d0" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8.5 8.5l5 5M13.5 8.5l-5 5"/></svg><b id="snone"></b><span id="shint"></span></div>
+  </div>
+  <div class="abs bub" id="hello"><div class="who">Sella</div><p id="hellot"></p><span class="hb" id="hellob"></span></div>
+
   <!-- the mascot (moves between scenes) and the end card -->
   <div class="abs blob" id="hero"></div>
   <div class="abs" id="end"><span class="emas blob" id="emas"></span><div class="mark serif" id="emark"><span>S</span><span>e</span><span>l</span><span>l</span><span>a</span></div><div class="line" id="eline"></div><span class="cta">sella.chat</span></div>
@@ -159,7 +181,7 @@
 <script>
   const params = new URLSearchParams(location.search);
   const LANG = params.get("lang") === "en" ? "en" : "cs";
-  const V = ["1", "2", "3"].includes(params.get("v")) ? Number(params.get("v")) : 1;
+  const V = ["1", "2", "3", "4", "5", "6"].includes(params.get("v")) ? Number(params.get("v")) : 1;
   const T = {
     cs: {
       line: "AI prodavačka pro e-shopy",
@@ -174,6 +196,8 @@
       h3: [["Jeden řádek kódu.", ["Jeden"]], ["Funguje na každém webu.", ["každém"]], ["Odpovídá zákazníkům. Nonstop.", ["Nonstop."]], ["A vy víte, co chtějí.", ["chtějí."]]],
       client: "vas-obchod", plat: ["Shoptet", "WordPress", "Shopify", "Tag Manager"], any: "jakýkoli web",
       qs: ["Je v balení nabíječka?", "Stihne to do pátku?", "Máte to skladem?"], bh: "Na co se ptají",
+      sq: ["sluchátka do vlaku", "bezdrátová sluchátka výdrž", "sluchátka 30 hodin"], none: (q) => `Pro „${q}“ jsme nic nenašli`, hint: "Zkuste jiný výraz.",
+      hello: "Nemůžete něco najít? Řekněte mi, co hledáte.", helloB: "Napsat",
       bars: [["Doprava a termíny", 38], ["Rozdíly mezi modely", 31], ["Co je v balení", 18]],
     },
     en: {
@@ -189,6 +213,8 @@
       h3: [["One line of code.", ["One"]], ["Works on any website.", ["any"]], ["Answers customers. 24/7.", ["24/7."]], ["And you see what they want.", ["want."]]],
       client: "your-shop", plat: ["Shoptet", "WordPress", "Shopify", "Tag Manager"], any: "any website",
       qs: ["Is a charger in the box?", "Will it arrive by Friday?", "Is it in stock?"], bh: "What they ask",
+      sq: ["headphones for the train", "wireless headphones battery", "headphones 30 hours"], none: (q) => `No results for “${q}”`, hint: "Try another search.",
+      hello: "Can't find something? Tell me what you need.", helloB: "Chat",
       bars: [["Delivery and dates", 38], ["Differences between models", 31], ["What's in the box", 18]],
     },
   }[LANG];
@@ -229,7 +255,8 @@
   }
 
   // ---- scenes (seconds; ?d= overrides, e.g. to fit the recorded voice)
-  const REELS = { 1: [2.6, 1.4, 5.6, 2.0, 3.2], 2: [2.2, 3.0, 9.6, 3.4], 3: [3.0, 3.6, 3.8, 3.0, 3.2] };
+  // 4–6 are clips for the live-action video: the search finds nothing, Sella helps, the end card alone
+  const REELS = { 1: [2.6, 1.4, 5.6, 2.0, 3.2], 2: [2.2, 3.0, 9.6, 3.4], 3: [3.0, 3.6, 3.8, 3.0, 3.2], 4: [3.6, 0], 5: [2.4, 5.0, 0], 6: [0, 3.2] };
   const lens = (params.get("d") || "").split(",").map(Number);
   const S = [];
   let acc = 0;
@@ -284,7 +311,7 @@
   }
 
   const LAYERS = ["sky", "ink", "dark", "paper"];
-  const ITEMS = ["prods", "kw", "kwsub", "hl", "chat", "sparks", "tap", "term", "ask", "scope", "rings", "say", "gcard", "orbit", "codep", "qs", "board", "hero", "end"];
+  const ITEMS = ["prods", "kw", "kwsub", "hl", "chat", "sparks", "tap", "term", "ask", "scope", "rings", "say", "gcard", "orbit", "codep", "qs", "board", "shopm", "hello", "hero", "end"];
   function only(layer) { for (const l of LAYERS) $(l).style.visibility = l === layer ? "visible" : "hidden"; }
 
   function endCard(t) {
@@ -294,6 +321,37 @@
     const land = t - END - 0.45;
     $("emas").style.transform = `translateY(${land < 0 ? -260 * (1 - out((t - END) / 0.45)) : 0}px)`;
     emas.pose(t, { m: t > END + 1.2 ? "happy" : "idle", squash: land > 0 ? 0.16 * Math.exp(-7 * land) * Math.cos(land * 14) : 0 });
+  }
+
+  // the chat close-up: the question, she thinks, answers, the product, a tap into the cart (reels 1 and 5)
+  function chatScene(t, chat, k2) {
+    const cv = on(t, chat, k2, 0.35, 0.25);
+    set($("chat"), cv, `translateY(${(1 - cv) * 80}px)`);
+    pop($("m1"), t, chat + 0.15);
+    const typing = t > chat + 0.9 && t < chat + 1.9;
+    pop($("r2"), t, chat + 0.9);
+    $("dots").style.display = typing ? "inline-flex" : "none";
+    [...$("dots").children].forEach((d, i) => { d.style.transform = `translateY(${-Math.max(0, Math.sin(t * 9 - i * 0.8)) * 10}px)`; });
+    $("m2").style.display = typing ? "none" : "block";
+    $("m2").textContent = type(T.m2, t, chat + 1.9, 70);
+    cblob.pose(t, { m: typing ? "think" : t > chat + 4.3 ? "happy" : "idle", look: [1.5, -1], talk: !typing && t < chat + 3 ? 1 : 0 });
+    pop($("m3"), t, chat + 2.9);
+    const added = chat + 4.1;
+    $("m3add").textContent = t > added ? T.added : T.add; $("m3add").classList.toggle("done", t > added);
+    $("m3add").style.transform = `scale(${t > added ? 1 + 0.3 * Math.exp(-7 * (t - added)) : 1})`;
+    // the customer's tap on "add to cart"
+    const tv = on(t, chat + 3.3, chat + 4.7, 0.2, 0.25);
+    const r = $("m3add").getBoundingClientRect(), st = $("stage").getBoundingClientRect(), k = st.width / 1080;
+    const tx = (r.left + r.width / 2 - st.left) / k, ty = (r.top + r.height / 2 - st.top) / k;
+    set($("tap"), tv, `translate(${lerp(tx - 120, tx, io((t - chat - 3.3) / 0.6))}px, ${lerp(ty + 260, ty, io((t - chat - 3.3) / 0.6))}px) scale(${t > added - 0.12 && t < added + 0.08 ? 0.8 : 1})`);
+    // a burst of confetti from the button
+    const bt = t - added;
+    set($("sparks"), bt > 0 && bt < 1.2 ? 1 : 0);
+    [...$("sparks").children].forEach((s, i) => {
+      const ang = (i / 16) * Math.PI * 2 + 0.3, v = 380 + (i % 3) * 120, g = 900;
+      const x = tx + Math.cos(ang) * v * bt, y = ty + Math.sin(ang) * v * bt + 0.5 * g * bt * bt;
+      s.style.transform = `translate(${x}px, ${y}px) rotate(${bt * 720 + i * 40}deg)`; s.style.opacity = 1 - clamp(bt / 1.2);
+    });
   }
 
   // ---- 1 · kinetic type → Sella drops in → a chat close-up → kinetic type → end
@@ -324,36 +382,7 @@
       hero.pose(t, { m: land > 0.25 ? "happy" : "wow", squash: sq });
       headline(t, T.h1, drop + 0.35, chat + 0.4);
     }
-    // the chat close-up
-    if (t >= chat - 0.1 && t < k2) {
-      const cv = on(t, chat, k2, 0.35, 0.25);
-      set($("chat"), cv, `translateY(${(1 - cv) * 80}px)`);
-      pop($("m1"), t, chat + 0.15);
-      const typing = t > chat + 0.9 && t < chat + 1.9;
-      pop($("r2"), t, chat + 0.9);
-      $("dots").style.display = typing ? "inline-flex" : "none";
-      [...$("dots").children].forEach((d, i) => { d.style.transform = `translateY(${-Math.max(0, Math.sin(t * 9 - i * 0.8)) * 10}px)`; });
-      $("m2").style.display = typing ? "none" : "block";
-      $("m2").textContent = type(T.m2, t, chat + 1.9, 70);
-      cblob.pose(t, { m: typing ? "think" : t > chat + 4.3 ? "happy" : "idle", look: [1.5, -1], talk: !typing && t < chat + 3 ? 1 : 0 });
-      pop($("m3"), t, chat + 2.9);
-      const added = chat + 4.1;
-      $("m3add").textContent = t > added ? T.added : T.add; $("m3add").classList.toggle("done", t > added);
-      $("m3add").style.transform = `scale(${t > added ? 1 + 0.3 * Math.exp(-7 * (t - added)) : 1})`;
-      // the customer's tap on "add to cart"
-      const tv = on(t, chat + 3.3, chat + 4.7, 0.2, 0.25);
-      const r = $("m3add").getBoundingClientRect(), st = $("stage").getBoundingClientRect(), k = st.width / 1080;
-      const tx = (r.left + r.width / 2 - st.left) / k, ty = (r.top + r.height / 2 - st.top) / k;
-      set($("tap"), tv, `translate(${lerp(tx - 120, tx, io((t - chat - 3.3) / 0.6))}px, ${lerp(ty + 260, ty, io((t - chat - 3.3) / 0.6))}px) scale(${t > added - 0.12 && t < added + 0.08 ? 0.8 : 1})`);
-      // a burst of confetti from the button
-      const bt = t - added;
-      set($("sparks"), bt > 0 && bt < 1.2 ? 1 : 0);
-      [...$("sparks").children].forEach((s, i) => {
-        const ang = (i / 16) * Math.PI * 2 + 0.3, v = 380 + (i % 3) * 120, g = 900;
-        const x = tx + Math.cos(ang) * v * bt, y = ty + Math.sin(ang) * v * bt + 0.5 * g * bt * bt;
-        s.style.transform = `translate(${x}px, ${y}px) rotate(${bt * 720 + i * 40}deg)`; s.style.opacity = 1 - clamp(bt / 1.2);
-      });
-    }
+    if (t >= chat - 0.1 && t < k2) chatScene(t, chat, k2);
     // kinetic again: what she does
     if (t >= k2 && t < END) { set($("kw"), 1); kinetic(t, T.k2, k2, 0.66); }
     if (t >= END) only("sky");
@@ -465,12 +494,55 @@
     }
   }
 
+  // ---- 4 · the shop's search: three tries, three times nothing
+  function searchState(t, i, typedFrom) {
+    const q = T.sq[i];
+    $("sq").textContent = typedFrom === null ? q : type(q, t, typedFrom, 32);
+    $("scur").style.opacity = Math.floor(t * 2.6) % 2 ? 1 : 0;
+    $("snone").textContent = T.none(q); $("shint").textContent = T.hint;
+  }
+  function reel4(t) {
+    only("sky");
+    const sv = on(t, 0, DURATION + 9, 0.25, 0.1);
+    set($("shopm"), sv, `scale(${0.97 + 0.03 * sv})`);
+    const cyc = 1.2, i = Math.min(2, Math.floor(t / cyc)), dt = t - i * cyc;
+    searchState(t, i, i * cyc + 0.05);
+    const shown = dt > 0.75;
+    // "nothing found" pops in with a shake, the search box flashes red
+    const k = out((dt - 0.75) / 0.2), shake = shown ? Math.sin((dt - 0.75) * 50) * 14 * Math.exp(-(dt - 0.75) * 9) : 0;
+    set($("sempty"), shown ? k : 0, `translateX(${shake}px) scale(${0.9 + 0.1 * k})`);
+    $("sinput").style.borderColor = shown && dt < 1.1 ? "#e0533a" : "#d6dbe1";
+  }
+  // ---- 5 · still nothing… then Sella hops in, offers help and finds it
+  function reel5(t) {
+    const [offer, chat] = S;
+    only("sky");
+    const sv = on(t, 0, chat + 0.3, 0.1, 0.3);
+    set($("shopm"), sv);
+    searchState(t, 2, null);
+    set($("sempty"), 1);
+    if (t < chat + 0.2) {
+      const land = t - 0.25 - 0.8;
+      $("hero").style.width = $("hero").style.height = "190px";
+      set($("hero"), clamp((t - 0.25) / 0.1), hop(t, 0.25, 0.8, 1080, 1250, 770, 1260, 260));
+      hero.pose(t, { m: land > 0.2 ? "happy" : "wow", squash: land > 0 ? 0.18 * Math.exp(-6 * land) * Math.cos(land * 12) : 0 });
+      const hv = on(t, 1.0, chat + 0.15, 0.35, 0.2);
+      set($("hello"), hv, `scale(${0.6 + 0.4 * back((t - 1.0) / 0.4)})`);
+      $("hellot").textContent = type(T.hello, t, 1.2, 50); $("hellob").textContent = T.helloB;
+    }
+    if (t >= chat - 0.1) chatScene(t, chat, DURATION + 1);
+  }
+  function hop(t, a, d, x0, y0, x1, y1, h) {
+    const u = clamp((t - a) / d);
+    return `translate(${lerp(x0, x1, u)}px, ${lerp(y0, y1, u) - h * 4 * u * (1 - u)}px)`;
+  }
+
   function render(t) {
     $("c1").style.transform = `translate(${Math.sin(t / 5) * 60}px, ${Math.cos(t / 6) * 50}px)`;
     $("c2").style.transform = `translate(${Math.sin(t / 6) * 70}px, ${Math.cos(t / 5) * 40}px)`;
     for (const id of ITEMS) set($(id), 0);
     $("hero").style.filter = "";
-    ({ 1: reel1, 2: reel2, 3: reel3 })[V](t);
+    ({ 1: reel1, 2: reel2, 3: reel3, 4: reel4, 5: reel5, 6: () => {} })[V](t);
     if (t >= END) { only(V === 2 ? "dark" : V === 3 ? "paper" : "sky"); endCard(t); }
   }
 

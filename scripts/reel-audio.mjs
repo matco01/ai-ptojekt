@@ -10,7 +10,7 @@ import { execFileSync } from "node:child_process";
 
 const [reel = "1", outFile = "reel.wav"] = process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && !all[i - 1]?.startsWith("--"));
 const opt = (name) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : null; };
-const SCENES = { 1: [2.6, 1.4, 5.6, 2.0, 3.2], 2: [2.2, 3.0, 9.6, 3.4], 3: [3.0, 3.6, 3.8, 3.0, 3.2] };
+const SCENES = { 1: [2.6, 1.4, 5.6, 2.0, 3.2], 2: [2.2, 3.0, 9.6, 3.4], 3: [3.0, 3.6, 3.8, 3.0, 3.2], 4: [3.6, 0], 5: [2.4, 5.0, 0], 6: [0, 3.2] };
 const lens = (opt("d") || "").split(",").map(Number);
 const S = [];
 let acc = 0;
@@ -130,6 +130,19 @@ if (reel === "3") {
   whoosh(buf, END - 0.2, 0.5, 0.25, true);
   impact(buf, END + 0.45, 0.45); boing(buf, END + 0.5, 0.16); ding(buf, END + 1.2, 0.09);
 }
+
+// ---- 4–6 · clips for the live-action video (its music comes from the edit, so only effects here)
+const buzz = (bus, t0, g = 0.18) => { tone(bus, t0, 0.22, 140, g, { attack: 0.005, harm: [1, 0.6, 0.4, 0.3] }); tone(bus, t0 + 0.12, 0.22, 110, g, { attack: 0.005, harm: [1, 0.6, 0.4, 0.3] }); };
+if (reel === "4") for (let i = 0; i < 3; i++) { typing(buf, i * 1.2 + 0.05, i * 1.2 + 0.65, 30, 0.08); buzz(buf, i * 1.2 + 0.75); }
+if (reel === "5") {
+  const [, chat] = S;
+  whoosh(buf, 0.2, 0.5, 0.2, true); boing(buf, 1.05, 0.2); pop(buf, 1.0, 0.2, 420);
+  whoosh(buf, chat - 0.2, 0.5, 0.22, true); pop(buf, chat + 0.15); pop(buf, chat + 0.9, 0.18, 420);
+  for (let t = chat + 0.95; t < chat + 1.85; t += 0.3) click(buf, t, 0.05);
+  typing(buf, chat + 1.9, chat + 2.9, 30, 0.035);
+  pop(buf, chat + 2.9, 0.2, 380); click(buf, chat + 4.0, 0.25); ding(buf, chat + 4.1); sparkle(buf, chat + 4.12);
+}
+if (reel === "6") { whoosh(buf, 0, 0.4, 0.25, true); impact(buf, 0.45, 0.5); boing(buf, 0.5, 0.18); ding(buf, 1.2, 0.1); pad(music, 0.2, DUR - 0.2, [N.A3, N.C4, N.E4, N.G4], 0.05); }
 
 // ---- the voice (reel 2): the music ducks under it
 const voice = opt("voice");
