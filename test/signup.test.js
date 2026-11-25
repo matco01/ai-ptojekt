@@ -107,8 +107,8 @@ test("a signed-up shop sees its overview, but its widget works only after paying
   assert.equal(status.status, 200);
   const st = await status.json();
   assert.equal(st.on, true);
-  // a new shop: no greeting in the middle of the page until the owner turns it on; offers of help on
-  assert.equal(st.greet, "off");
+  // a new shop: a small hello by the corner until the owner picks another greeting; offers of help on
+  assert.equal(st.greet, "corner");
   assert.equal(st.nudges, true);
   assert.equal((await fetch(`${base}/api/status?client=${id}`, { headers: { Origin: "https://evil.example" } })).status, 403);
 

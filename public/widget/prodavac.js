@@ -177,9 +177,11 @@
   }
   const returning = (ls.get("visits") || 1) > 1;
 
-  // per-session memory of how the customer reacted
-  const state = Object.assign({ greeted: false, choice: null, shown: [], nudgeCount: 0, lastNudgeAt: 0, cooldown: 20e3, offlineNoted: false }, ss.get("state") || {});
-  const saveState = () => ss.set("state", state);
+  // per-session memory of how the customer reacted (the owner's preview starts afresh every time, so a
+  // changed greeting shows at once)
+  const inPreview = script?.dataset.preview === "1";
+  const state = Object.assign({ greeted: false, choice: null, shown: [], nudgeCount: 0, lastNudgeAt: 0, cooldown: 20e3, offlineNoted: false }, (!inPreview && ss.get("state")) || {});
+  const saveState = () => { if (!inPreview) ss.set("state", state); };
   // the greeting was left open (the page reloaded or the visitor went elsewhere meanwhile) – that's
   // "just looking", not "never ask": without this the offers of help would stay off for the whole visit
   if (state.greeted && !state.choice) { state.choice = "declined"; saveState(); }
@@ -658,10 +660,10 @@
   let look = {};
   let lookSavedAt = null; // when the server last saved this website's look (reportLook)
   let starters = null; // the opening buttons written for this website (null = the shop's usual ones below)
-  // does she speak up on her own (the owner's settings)? Until the server says otherwise: no greeting
-  // in the middle of the page, small offers of help when someone hesitates
+  // does she speak up on her own (the owner's settings)? Until the server says otherwise: a small hello
+  // by her corner, small offers of help when someone hesitates
   // (greet: "off" | "corner" = a small card by her corner | "center" = she hops into the middle of the page)
-  let speakUp = { greet: "off", nudges: true };
+  let speakUp = { greet: "corner", nudges: true };
   let siteOnly = false; // true while reading the website's own look for the settings preview (reportLook)
   const opts = () => {
     if (preview || siteOnly) return { ...(script?.dataset || {}) };
@@ -2687,8 +2689,14 @@
     // A passing server error or a network hiccup doesn't switch it off.
     // the owner's preview takes only the opening buttons written for the website (its look is the unsaved one)
     const on = await fetch(`${cfg.api}/api/status?client=${encodeURIComponent(cfg.client || "")}&lang=${UI_LANG}${preview ? "&preview=1" : ""}`).then(async (r) => {
-      if (preview) { const st = r.ok ? await r.json() : {}; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; return true; }
-      if (r.ok) { const st = await r.json(); look = st.look || {}; lookSavedAt = st.lookSavedAt ?? null; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; speakUp = { greet: st.greet === true ? "center" : ["center", "corner"].includes(st.greet) ? st.greet : "off", nudges: st.nudges !== false }; return st.on !== false; }
+      if (preview) {
+        const st = r.ok ? await r.json() : {};
+        if (Array.isArray(st.starters) && st.starters.length) starters = st.starters;
+        // the owner's unsaved choice of how she greets (data-greet / data-nudges from the settings page)
+        speakUp = { greet: ["center", "corner", "off"].includes(script.dataset.greet) ? script.dataset.greet : "corner", nudges: script.dataset.nudges !== "off" };
+        return true;
+      }
+      if (r.ok) { const st = await r.json(); look = st.look || {}; lookSavedAt = st.lookSavedAt ?? null; if (look.name) cfg.name = look.name; if (Array.isArray(st.starters) && st.starters.length) starters = st.starters; speakUp = { greet: st.greet === true ? "center" : ["center", "corner", "off"].includes(st.greet) ? st.greet : "corner", nudges: st.nudges !== false }; return st.on !== false; }
       if (r.status >= 500 || r.status === 429) return true;
       console.warn("[Sella]", (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
       return false;

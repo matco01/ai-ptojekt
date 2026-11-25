@@ -401,8 +401,8 @@
     const paintFaceS = slider("face-s", "faceScale", 100, (v) => v + " %");
     const paintTone = choice("tone", () => S.persona.tone || "friendly", (v) => { S.persona.tone = v; });
     const paintGender = choice("gender", () => S.persona.gender || "f", (v) => { S.persona.gender = v; });
-    // the greeting is off unless the owner turns it on; offers of help are on unless turned off
-    const paintGreet = choice("greet", () => (S.persona.greet === true || S.persona.greet === "center" ? "on" : S.persona.greet === "corner" ? "corner" : "off"),
+    // the greeting is the small one by the corner unless the owner picks another; offers of help are on unless turned off
+    const paintGreet = choice("greet", () => (S.persona.greet === true || S.persona.greet === "center" ? "on" : S.persona.greet === false || S.persona.greet === "off" ? "off" : "corner"),
       (v) => { S.persona.greet = v === "on" ? "center" : v; });
     const paintNudges = choice("nudges", () => (S.persona.nudges === false ? "off" : "on"), (v) => { S.persona.nudges = v === "on"; });
     function showAvatarBoxes() {
@@ -530,6 +530,10 @@
       // her name on the website: the one set here, else the one the website got (made from the shop's name)
       const name = S.name.trim() || (!data.name && site?.name) || data.defaultName;
       const attrs = { client: data.client.id, preview: "1", greetDelay: "0.3", name, brand: site?.siteName || data.client.name };
+      // how she greets, as chosen here (saved or not)
+      const g = S.persona.greet;
+      attrs.greet = g === true || g === "center" ? "center" : g === false || g === "off" ? "off" : "corner";
+      attrs.nudges = S.persona.nudges === false ? "off" : "on";
       if (a.color) attrs.color = a.color; else if (site?.brand) attrs.color = site.brand;
       if (a.theme && a.theme !== "auto") attrs.theme = a.theme;
       if (a.avatar === "letter") { attrs.letter = a.letter || data.client.name[0]; if (a.avatarColor) attrs.avatarColor = a.avatarColor; }

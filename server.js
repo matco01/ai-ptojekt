@@ -386,13 +386,13 @@ app.post("/api/chat", rateLimit("chat", 30, 5 * 60e3, { shared: true }), withCli
   res.end();
 });
 
-// How the assistant greets a new visitor: "center" (in the middle of the page), "corner" (a small card by
-// her corner) or "off". Never set: our demo shops greet in the middle, everyone else waits.
+// How the assistant greets a new visitor: "corner" (a small card by her corner), "center" (in the middle
+// of the page) or "off". Never set: our demo shops greet in the middle, everyone else by the corner.
 function greetMode(client) {
   const g = client.persona?.greet;
   if (g === true || g === "center") return "center";
-  if (g === "corner") return "corner";
-  return g === undefined && isBuiltIn(client.id) ? "center" : "off";
+  if (g === false || g === "off") return "off";
+  return g === undefined && isBuiltIn(client.id) ? "center" : "corner";
 }
 
 // The chat's error messages for an English page (they're written in Czech where they arise).
